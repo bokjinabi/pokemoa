@@ -741,6 +741,10 @@
   var SETS = D.SETS || [];
   var activeSetId = SETS.length ? SETS[0].id : "";
   var dexGrid = $("#dexGrid");
+  var dexMoreWrap = $("#dexMoreWrap");
+  var dexMore = $("#dexMore");
+  var DEX_PAGE = 4; /* 도감은 처음 4장만 보이고 '더보기'로 펼침 */
+  var dexExpanded = false;
   var dexCount = $("#dexCount");
   var dexEyebrow = $("#dexEyebrow");
   var dexDesc = $("#dexDesc");
@@ -930,6 +934,20 @@
     return hay.indexOf(query.toLowerCase()) !== -1;
   }
 
+  function syncDexMore(total) {
+    if (!dexMoreWrap || !dexMore) return;
+    if (total <= DEX_PAGE) {
+      dexExpanded = false;
+      dexMoreWrap.hidden = true;
+      return;
+    }
+    dexMoreWrap.hidden = false;
+    dexMore.setAttribute("aria-expanded", dexExpanded ? "true" : "false");
+    dexMore.textContent = dexExpanded
+      ? "접기"
+      : "더보기 (" + (total - DEX_PAGE) + "장 더 보기)";
+  }
+
   function renderDex() {
     if (!dexGrid) return;
     var s = activeSet();
@@ -942,7 +960,8 @@
       empty.textContent = "‘" + query + "’에 해당하는 카드가 없습니다. 다른 이름이나 레어도로 찾아보세요.";
       dexGrid.appendChild(empty);
     }
-    list.forEach(function (card) {
+    var shown = dexExpanded ? list : list.slice(0, DEX_PAGE);
+    shown.forEach(function (card) {
       var btn = document.createElement("button");
       btn.type = "button";
       btn.className = "dex-card";
@@ -968,11 +987,13 @@
     if (dexEyebrow) dexEyebrow.textContent = s.short + " 도감";
     if (dexDesc) dexDesc.innerHTML = "<strong>" + s.total + "</strong> · " + s.summary;
     if (dexNoteEl) dexNoteEl.textContent = s.dexNote || "";
+    syncDexMore(list.length);
   }
 
   function selectSet(id) {
     activeSetId = id;
     rarity = "all";
+    dexExpanded = false; /* 세트를 바꾸면 다시 4장만 */
     renderSetNav();
     renderSetSummary();
     renderCompare();
@@ -1003,6 +1024,16 @@
       btn.classList.add("is-active");
       rarity = btn.getAttribute("data-rarity");
       renderDex();
+    });
+  }
+  if (dexMore) {
+    dexMore.addEventListener("click", function () {
+      dexExpanded = !dexExpanded;
+      renderDex();
+      if (!dexExpanded && dexGrid) {
+        var top = dexGrid.getBoundingClientRect().top + window.scrollY - 90;
+        window.scrollTo({ top: top > 0 ? top : 0, behavior: "smooth" });
+      }
     });
   }
 

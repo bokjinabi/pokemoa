@@ -648,23 +648,23 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .affiliate .affiliate-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .affiliate small { font-size: 11px; color: var(--muted-2); }
 
-/* 실제 제휴 상품 카드 (쿠팡 파트너스, 이미지 + 링크) */
-.affiliate .affiliate-product { display: flex; gap: 14px; align-items: flex-start; }
-.affiliate-thumb {
-  flex: 0 0 auto;
+/* 실제 제휴 배너 (쿠팡 파트너스 위젯 iframe 120×240, 가운데 정렬) */
+.affiliate .affiliate-widget {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 6px 0 2px;
+}
+.affiliate .affiliate-widget iframe {
   display: block;
-  width: 92px;
-  height: 92px;
+  width: 120px;
+  height: 240px;
+  max-width: 100%;
+  border: 0;
   border-radius: 12px;
-  overflow: hidden;
   background: #fff;
-  border: 1px solid #ffe58a;
   box-shadow: 0 1px 2px rgba(15, 27, 61, 0.06);
 }
-.affiliate-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.affiliate .affiliate-body { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-.affiliate .affiliate-body h4 { margin: 0; }
-.affiliate .affiliate-body p { line-height: 1.55; max-width: 600px; }
 .affiliate .affiliate-disclosure {
   display: block;
   padding-top: 10px;
@@ -672,9 +672,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
   font-size: 11px;
   line-height: 1.5;
   color: var(--muted-2);
-}
-@media (min-width: 720px) {
-  .affiliate-thumb { width: 150px; height: 150px; }
 }
 
 /* ------------------------------------------------------------------ 지도 */
@@ -1484,6 +1481,25 @@ button { font: inherit; color: inherit; cursor: pointer; }
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
+/* 도감 카드 더보기/접기 (처음 4장만 표시) */
+.dex-more-wrap { display: flex; justify-content: center; margin-top: 14px; }
+.dex-more-wrap[hidden] { display: none; }
+.dex-more {
+  border: 1.5px dashed #c8d4e6;
+  background: #f7f9fc;
+  border-radius: 12px;
+  padding: 11px 20px;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--navy);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.dex-more::after { content: "⌄"; font-size: 12px; line-height: 1; }
+.dex-more[aria-expanded="true"]::after { content: "⌃"; }
+.dex-more:hover { border-color: var(--navy); background: #eef3fb; }
 .dex-card {
   text-align: left;
   background: #fff;
