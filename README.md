@@ -15,6 +15,7 @@
 - **v3.2 변경(PokeConv 스타일)**: 지도를 **라이트·저채도 스타일**(OSM 타일 + grayscale 필터)로 정돈하고, 둥근 핀 마커를 **상태 말풍선(알약) 마커**로 교체(`CU · 입고 2종` / `확인` / `없음`, 넓게 볼 때는 `18곳` 클러스터). 상단의 카드 7종 필터 줄과 브랜드 칩 줄을 없애는 대신 **편의점 4사별 현황 요약 바**(전체·GS25·CU·세븐일레븐·이마트24, 클릭하면 그 브랜드만)와 **정렬 드롭다운(재고 우선/가까운 거리순)**, **`재고 있는 매장만` 토글**을 넣었습니다. 매장 카드·지도 팝업은 **개소별 보유 카드**가 주인공이 되도록 정리
 - **v3.3 변경(세트별 도감·가이드)**: 「도감·가이드」 탭을 30th CELEBRATION 단일 세트에서 **포케모아에 수록된 9개 상품(30th CELEBRATION · 어비스아이 · 블랙볼트 · 로켓단의 영광 · 열풍의 아레나 · 배틀 파트너즈 · 테라스탈 페스타 ex · 초전 브레이커 · 스타터 세트)** 으로 확장. 상단 **세트 선택 칩**으로 세트를 고르면 세트 요약(발매일·구성·정가·공식 링크) · **정가 vs KREAM 시세 비교표** · **리셀 프리미엄 계산기 기준 정가** · **수록 카드 도감(검색·레어도 필터)** 이 그 세트 기준으로 즉시 바뀝니다. 홈의 인기 카드팩 카드를 누르면 해당 세트 도감으로 바로 이동합니다
 - **v3.4 변경(쿠팡 파트너스 슬롯 연동)**: 도감·가이드 하단 제휴 슬롯(`coupang-supplies`)을 **실제 제휴 상품 카드**로 교체했습니다. 탑로더+슬리브 세트 상품 이미지를 **로컬 자산 `assets/coupang-supplies.jpg`**로 저장해 핫링크 차단 없이 뜨게 했고, 이미지·버튼 모두 `https://link.coupang.com/a/iKC6PvZjtQ`(`target="_blank" rel="noopener noreferrer sponsored"`)로 연결됩니다. 카드 하단에 쿠팡 파트너스 대가성 문구를 그대로 넣었습니다(`coupang-30th` 슬롯은 링크 교체 대기)
+- **v3.5 변경(제휴 카드 가격 문구 제거)**: 제휴 상품 카드 본문에서 가격·할인 관련 문구(`2026-11-17 쿠팡 기준 8,600원(정가 26,000원 · 쿠폰 적용가)이며, 쿠폰·배송 조건에 따라 달라질 수 있습니다.`)를 삭제해 **가격을 표기하지 않습니다**. 본문은 상품 설명과 `최신 가격과 배송 조건은 쿠팡 상품 페이지에서 확인해 주세요.` 안내만 남겼습니다 — 쿠폰가·배송비는 수시로 바뀌어 정적 페이지에 적어 두면 오래된 가격이 노출되므로, 가격은 쿠팡 상품 페이지에서만 확인하도록 안내합니다.
 
 > 타일 참고: 브리프의 CARTO Positron(`basemaps.cartocdn.com/light_all`)은 2026-11 확인 시 **API 키가 없으면 `API KEY REQUIRED` 워터마크 타일**이 내려와 쓸 수 없었습니다. 그래서 OSM 표준 타일에 저채도·밝기 필터를 걸어 Positron과 같은 라이트 느낌을 냈고(한국어 지명 그대로), 타일 서버가 막히면 OSM 독일 미러로 자동 대체합니다.
 
@@ -130,7 +131,7 @@ pokemoa/
    각 슬롯 자리에 `<ins class="adsbygoogle" data-ad-client="ca-pub-…" data-ad-slot="…">` 삽입
 3. **쿠팡 파트너스**: `data-affiliate="coupang-30th"` 링크의 `href`를 실제 파트너스 링크로 교체 (현재는 클릭 시 안내 토스트만 표시).
    `coupang-supplies`는 `https://link.coupang.com/a/iKC6PvZjtQ`(탑로더+슬리브 세트)로 **연동 완료** — 이미지는 핫링크 대신
-   `assets/coupang-supplies.jpg`에 저장했고, 상품·가격이 바뀌면 이미지와 문구(8,600원 · 2026-11-17 기준)도 함께 갱신해야 합니다.
+   `assets/coupang-supplies.jpg`에 저장했고, 상품이 바뀌면 이미지도 함께 갱신해야 합니다. 카드 본문에는 **가격을 표기하지 않습니다**(v3.5) — 가격·배송 조건은 쿠팡 상품 페이지에서 확인하도록 안내만 넣었습니다.
 4. **운영 문의**: `tpl-contact`의 폼을 실제 폼 백엔드(Formspree·Google Forms 등)나 메일 주소로 연결,
    `privacy.html` 문의처에 운영 이메일 기입
 5. **실데이터**: 매장 위치는 Overpass API 실시간 조회 + `assets/js/data.js`의 `osmSnapshot`(2026-11-17 스냅샷)을 사용합니다.
@@ -161,7 +162,8 @@ pokemoa/
   모바일 390px 가로 넘침 0 · 세트 칩 가로 스크롤 · 인트로 문단 노출 · 세트 전환 정상, 페이지 오류 0건
 - **v3.4 확인 항목(2026-11-17 라이브 `https://bokjinabi.github.io/pokemoa/#guide`)**: 제휴 상품 이미지 `assets/coupang-supplies.jpg` 200(55.9KB · 480×480)로 로드(`naturalWidth` 480, 실패 요청 0건), 이미지·CTA 두 링크 모두 `https://link.coupang.com/a/iKC6PvZjtQ`(`target="_blank"` · `rel="noopener noreferrer sponsored"`), 클릭하면 새 탭으로 쿠팡 상품 페이지(상품번호 9732320873 · 탑로더+슬리브 세트)로 이동 — `app.js`가 `http(s)` 링크는 토스트로 막지 않으며 `coupang-30th` 자리(플레이스홀더)는 기존 토스트 유지,
   카드 하단에 대가성 문구 노출, 데스크톱 1280×900 · 모바일 390×844 가로 넘침 0, 페이지 오류 0건
-  (단, 이 환경의 헤드리스 크롬에서 상품 페이지 자체는 쿠팡 봇 차단 `Access Denied`가 뜹니다 — 일반 브라우저·한국 IP에서는 정상, 가격 `8,600원`은 2026-11-17 조회 시점 쿠폰 적용가)
+  (단, 이 환경의 헤드리스 크롬에서 상품 페이지 자체는 쿠팡 봇 차단 `Access Denied`가 뜹니다 — 일반 브라우저·한국 IP에서는 정상)
+- **v3.5 확인 항목(2026-11-17 라이브 `https://bokjinabi.github.io/pokemoa/#guide`)**: 제휴 상품 카드 본문에서 가격·할인 문구가 사라지고 `개봉한 카드를 바로 넣어 보관하는 3×4인치 탑로더와 슬리브 세트입니다. 최신 가격과 배송 조건은 쿠팡 상품 페이지에서 확인해 주세요.`만 남음(본문에 `원`·`정가`·`쿠폰`·`2026-11-17` 표기 없음), 이미지 `assets/coupang-supplies.jpg` 정상 로드, 이미지·CTA 링크 `https://link.coupang.com/a/iKC6PvZjtQ`(`target="_blank"` · `rel="noopener noreferrer sponsored"`) 유지, 대가성 문구 유지, 데스크톱 1280×900 · 모바일 390×844 가로 넘침 0, 페이지 오류 0건
 - 스크린샷(v3.4): `screenshots/35-coupang-supplies-desktop.png`(카드), `36-coupang-supplies-context-desktop.png`, `37-coupang-supplies-mobile.png`, `38-coupang-live-desktop.png`
   (라이브 캡처: `downloads/pokemoa-coupang-banner.png`, `downloads/pokemoa-coupang-banner-mobile.png`)
 - 스크린샷(v3.3): 라이브 캡처 `downloads/pokemoa-multiset-guide.png`(테라스탈 페스타 ex 도감·가이드),
