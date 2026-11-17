@@ -141,8 +141,8 @@ pokemoa/
   - 502·타임아웃: `실시간 조회 지연/제한 → 내장 실제 좌표 스냅샷(반경 3km) 사용 (2026-11-17)` 배지 + `실시간 다시 조회` 버튼. 20km를 고른 상태면 `· 넓은 반경은 실시간 조회에서만 표시`를 덧붙입니다. 검증 시점에 overpass-api.de가 용량 초과로 간헐적 502를 반환해 스냅샷 경로가 자주 쓰였습니다
 - 스크린샷(v3): `screenshots/18-nationwide-loading.png`(로딩), `19-nationwide-desktop.png`, `20-pohang-20km.png`,
   `21-region-search.png`(동네 검색), `22-jeju-20km.png`, `23-seoul-5km.png`(도심 20km 비활성),
-  `24-mobile-nationwide.png`, `25-live-pohang.png`, `28-nationwide-final.png`
-  (배포 화면 라이브 캡처: `downloads/pokemoa-v3-nationwide.png`)
+  `24-mobile-nationwide.png`, `25-live-pohang.png`
+  (배포 화면 라이브 캡처: `downloads/pokemoa-v3-nationwide.png`, `pokemoa-v3-pohang-20km.png`, `pokemoa-v3-jeju-20km.png`, `pokemoa-v3-seoul-5km.png`, `pokemoa-v3-loading.png`)
 - 스크린샷(v2.1 이전): `screenshots/01-pricing-desktop.png`, `02-map-desktop.png`, `03-map-loading-desktop.png`,
   `04-card-mobile.png`, `05-mobile-map.png`, `06-mobile-store-list.png`, `07-mobile-pricing.png`, `08-cards-guide.png`,
   `10-store-list-10-more.png`, `11-store-list-expanded.png`, `12-radius-20km.png`, `13-seoul-5km-note.png`,
