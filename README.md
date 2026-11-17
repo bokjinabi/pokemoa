@@ -17,6 +17,7 @@
 - **v3.4 변경(쿠팡 파트너스 슬롯 연동)**: 도감·가이드 하단 제휴 슬롯(`coupang-supplies`)을 **실제 제휴 상품 카드**로 교체했습니다. 탑로더+슬리브 세트 상품 이미지를 **로컬 자산 `assets/coupang-supplies.jpg`**로 저장해 핫링크 차단 없이 뜨게 했고, 이미지·버튼 모두 `https://link.coupang.com/a/iKC6PvZjtQ`(`target="_blank" rel="noopener noreferrer sponsored"`)로 연결됩니다. 카드 하단에 쿠팡 파트너스 대가성 문구를 그대로 넣었습니다(`coupang-30th` 슬롯은 링크 교체 대기)
 - **v3.5 변경(제휴 카드 가격 문구 제거)**: 제휴 상품 카드 본문에서 가격·할인 관련 문구(조회 시점 기준가·정가·쿠폰 적용가를 적고 `쿠폰·배송 조건에 따라 달라질 수 있습니다`로 덧붙이던 두 문장)를 삭제해 **가격을 표기하지 않습니다**. 본문은 상품 설명과 `최신 가격과 배송 조건은 쿠팡 상품 페이지에서 확인해 주세요.` 안내만 남겼습니다 — 쿠폰가·배송비는 수시로 바뀌어 정적 페이지에 적어 두면 오래된 가격이 노출되므로, 가격은 쿠팡 상품 페이지에서만 확인하도록 안내합니다.
 - **v3.6 변경(도감 4장 접기 + 파트너스 위젯)**: ① 「도감·가이드」의 `수록 카드와 레어도` 목록이 모바일에서 길어지지 않도록 **처음 4장만 보여 주고** 아래에 `더보기 (N장 더 보기)` / `접기` 토글 버튼을 넣었습니다(4장 이하인 세트·검색 결과에서는 버튼 자동 숨김, 세트 칩을 바꾸면 다시 4장 상태로 리셋). ② 제휴 슬롯은 손으로 만든 상품 카드 대신 **쿠팡 파트너스 공식 상품 배너 위젯 `<iframe>`**(`https://coupa.ng/cq5BV0`, 120×240, `scrolling="no"`, `referrerpolicy="unsafe-url"`, 모바일·데스크톱 가운데 정렬)으로 교체했습니다 — 카드 상단 `쿠팡 파트너스 · 제휴 상품` 라벨과 하단 대가성 문구는 그대로 두고, 금액 표기는 없습니다(배너 안내 문구는 쿠팡이 내려주는 값).
+- **v3.7 변경(FAQ 3개 접기 + 파트너스 위젯 2열)**: ① 「구매 전에 가장 많이 묻는 것들」 FAQ를 **처음 3문항만 보이고** 아래 `더보기 (N개 더 보기)` / `접기` 토글로 나머지를 펼치게 바꿨습니다(도감 더보기 버튼과 같은 점선·네이비 톤, 3문항 이하이면 버튼·토글 자동 숨김, `접기` 시 FAQ 머리로 부드럽게 스크롤, 펼침 상태에서 다시 접으면 열려 있던 항목은 닫힘). ② 도감·가이드 하단 제휴 슬롯을 **120×240 위젯 2개 가로 2열**(`display:flex; flex-wrap:nowrap; justify-content:center; gap:12px`)로 바꿔 왼쪽 1번 `https://coupa.ng/cq5BV0`, 오른쪽 2번 `https://coupa.ng/cq5DGN`이 모바일 390px에서도 **가로 넘침 없이 한 줄**로 나란히 놓입니다(320px 화면용으로 카드 패딩·gap·슬롯 폭을 줄이는 미디어 쿼리 포함). 슬롯은 `data-affiliate-slot="coupang-widget-1"`·`"coupang-widget-2"`로 구분해 위젯 코드가 바뀌면 해당 iframe `src`만 교체하면 됩니다. ③ 같은 2열 위젯 카드를 「정가 구매처」 탭 중간(`data-affiliate-card="coupang-30th"`)에도 그대로 넣었습니다 — 기존 `30th CELEBRATION 최저가 확인` 플레이스홀더·`쿠팡에서 시세 보기` 토스트 버튼을 없애고 `쿠팡 파트너스 · 제휴 상품` 라벨, 2열 위젯(`coupang-30th-widget-1/2`), 하단 대가성 문구로 도감·가이드와 동일하게 맞췄습니다.
 
 > 타일 참고: 브리프의 CARTO Positron(`basemaps.cartocdn.com/light_all`)은 2026-11 확인 시 **API 키가 없으면 `API KEY REQUIRED` 워터마크 타일**이 내려와 쓸 수 없었습니다. 그래서 OSM 표준 타일에 저채도·밝기 필터를 걸어 Positron과 같은 라이트 느낌을 냈고(한국어 지명 그대로), 타일 서버가 막히면 OSM 독일 미러로 자동 대체합니다.
 
@@ -113,14 +114,14 @@ pokemoa/
 - **정가 vs 리셀 비교표**: 선택 세트의 정가를 기준으로 KREAM 한글판 1박스 즉시구매 최저가를 팩당 단가·정가 대비 %로 환산(스타터 세트는 `세트 가격/세트당 단가`로 자동 전환)
 - **리셀 프리미엄 계산기**: 기준 정가가 선택 세트의 박스 정가로 자동 전환(입력값은 유지한 채 새 기준으로 재계산)
 - **수록 카드 도감**: 세트별 대표 카드 10~34장(30th는 기존 34장 전체 유지, 나머지는 SAR·AR·SR·UR·MUR·BWR 등 대표 카드). 이름·번호 검색 + **세트에 실제로 있는 레어도만 칩으로 생성**, 카드 클릭 → 상세 모달
-- 미개봉(슈링크) 체크리스트 7항목, 가품·재포장 주의 신호, FAQ 8문항 아코디언은 공통 섹션으로 하단 유지
+- 미개봉(슈링크) 체크리스트 7항목, 가품·재포장 주의 신호, FAQ 8문항 아코디언(처음 **3문항 + `더보기 (5개 더 보기)` / `접기`**, v3.7)은 공통 섹션으로 하단 유지
 
 > 세트별 데이터는 공식 제품 정보(pokemoncard.co.kr)의 정가·구성·발매일과 KREAM 한글판 1박스 즉시구매 최저가(2026-11-17 확인)를 `assets/js/data.js`의 `SETS` 배열에 정리했습니다. 카드 번호·레어도는 공식 카드검색과 TCGHeart·리치몬 목록을 대조해 확인한 카드만 실었고, 전체 카드 목록이 아니라 대표 카드만 담았습니다(카드 도감 설명에 명시).
 
 ### 수익화 · 운영 페이지
 - AdSense 슬롯 6곳: `home-top-banner`, `home-infeed-1`, `map-bottom`, `schedule-bottom`,
   `guide-bottom`, `mobile-sticky` — 점선 플레이스홀더 + `data-ad-slot` 속성
-- 쿠팡 파트너스 슬롯 2곳(대가성 문구 포함) — `coupang-supplies`는 **쿠팡 파트너스 공식 상품 배너 위젯 iframe**(`https://coupa.ng/cq5BV0`, 120×240)으로 연동(v3.6, 수동 상품 카드·로컬 이미지 참조 제거), `coupang-30th`는 링크 교체 대기
+- 쿠팡 파트너스 슬롯 2곳(대가성 문구 포함) — 둘 다 **같은 2열 위젯 카드**로 통일(v3.7): 「도감·가이드」 하단 `coupang-supplies`(`coupang-widget-1` = `https://coupa.ng/cq5BV0` / `coupang-widget-2` = `https://coupa.ng/cq5DGN`)와 「정가 구매처」 중간 `coupang-30th`(`coupang-30th-widget-1` / `-2`, 같은 위젯 코드) — 각 120×240, `flex-wrap:nowrap`·`gap:12px`, 모바일 390px에서도 한 줄
 - 푸터 모달: 소개 / 개인정보처리방침 / 이용약관 / 운영 문의(재고 제보 폼)
 - `privacy.html`, `terms.html` 단독 문서, `sitemap.xml`, `robots.txt`, OG/Twitter/JSON-LD(WebSite·FAQPage)
 
@@ -130,9 +131,8 @@ pokemoa/
    (`index.html`, `privacy.html`, `terms.html`, `sitemap.xml`, `robots.txt`)
 2. **AdSense**: `index.html` 상단의 주석 처리된 `adsbygoogle.js` 스크립트를 풀고 `ca-pub-…` 입력,
    각 슬롯 자리에 `<ins class="adsbygoogle" data-ad-client="ca-pub-…" data-ad-slot="…">` 삽입
-3. **쿠팡 파트너스**: `data-affiliate="coupang-30th"` 링크의 `href`를 실제 파트너스 링크로 교체 (현재는 클릭 시 안내 토스트만 표시).
-   `coupang-supplies` 자리는 **쿠팡 파트너스가 발급한 위젯 iframe**(`https://coupa.ng/cq5BV0`, 120×240)입니다 — 배너 상품을 바꾸려면 파트너스에서 새 위젯 코드를 받아
-   `index.html`의 `.affiliate-widget iframe` `src`만 바꾸면 됩니다(이미지·상품명·링크는 쿠팡이 내려줍니다). 카드 본문에는 **가격을 표기하지 않습니다**(v3.5) — 배너 안의 가격은 쿠팡 위젯이 실시간으로 표시합니다.
+3. **쿠팡 파트너스**: 도감·가이드(`data-affiliate-card="coupang-supplies"`)와 정가 구매처(`data-affiliate-card="coupang-30th"`) 모두 **쿠팡 파트너스가 발급한 위젯 iframe 2개**로 구성되어 있습니다(`https://coupa.ng/cq5BV0` · `https://coupa.ng/cq5DGN`, 각 120×240, `data-affiliate-slot="…-widget-1/2"`) — 배너 상품을 바꾸려면 파트너스에서 새 위젯 코드를 받아
+   `index.html`의 해당 `.affiliate-slot` 안 iframe `src`만 바꾸면 됩니다(이미지·상품명·링크는 쿠팡이 내려줍니다). 카드 본문에는 **가격을 표기하지 않습니다**(v3.5) — 배너 안의 가격은 쿠팡 위젯이 실시간으로 표시합니다.
 4. **운영 문의**: `tpl-contact`의 폼을 실제 폼 백엔드(Formspree·Google Forms 등)나 메일 주소로 연결,
    `privacy.html` 문의처에 운영 이메일 기입
 5. **실데이터**: 매장 위치는 Overpass API 실시간 조회 + `assets/js/data.js`의 `osmSnapshot`(2026-11-17 스냅샷)을 사용합니다.
@@ -174,6 +174,17 @@ pokemoa/
   상품 이미지(212px)·상품명(`포켓몬 카드 탑로더 + 슬리브 세트 50개, 1세트, 클리어`)·`쇼핑하기` 링크가 뜨고, 카드 안에 `원·정가·할인·쿠폰` 문자열 0건,
   상단 `쿠팡 파트너스`·`제휴 상품` 라벨과 하단 대가성 문구 유지,
   데스크톱 1280×900 `scrollWidth 1280`, 모바일 390×844 `scrollWidth 390`(가로 넘침 0)에서 모두 iframe 120×240 로드, 페이지 오류·실패 요청 0건
+- **v3.7 확인 항목(2026-11-17 라이브 `https://bokjinabi.github.io/pokemoa/#guide`)**:
+  FAQ 첫 화면이 **3문항**만 보이고(`.faq-item` 표시 3 / 전체 8) 바로 아래 `더보기 (5개 더 보기)` 노출 → 클릭 시 **8문항 + `접기`**(`aria-expanded="true"`) → 다시 클릭하면 3문항 복귀(펼쳐 둔 답변은 닫힘),
+  도감·가이드 제휴 카드의 위젯 행은 **폭 316px · `gap:12px` · `flex-wrap:nowrap` · `justify-content:center`**, 슬롯 2개 x=69·201(각 120×240), iframe `https://coupa.ng/cq5BV0` · `https://coupa.ng/cq5DGN` 실측 120×240,
+  두 iframe 안에 `partners.coupangcdn.com` 위젯이 로드되어 상품 1 `포켓몬 카드 탑로더 + 슬리브 세트 50개, 1세트, 클리어`, 상품 2 `BERYFAM 35PT 자석 카드 케이스 고투명 UV 차단 포켓몬 원피스 TCG 스포츠카드`와 각 `쇼핑하기` 링크가 뜸,
+  카드 상단 `쿠팡 파트너스`·`제휴 상품` 라벨과 하단 대가성 문구 유지, 카드 안에 `원·정가·할인·쿠폰` 문자열 0건,
+  「정가 구매처」(`#stores`) 중간 제휴 카드도 같은 구성 — 기존 `data-affiliate="coupang-30th"` 플레이스홀더·`쿠팡에서 시세 보기` 토스트 버튼 **DOM 0건**, 위젯 행 폭 316px·슬롯 2개(x=69·201), 두 위젯 모두 로드,
+  가로 넘침 0(모바일 390×844 `scrollWidth 390` / 데스크톱 1440 `scrollWidth 1440` / 로컬 320px `scrollWidth 320`), 페이지 오류·실패 요청 0건
+- 스크린샷(v3.7): `screenshots/42-v37-faq-3-mobile.png`(FAQ 3문항), `43-v37-faq-3-expanded-mobile.png`(펼침),
+  `44-v37-coupang-2col-guide-mobile.png`(도감·가이드 2열), `45-v37-coupang-2col-stores-mobile.png`(정가 구매처 2열),
+  `46-v37-faq-3-desktop.png`, `47-v37-coupang-2col-desktop.png`
+  (라이브 캡처: `downloads/pokemoa-v37-mobile.png` — 모바일 390×844 FAQ + 두 제휴 카드)
 - 스크린샷(v3.6): `screenshots/39-v36-dex-4cards-desktop.png`(4장 접힘), `40-v36-coupang-widget-desktop.png`(파트너스 위젯),
   `41-v36-mobile-live.png`(모바일 2패널)
   (라이브 캡처: `downloads/pokemoa-v36-mobile.png` — 모바일 390×844 두 화면을 나란히 묶은 파일)
