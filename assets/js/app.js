@@ -75,8 +75,9 @@
   var districtSelect = $("#districtSelect");
   var regionSearch = $("#regionSearch");
   var regionSuggest = $("#regionSuggest");
-  var brandChips = $("#brandChips");
-  var productChips = $("#productChips");
+  var brandSummary = $("#brandSummary");
+  var sortSelect = $("#sortSelect");
+  var stockToggle = $("#stockOnly");
   var storeListEl = $("#storeList");
   var storeSkeleton = $("#storeSkeleton");
   var mapCountEl = $("#mapCount");
@@ -99,15 +100,10 @@
   var filterState = {
     region: "pohang-north",
     brand: "all",
-    product: "all",
+    sort: "stock",
+    stockOnly: false,
     radius: 3000
   };
-  function productLabel(id) {
-    if (!id || id === "all") return "";
-    var list = D.cardProducts || [];
-    for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i].short;
-    return "";
-  }
 
   var statusText = { in: "재고 있음", check: "매장 확인 필요", none: "재고 없음" };
 
@@ -176,9 +172,24 @@
     return '<span class="s-products">' + head + tags + "</span>";
   }
 
-  /* 매장 목록: 처음 10곳 + 더보기 */
+  /* 정렬: 재고 우선(재고 있음 → 확인 필요 → 없음, 각각 가까운 순) / 가까운 거리순 */
+  var STATUS_RANK = { in: 0, check: 1, none: 2 };
+  function sortStores(list) {
+    var arr = (list || []).slice();
+    if (filterState.sort === "stock") {
+      arr.sort(function (a, b) {
+        var d = (STATUS_RANK[a.status] || 0) - (STATUS_RANK[b.status] || 0);
+        return d !== 0 ? d : a.distance - b.distance;
+      });
+    } else {
+      arr.sort(function (a, b) { return a.distance - b.distance; });
+    }
+    return arr;
+  }
+
+  /* 매장 목록: 재고 우선/가까운 순 정렬 + 처음 10곳 + 더보기 */
   function renderStores(list) {
-    currentStores = (list || []).slice();
+    currentStores = sortStores(list);
     drawStoreList();
   }
 
@@ -191,9 +202,8 @@
       mapCountEl.innerHTML = "표시 중 <b>" + list.length + "</b>곳 · 재고 " + counts.in + " · 확인 " + counts.check + " · 없음 " + counts.none;
     }
     if (sideSummary) {
-      var pLabel = productLabel(filterState.product);
       sideSummary.textContent = list.length
-        ? (pLabel ? pLabel + " · " + list.length + "곳" : "가까운 순 · " + list.length + "곳")
+        ? (filterState.sort === "stock" ? "재고 우선 · " : "가까운 순 · ") + list.length + "곳"
         : "조건에 맞는 매장 없음";
     }
 
@@ -215,7 +225,7 @@
       var item = document.createElement("li");
       var btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "store-item";
+      btn.className = "store-item is-" + s.status;
       btn.setAttribute("data-store", s.id);
       btn.innerHTML =
         '<span class="s-top">' +
@@ -225,7 +235,7 @@
         "</span>" +
         '<span class="s-meta">' +
         '<span class="status-badge ' + s.status + '">' + statusText[s.status] + "</span>" +
-        '<span class="chip chip-sample">샘플 재고</span>' +
+        '<span class="chip chip-sample">샘플</span>' +
         (s.street ? "<small>" + s.street + "</small>" : "") +
         "</span>" +
         productTagsHtml(s);
@@ -302,6 +312,7 @@
       if (storeSkeleton) storeSkeleton.hidden = true;
       if (storeListEl) storeListEl.hidden = false;
     }
+    if (d.brandCounts) renderBrandSummary(d.brandCounts, d.brand || filterState.brand);
   });
 
   document.addEventListener("pokemoa:visible", function (e) {
@@ -546,38 +557,54 @@
   }
 
   /* 카드 상품 필터 (data.js cardProducts 로 칩을 만든다) */
-  function renderProductChips() {
-    if (!productChips) return;
-    var html = '<button type="button" class="product-chip is-active" data-product="all">전체 카드</button>';
-    (D.cardProducts || []).forEach(function (p) {
-      html += '<button type="button" class="product-chip" data-product="' + p.id +
-        '" title="' + p.name + " · " + p.unit + '">' + p.short + "</button>";
+  /* 편의점 4사별 현황 요약 (클릭하면 그 브랜드만 보기 · 한 번 더 누르면 전체) */
+  var BRAND_ORDER = ["gs25", "cu", "seven", "emart24"];
+  function renderBrandSummary(counts, activeBrand) {
+    if (!brandSummary || !counts) return;
+    var all = counts.all || { total: 0, in: 0, check: 0, none: 0 };
+    var html = '<button type="button" class="bs-card bs-all' + (activeBrand === "all" ? " is-active" : "") + '" data-brand="all">' +
+      '<span class="bs-head"><span class="bs-name">전체</span></span>' +
+      '<strong class="bs-count">' + all.total + '<small>곳</small></strong>' +
+      '<span class="bs-sub">재고 ' + all.in + " · 확인 " + all.check + " · 없음 " + all.none + "</span></button>";
+    BRAND_ORDER.forEach(function (id) {
+      var meta = D.brandMeta[id] || { label: id, short: id, color: "#1b2a4a" };
+      var c = counts[id] || { total: 0, in: 0, check: 0, none: 0 };
+      html += '<button type="button" class="bs-card' + (activeBrand === id ? " is-active" : "") + '" data-brand="' + id + '" style="--brand:' + meta.color + '">' +
+        '<span class="bs-head"><i class="bs-dot"></i><span class="bs-name">' + meta.label + "</span></span>" +
+        '<strong class="bs-count">' + c.total + "<small>곳</small></strong>" +
+        '<span class="bs-sub">' + (c.in ? "재고 " + c.in + "곳" : "재고 없음") + "</span></button>";
     });
-    productChips.innerHTML = html;
-  }
-  renderProductChips();
-
-  if (productChips) {
-    productChips.addEventListener("click", function (e) {
-      var btn = e.target.closest(".product-chip");
-      if (!btn) return;
-      $$(".product-chip", productChips).forEach(function (b) { b.classList.remove("is-active"); });
-      btn.classList.add("is-active");
-      filterState.product = btn.getAttribute("data-product");
-      listExpanded = false;
-      if (mapReady) window.PokeMoaMap.setProduct(filterState.product);
-    });
+    brandSummary.innerHTML = html;
   }
 
-  if (brandChips) {
-    brandChips.addEventListener("click", function (e) {
-      var btn = e.target.closest(".brand-chip");
+  if (brandSummary) {
+    brandSummary.addEventListener("click", function (e) {
+      var btn = e.target.closest(".bs-card");
       if (!btn) return;
-      $$(".brand-chip", brandChips).forEach(function (b) { b.classList.remove("is-active"); });
-      btn.classList.add("is-active");
-      filterState.brand = btn.getAttribute("data-brand");
+      var next = btn.getAttribute("data-brand");
+      if (!next) return;
+      if (next !== "all" && next === filterState.brand) next = "all";
+      filterState.brand = next;
       listExpanded = false;
-      if (mapReady) window.PokeMoaMap.setBrand(filterState.brand);
+      if (mapReady) window.PokeMoaMap.setBrand(next);
+    });
+  }
+
+  if (sortSelect) {
+    sortSelect.value = filterState.sort;
+    sortSelect.addEventListener("change", function () {
+      filterState.sort = sortSelect.value;
+      listExpanded = false;
+      drawStoreList();
+    });
+  }
+
+  if (stockToggle) {
+    stockToggle.addEventListener("change", function () {
+      filterState.stockOnly = stockToggle.checked;
+      listExpanded = false;
+      if (mapReady) window.PokeMoaMap.setStockOnly(filterState.stockOnly);
+      toast(stockToggle.checked ? "재고 있는 매장만 보여 드립니다." : "확인 필요·없음 매장도 함께 표시합니다.");
     });
   }
 
@@ -595,21 +622,18 @@
   if (resetBtn) {
     resetBtn.addEventListener("click", function () {
       filterState.brand = "all";
-      filterState.product = "all";
+      filterState.sort = "stock";
+      filterState.stockOnly = false;
       filterState.radius = 3000;
       listExpanded = false;
-      $$(".brand-chip").forEach(function (b) {
-        b.classList.toggle("is-active", b.getAttribute("data-brand") === "all");
-      });
-      $$(".product-chip").forEach(function (b) {
-        b.classList.toggle("is-active", b.getAttribute("data-product") === "all");
-      });
+      if (sortSelect) sortSelect.value = "stock";
+      if (stockToggle) stockToggle.checked = false;
       $$(".radius-btn").forEach(function (b) {
         b.classList.toggle("is-active", b.getAttribute("data-radius") === "3000");
       });
       if (mapReady) {
         window.PokeMoaMap.setBrand("all");
-        window.PokeMoaMap.setProduct("all");
+        window.PokeMoaMap.setStockOnly(false);
         window.PokeMoaMap.setRadius(3000);
         window.PokeMoaMap.closeCard();
       }

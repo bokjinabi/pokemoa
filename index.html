@@ -466,8 +466,8 @@
   <div class="wrap">
     <div class="map-page-head">
       <span class="eyebrow">동네에서 찾기 · 첫 화면</span>
-      <h1 id="map-title">내 주변 편의점 4사, 실제 지도에서 찾기</h1>
-      <p>OpenStreetMap 실제 지도 위에 주변 <b>편의점 4사(GS25·CU·세븐일레븐·이마트24)</b>만 표시합니다. 매장 카드에는 그 매장이 취급·입고한 <b>카드 상품명</b>(30th CELEBRATION·배틀 파트너즈 등)을 함께 보여 주니, 원하는 카드를 보고 찾아가세요. <b>전국 17개 시·도</b>에서 시·군·구를 고르거나 동네 이름으로 검색하고, <b>'내 위치로 찾기'</b>를 누르면 그 반경의 매장을 새로 조회합니다.</p>
+      <h1 id="map-title">내 주변 편의점 4사, 어떤 카드가 있는지 한눈에</h1>
+      <p>OpenStreetMap 실제 지도 위에 주변 <b>편의점 4사(GS25·CU·세븐일레븐·이마트24)</b>만 표시합니다. 지도 말풍선과 매장 카드에는 그 매장이 <b>보유·취급 중인 카드 상품</b>(30th CELEBRATION·배틀 파트너즈 등)과 상태가 바로 보이도록 정리했습니다. <b>전국 17개 시·도</b>에서 시·군·구를 고르거나 동네 이름으로 검색하고, <b>'내 위치로 찾기'</b>를 누르면 그 반경의 매장을 새로 조회합니다.</p>
     </div>
 
     <div class="demo-notice">
@@ -475,6 +475,8 @@
       <div class="notice-long"><b>매장 위치·이름은 실제 지도 데이터(OpenStreetMap)입니다.</b> 다만 각 매장의 포켓몬카드 <b>재고 상태(재고 있음 / 확인 필요 / 없음)</b>와 <b>취급 카드 상품명</b>은 편의점 앱 API가 아직 연결되지 않아 <b>제보·샘플 기반 표시</b>입니다. 방문 전에는 아래 공식 앱과 매장 전화로 확인하세요.</div>
       <div class="notice-short"><b>매장 위치·이름은 실제 OSM 데이터</b>이고, <b>재고 상태·취급 카드명은 제보·샘플</b>입니다. 방문 전 공식 앱·매장 전화로 확인하세요.</div>
     </div>
+
+    <div class="brand-summary" id="brandSummary" role="group" aria-label="편의점 4사별 현황"></div>
 
     <div class="map-toolbar">
       <div class="toolbar-row">
@@ -531,19 +533,19 @@
         <button type="button" class="btn btn-ghost btn-sm toolbar-spacer" id="filterReset">필터 초기화</button>
         <span class="toolbar-count" id="mapCount">표시 중 <b>0</b>곳</span>
       </div>
-      <div class="toolbar-row">
-        <span class="row-label">브랜드</span>
-        <div class="brand-chips" id="brandChips" role="group" aria-label="브랜드 필터">
-          <button type="button" class="brand-chip is-active" data-brand="all">전체</button>
-          <button type="button" class="brand-chip" data-brand="gs25">GS25</button>
-          <button type="button" class="brand-chip" data-brand="cu">CU</button>
-          <button type="button" class="brand-chip" data-brand="seven">세븐일레븐</button>
-          <button type="button" class="brand-chip" data-brand="emart24">이마트24</button>
-        </div>
-      </div>
-      <div class="toolbar-row product-row">
-        <span class="row-label">카드</span>
-        <div class="product-chips" id="productChips" role="group" aria-label="카드 상품 필터"></div>
+      <div class="toolbar-row sort-row">
+        <span class="row-label">정렬</span>
+        <span class="select-wrap select-sort">
+          <select id="sortSelect" aria-label="정렬 기준">
+            <option value="stock" selected>재고 우선</option>
+            <option value="distance">가까운 거리순</option>
+          </select>
+        </span>
+        <label class="stock-toggle" for="stockOnly">
+          <input type="checkbox" id="stockOnly">
+          <span class="stock-toggle-track" aria-hidden="true"><i></i></span>
+          <span class="stock-toggle-label">재고 있는 매장만</span>
+        </label>
       </div>
     </div>
 
@@ -567,16 +569,17 @@
         <div class="map-popup pm-card" id="mapCard" hidden></div>
 
         <div class="map-legend" aria-hidden="true">
+          <span><i class="l-me"></i>내 위치</span>
           <span><i class="l-in"></i>재고 있음</span>
           <span><i class="l-check"></i>확인 필요</span>
-          <span><i class="l-none"></i>재고 없음</span>
+          <span><i class="l-none"></i>없음</span>
         </div>
       </div>
 
       <aside class="map-side" aria-label="매장 목록">
         <div class="map-side-head">
-          <strong>매장 목록</strong>
-          <span id="sideSummary">가까운 순</span>
+          <strong>매장별 보유 카드</strong>
+          <span id="sideSummary">재고 우선</span>
         </div>
         <div class="store-skeleton" id="storeSkeleton" aria-hidden="true">
           <div class="sk-row"><span class="sk-dot"></span><span class="sk-lines"><i></i><i></i></span></div>
@@ -596,7 +599,7 @@
       <div><b>재고 있음</b>조회 시점에 1개 이상 확인된 상태입니다. 지금은 제보·샘플 값이므로 참고만 하세요.</div>
       <div><b>매장 확인 필요</b>수량을 받지 못했거나 전산 확인이 안 된 상태입니다. '재고 없음'과 다릅니다.</div>
       <div><b>재고 없음</b>조회 결과 0으로 확인된 상태입니다. 아직 입고 전일 수도 있습니다.</div>
-      <div><b>카드명 표시</b>매장 카드의 작은 태그는 그 매장이 취급·입고한 상품명과 상태(입고·소량·확인 필요·품절·미입고)입니다. 상단 <b>카드</b> 필터로 원하는 상품만 골라볼 수 있고, 이 값도 제보·샘플 기반입니다.</div>
+      <div><b>보유 카드 표시</b>매장 카드와 지도 말풍선의 태그는 그 매장이 보유·취급한 상품명과 상태(입고·소량·확인 필요·품절·미입고)입니다. 매장별로 어떤 카드가 있는지 바로 보이도록 정리했고, 이 값도 제보·샘플 기반입니다.</div>
     </div>
 
     <h3 class="mt-24" style="font-size:15px;margin-bottom:10px;">실제 재고를 확인하는 공식 채널</h3>
@@ -1028,7 +1031,7 @@
     <h4>무엇을 제공하나요</h4>
     <ul>
       <li><strong>정가 구매처 보드</strong> — 공식 스토어부터 편의점 4사까지 채널별 정가, 배송비, 판매 단위, 확인 팁을 한 표에 정리</li>
-      <li><strong>재고 지도</strong> — 편의점 4사·카드 상품·반경 필터로 주변 매장을 훑고, 취급 카드명·판매 단위·관측 시각을 함께 확인</li>
+      <li><strong>재고 지도</strong> — 편의점 4사별 현황과 반경·재고 필터로 주변 매장을 훑고, 매장별 보유 카드명·판매 단위·관측 시각을 함께 확인</li>
       <li><strong>일정·입고 기록</strong> — 추첨 회차별 응모·발표·결제·배송 일정과 요일별 입고 패턴</li>
       <li><strong>도감·가이드</strong> — 수록 카드와 레어도, 정가 대비 리셀 계산, 미개봉·가품 확인 체크리스트</li>
     </ul>

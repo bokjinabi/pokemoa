@@ -1,9 +1,14 @@
 /* =========================================================================
- * 포케모아 — 실제 지도 엔진 (Leaflet + OpenStreetMap 타일 + Overpass API)
+ * 포케모아 — 실제 지도 엔진 (Leaflet + 라이트 스타일 지도 + Overpass API)
  *
- * · 지도 타일: OpenStreetMap 표준 타일 (실제 도로·건물)
+ * · 지도 타일: OpenStreetMap 표준 타일을 라이트·저채도로 정돈해(Positron 느낌)
+ *   도로·지명만 깔끔하게 보이도록 했다. CARTO Positron은 이제 API 키가 없으면
+ *   워터마크 타일이 내려와 쓸 수 없어(2026-11 확인) OSM 타일을 스타일링했다.
+ *   타일이 막히면(사내망·차단) 독일 OSM 미러로 자동 대체한다.
  * · 주변 매장: Overpass API 실시간 조회 (편의점 4사만: GS25·CU·세븐일레븐·이마트24)
- * · 매장마다 취급·재고 카드 상품명(30th CELEBRATION 등)을 함께 표시한다.
+ * · 매장 마커는 둥근 핀 대신 상태가 바로 읽히는 말풍선(알약) 마커:
+ *   재고 있음 = 브랜드 색 말풍선(`CU · 입고 2종`), 확인/없음 = 화이트·그레이 알약.
+ * · 매장마다 보유·취급 카드 상품명(30th CELEBRATION 등)을 함께 표시한다.
  * · 실시간 조회가 8초 안에 끝나지 않거나 응답 제한(429/502)이면
  *   내장된 실제 좌표 스냅샷으로 부드럽게 대체하고 배지에 상태를 표기한다.
  * · 재고 상태는 편의점 앱 API 미연동 → 제보·샘플 기반임을 화면에서 밝힌다.
@@ -14,6 +19,12 @@ window.PokeMoaMap = (function () {
   var D = window.POKEMOA_DATA;
   var TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
   var TILE_ATTRIB = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> 기여자';
+  var TILE_FALLBACK = "https://tile.openstreetmap.de/{z}/{x}/{y}.png";
+  var TILE_FALLBACK_ATTRIB = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> 기여자 (OSM Germany)';
+  /* 예전에 쓰던 CARTO Positron — API 키 없이는 워터마크 타일이라 사용하지 않는다. */
+  var TILE_LIGHT = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+  var TILE_LIGHT_SUB = "abcd";
+  var TILE_LIGHT_ATTRIB = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> 기여자 &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>';
   var OVERPASS_ENDPOINTS = [
     "https://overpass-api.de/api/interpreter",
     "https://overpass.kumi.systems/api/interpreter",
@@ -36,6 +47,7 @@ window.PokeMoaMap = (function () {
   var st = {
     map: null,
     tiles: null,
+    tileKind: "primary",   /* primary(OSM 라이트 스타일) | fallback(OSM 미러) */
     layer: null,
     ring: null,
     meMarker: null,
@@ -44,6 +56,8 @@ window.PokeMoaMap = (function () {
     visible: [],
     brand: "all",
     product: "all",
+    stockOnly: false,
+    compact: false,
     radius: 3000,
     regionId: "pohang-north",
     origin: "region",  /* region | geo */
@@ -243,24 +257,55 @@ window.PokeMoaMap = (function () {
       preferCanvas: false
     });
 
+    st.tileKind = "primary";
+    var tc = { loaded: 0, errors: 0 };
+    function attachTiles(layer) {
+      layer.on("load", function () {
+        st.loading.tiles = false;
+        emit("pokemoa:loading", loadingState());
+      });
+      layer.on("tileload", function () {
+        tc.loaded += 1;
+        st.loading.tiles = false;
+      });
+      layer.on("tileerror", function () {
+        tc.errors += 1;
+        /* 타일을 한 장도 못 받으면(차단·오프라인) 미러 서버로 대체 */
+        if (tc.loaded === 0 && tc.errors >= 4) {
+          if (st.tileKind === "primary") { useFallbackTiles(); }
+          else { st.loading.tiles = false; emit("pokemoa:loading", loadingState()); }
+        } else if (tc.loaded === 0 && tc.errors >= 2) {
+          st.loading.tiles = false;
+          emit("pokemoa:loading", loadingState());
+        }
+      });
+    }
+    function useFallbackTiles() {
+      st.tileKind = "fallback";
+      tc.loaded = 0;
+      tc.errors = 0;
+      try { st.map.removeLayer(st.tiles); } catch (e) {}
+      st.tiles = L.tileLayer(TILE_FALLBACK, {
+        maxZoom: 19,
+        minZoom: 9,
+        attribution: TILE_FALLBACK_ATTRIB,
+        crossOrigin: true
+      });
+      attachTiles(st.tiles);
+      st.tiles.addTo(st.map);
+    }
+
     st.tiles = L.tileLayer(TILE_URL, {
       maxZoom: 19,
       minZoom: 9,
       attribution: TILE_ATTRIB,
       crossOrigin: true
     });
-    st.tiles.on("load", function () {
-      st.loading.tiles = false;
-      emit("pokemoa:loading", loadingState());
-    });
-    st.tiles.on("tileerror", function () {
-      st.loading.tiles = false;
-      emit("pokemoa:loading", loadingState());
-    });
+    attachTiles(st.tiles);
     st.tiles.addTo(st.map);
 
     L.control.zoom({ position: "topright" }).addTo(st.map);
-    L.control.scale({ position: "bottomleft", imperial: false, maxWidth: 90 }).addTo(st.map);
+    L.control.scale({ position: "topright", imperial: false, maxWidth: 90 }).addTo(st.map);
 
     st.layer = L.layerGroup().addTo(st.map);
     st.ring = L.circle([r.lat, r.lng], {
@@ -274,27 +319,99 @@ window.PokeMoaMap = (function () {
       interactive: false
     }).addTo(st.map);
 
+    st.compact = compactMode();
     st.map.on("moveend", positionCard);
+    st.map.on("zoomend", function () {
+      var c = compactMode();
+      if (c === st.compact) return;
+      st.compact = c;
+      renderMarkers();
+    });
   }
 
   /* ------------------------------------------------------------- 마커 */
-  function pinIcon(s) {
+  /* 줌이 넓으면(20km 보기) 말풍선 대신 작은 점·브랜드 칩만 그려 겹칩을 줄인다. */
+  function compactMode() {
+    return !st.map || st.map.getZoom() < 13;
+  }
+
+  function stockProductCount(s) {
+    var n = 0;
+    (s.products || []).forEach(function (p) {
+      if (p.state === "in" || p.state === "low") n += 1;
+    });
+    return n;
+  }
+
+  function pillIcon(s) {
     var b = D.brandMeta[s.brand] || { short: "?", color: "#1b2a4a" };
-    var html =
-      '<span class="pm-pin status-' + s.status + '" style="--brand:' + b.color + '">' +
-      '<span class="pm-pin-dot">' + b.short + "</span>" +
-      "</span>";
+    var html;
+    if (st.compact) {
+      html = s.status === "in"
+        ? '<span class="pm-pill is-chip status-in" style="--brand:' + b.color + '">' + b.short + "</span>"
+        : '<span class="pm-pill is-dot status-' + s.status + '"></span>';
+    } else if (s.status === "in") {
+      var n = stockProductCount(s);
+      html = '<span class="pm-pill status-in" style="--brand:' + b.color + '">' +
+        "<b>" + b.short + "</b><span>" + (n ? "입고 " + n + "종" : "재고 있음") + "</span></span>";
+    } else {
+      html = '<span class="pm-pill status-' + s.status + '">' +
+        '<i class="pm-dot" style="background:' + b.color + '"></i>' +
+        "<span>" + (s.status === "check" ? "확인" : "없음") + "</span></span>";
+    }
     return L.divIcon({
-      className: "pm-marker status-" + s.status,
+      className: "pm-marker status-" + s.status + (st.compact ? " is-compact" : ""),
       html: html,
-      iconSize: [30, 38],
-      iconAnchor: [15, 36],
-      popupAnchor: [0, -34]
+      iconSize: [0, 0],
+      iconAnchor: [0, 0],
+      popupAnchor: [0, 0]
     });
   }
 
   function brandOrder(b) {
     return ({ gs25: 0, cu: 1, seven: 2, emart24: 3 })[b] || 9;
+  }
+
+  /* 넓게 보는 저줌에서는 같은 구역의 매장을 묶어 `N곳` 한 덩이로 표시한다 */
+  function clusterIcon(g) {
+    var html = '<span class="pm-cluster' + (g.in ? " has-stock" : "") + '">' +
+      g.n + '곳' + (g.in ? "<small>재고 " + g.in + "</small>" : "") + "</span>";
+    return L.divIcon({
+      className: "pm-marker-cluster",
+      html: html,
+      iconSize: [0, 0],
+      iconAnchor: [0, 0],
+      popupAnchor: [0, 0]
+    });
+  }
+
+  function renderClusters(list) {
+    var groups = {};
+    /* 줌이 낮을수록 넓은 칸으로 묶어 말풍선이 겹치지 않게 한다 */
+    var cell = st.map.getZoom() <= 11 ? 150 : st.map.getZoom() <= 12 ? 110 : 80;
+    list.forEach(function (s) {
+      var pt = st.map.latLngToContainerPoint([s.lat, s.lng]);
+      var key = Math.floor(pt.x / cell) + ":" + Math.floor(pt.y / cell);
+      var g = groups[key] || (groups[key] = { lat: 0, lng: 0, n: 0, in: 0, names: [] });
+      g.lat += s.lat;
+      g.lng += s.lng;
+      g.n += 1;
+      if (s.status === "in") g.in += 1;
+      if (g.names.length < 3) g.names.push(s.name);
+    });
+    Object.keys(groups).forEach(function (k) {
+      var g = groups[k];
+      var ll = [g.lat / g.n, g.lng / g.n];
+      var m = L.marker(ll, {
+        icon: clusterIcon(g),
+        title: g.names.join(", ") + (g.n > 3 ? " 외" : ""),
+        keyboard: true
+      });
+      m.on("click", function () {
+        st.map.flyTo(ll, 15, { duration: 0.6 });
+      });
+      m.addTo(st.layer);
+    });
   }
 
   function renderMarkers() {
@@ -314,16 +431,28 @@ window.PokeMoaMap = (function () {
     st.visible = list.map(function (s) { return s; });
     st.visible.sort(function (a, b) { return a.distance - b.distance; });
 
+    if (st.compact && st.map) {
+      renderClusters(st.visible);
+      if (st.selectedId) closeCard();
+      emit("pokemoa:visible", { stores: st.visible });
+      return;
+    }
+
     st.visible.forEach(function (s) {
       var m = L.marker([s.lat, s.lng], {
-        icon: pinIcon(s),
+        icon: pillIcon(s),
         title: s.name,
         keyboard: true,
-        riseOnHover: true
+        riseOnHover: true,
+        zIndexOffset: s.status === "in" ? 300 : 0
       });
       m.on("click", function () { select(s.id, true); });
       m.addTo(st.layer);
       st.markers[s.id] = m;
+      if (st.selectedId === s.id) {
+        var node = m.getElement();
+        if (node) node.classList.add("is-selected");
+      }
     });
     if (st.selectedId && !st.markers[st.selectedId]) closeCard();
     emit("pokemoa:visible", { stores: st.visible });
@@ -332,6 +461,7 @@ window.PokeMoaMap = (function () {
   function match(s) {
     if (st.brand !== "all" && s.brand !== st.brand) return false;
     if (s.distance > st.radius) return false;
+    if (st.stockOnly && s.status !== "in") return false;
     if (st.product !== "all") {
       /* 그 상품을 취급했거나 입고·확인 중인 매장만 (한 번도 입고 안 된 '미입고'는 제외) */
       var hit = (s.products || []).some(function (p) {
@@ -353,6 +483,7 @@ window.PokeMoaMap = (function () {
       if (node) node.classList.toggle("is-selected", k === id);
     });
     renderCard(s);
+    el.container.classList.add("is-card-open");
     emit("pokemoa:store-selected", { id: id });
     if (fromMap && window.innerWidth < 980) {
       /* 모바일: 카드가 지도 하단에 고정되므로 지도만 보이도록 스크롤 유지 */
@@ -363,6 +494,7 @@ window.PokeMoaMap = (function () {
   function closeCard() {
     st.selectedId = null;
     if (el.card) el.card.hidden = true;
+    if (el.container) el.container.classList.remove("is-card-open");
     emit("pokemoa:store-cleared");
   }
 
@@ -380,7 +512,7 @@ window.PokeMoaMap = (function () {
       /* 품절 이력이 있으면 머리표로, 전부 미입고면 태그의 '미입고'만으로 충분하다 */
       head = soldout ? '<span class="p-head">최근 입고 품절</span>' : "";
     } else if (withHead) {
-      head = '<span class="p-head">취급 카드</span>';
+      head = '<span class="p-head p-head-label">보유 카드</span>';
     }
     var tags = list.map(function (p) {
       return '<span class="p-tag is-' + p.state + '" title="' + p.name + " · " + p.stateLabel + '">' +
@@ -394,12 +526,18 @@ window.PokeMoaMap = (function () {
     var meta = D.brandMeta[s.brand] || { label: s.brand, color: "#1b2a4a", short: "?" };
     var dist = s.distance < 1000 ? Math.round(s.distance) + "m" : (s.distance / 1000).toFixed(1) + "km";
     var navLink = "https://map.naver.com/p/search/" + encodeURIComponent(s.name);
+    /* 매장명이 브랜드명뿐이면 부제에서 브랜드를 한 번 더 쓰지 않는다 */
+    var subBits = [];
+    if (s.name.indexOf(meta.label) !== 0) subBits.push(meta.label);
+    if (s.street) subBits.push(s.street);
+    subBits.push(dist);
+    var subLine = subBits.join(" · ");
     el.card.hidden = false;
     el.card.innerHTML =
       '<div class="pm-card-head">' +
       '<span class="pm-card-brand" style="background:' + meta.color + '">' + meta.short + "</span>" +
       '<div class="pm-card-title"><strong>' + s.name + "</strong>" +
-      "<span>" + meta.label + (s.street ? " · " + s.street : "") + " · " + dist + "</span></div>" +
+      "<span>" + subLine + "</span></div>" +
       '<button type="button" class="pm-card-close" aria-label="닫기">×</button>' +
       "</div>" +
       '<div class="pm-card-meta">' +
@@ -472,6 +610,23 @@ window.PokeMoaMap = (function () {
     };
   }
 
+  /* 브랜드별 현황 (반경·재고 필터를 반영한 집계) */
+  function blankCount() { return { total: 0, in: 0, check: 0, none: 0 }; }
+  function brandCounts() {
+    var out = { all: blankCount(), gs25: blankCount(), cu: blankCount(), seven: blankCount(), emart24: blankCount() };
+    (st.all || []).forEach(function (s) {
+      if (s.distance > st.radius) return;
+      if (st.stockOnly && s.status !== "in") return;
+      var row = out[s.brand];
+      if (!row) return;
+      out.all.total += 1;
+      out.all[s.status] += 1;
+      row.total += 1;
+      row[s.status] += 1;
+    });
+    return out;
+  }
+
   function pushData() {
     st.snapshotLabel = (D.osmSnapshot && D.osmSnapshot.fetchedAt) || "";
     emit("pokemoa:data", {
@@ -485,6 +640,10 @@ window.PokeMoaMap = (function () {
       radius: st.radius,
       total: st.all.length,
       product: st.product,
+      stockOnly: st.stockOnly,
+      brand: st.brand,
+      brandCounts: brandCounts(),
+      tileKind: st.tileKind,
       allow20: allow20(),
       markerCap: st.radius >= 20000 ? MAX_MARKERS_20 : MAX_MARKERS,
       snapshotAt: (D.osmSnapshot || {}).fetchedAt || "",
@@ -711,6 +870,12 @@ window.PokeMoaMap = (function () {
     pushData();
   }
 
+  function setStockOnly(on) {
+    st.stockOnly = !!on;
+    renderMarkers();
+    pushData();
+  }
+
   function setRegion(id) {
     var r = region(id);
     st.regionId = r.id;
@@ -815,6 +980,7 @@ window.PokeMoaMap = (function () {
     setRegion: setRegion,
     setBrand: setBrand,
     setProduct: setProduct,
+    setStockOnly: setStockOnly,
     setRadius: setRadius,
     locate: locate,
     retry: retry,
