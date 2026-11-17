@@ -251,6 +251,304 @@ window.POKEMOA_DATA = (function () {
     { id: "rr-pikachu", name: "피카츄 ex (RR)", rarity: "RR", tag: "energy", illus: "5ban Graphics", note: "배틀용 더블 레어. 스페셜 아트와는 별도 카드입니다." }
   ];
 
+  /* ---------------------------------------- 세트별 도감·가이드 (v3.3 확장) */
+  /* 정가·구성: 포켓몬 카드 게임 공식 제품 정보(pokemoncard.co.kr) 2026-11-17 확인
+   * 시세: KREAM 한글판 1박스 즉시구매 최저가 2026-11-17 확인 (배송비·수수료 별도)
+   * 카드: 공식 카드검색·TCGHeart·리치몬의 번호·레어도 대조, 대표 카드만 골라 수록 */
+  var SETS = [
+    {
+      id: "m6a",
+      short: "30th CELEBRATION",
+      name: "MEGA 확장팩 「30th CELEBRATION」",
+      code: "M6a",
+      series: "MEGA",
+      release: "2026-09-16",
+      packPrice: 3500,
+      packsPerBox: 20,
+      cardsPerPack: 6,
+      boxPrice: 70000,
+      unit: "팩",
+      total: "176종(기본 103종)",
+      summary:
+        "30주년 기념팩. 팩마다 30주년 피카츄 1장과 기본 에너지 1장이 확정 봉입되고, 카드 전 종이 포일입니다.",
+      official: "https://pokemoncard.co.kr/card/960",
+      extraLink: {
+        label: "포켓몬스토어 30주년 특설 페이지",
+        url: "https://www.pokemonstore.co.kr/pages/pokemoncardgame30th/product/m6a/index.html"
+      },
+      kream: [
+        { label: "KREAM 슈링크", price: 76000, url: "https://kream.co.kr/products/1072895" },
+        { label: "KREAM 논슈링크", price: 72000, url: "https://kream.co.kr/products/1094196" }
+      ],
+      extra: [{ label: "SSG 공식인증샵 총액", price: 73000, note: "정가 70,000원 + 배송비 3,000원" }],
+      dexNote:
+        "카드 번호는 공식 표기가 확인된 카드만 표시합니다. 017~046번은 30명의 일러스트레이터가 그린 피카츄 30종입니다.",
+      cards: cards
+    },
+    {
+      id: "m5",
+      short: "어비스아이",
+      name: "MEGA 확장팩 「어비스아이」",
+      code: "M5",
+      series: "MEGA",
+      release: "2026-06-26",
+      packPrice: 1500,
+      packsPerBox: 30,
+      cardsPerPack: 5,
+      boxPrice: 45000,
+      unit: "팩",
+      total: "118종(기본 81종)",
+      summary:
+        "메가다크라이 ex가 세트를 대표합니다. 2026년 6월 가격 조정 이후 발매돼 1팩 1,500원·1박스 45,000원입니다.",
+      official: "https://pokemoncard.co.kr/card/907",
+      kream: [{ label: "KREAM 한글판", price: 42000, url: "https://kream.co.kr/products/974080" }],
+      dexNote:
+        "시크릿 카드 37장을 포함한 118종 가운데 대표 카드만 골랐습니다. 세트 이름 '어비스아이'는 메가다크라이 ex의 기술 이름이기도 합니다.",
+      cards: [
+        { id: "m5-mur-darkrai", name: "메가다크라이 ex", rarity: "MUR", tag: "mur", num: "118/081", note: "세트 최상위 레어도 MUR 1종. 세트에서 시세가 가장 높은 카드입니다. 기술 '어비스아이'는 상대 배틀 포켓몬이 특수 상태라면 기절시킵니다." },
+        { id: "m5-sar-muku", name: "무쿠", rarity: "SAR", tag: "sar", num: "117/081", note: "트레이너 무쿠의 스페셜 아트. 세트 SAR 가운데 시세 상위권입니다." },
+        { id: "m5-sar-gladio", name: "글라디오의 결전", rarity: "SAR", tag: "sar", num: "116/081", note: "글라디오 테마 서포트 카드의 스페셜 아트입니다." },
+        { id: "m5-sar-morpeko", name: "모르페코 ex", rarity: "SAR", tag: "sar", num: "115/081", note: "모르페코 ex의 스페셜 아트." },
+        { id: "m5-sar-darkrai", name: "메가다크라이 ex", rarity: "SAR", tag: "sar", num: "114/081", note: "MUR과는 다른 일러스트의 스페셜 아트. 세트 SAR 중 두 번째로 시세가 높습니다." },
+        { id: "m5-sar-chandelure", name: "메가샹델라 ex", rarity: "SAR", tag: "sar", num: "113/081", note: "메가진화 ex의 스페셜 아트입니다." },
+        { id: "m5-sar-zeraora", name: "메가제라오라 ex", rarity: "SAR", tag: "sar", num: "112/081", note: "메가진화 ex의 스페셜 아트입니다." },
+        { id: "m5-sr-misty", name: "이슬의 기력", rarity: "SR", tag: "sr", num: "111/081", note: "이슬 테마 서포트의 SR 판입니다." },
+        { id: "m5-sr-excadrill", name: "메가몰드류 ex", rarity: "SR", tag: "sr", num: "101/081", note: "메가몰드류 ex의 SR 판." },
+        { id: "m5-sr-bangle", name: "브레이브뱅글", rarity: "SR", tag: "sr", num: "106/081", note: "도구 카드의 SR 판입니다." }
+      ]
+    },
+    {
+      id: "sv11b",
+      short: "블랙볼트",
+      name: "스칼렛&바이올렛 확장팩 「블랙볼트」",
+      code: "SV11B",
+      series: "스칼렛&바이올렛",
+      release: "2025-08-01",
+      packPrice: 2000,
+      packsPerBox: 20,
+      cardsPerPack: 7,
+      boxPrice: 40000,
+      unit: "팩",
+      total: "174종(기본 86종)",
+      summary:
+        "1팩 7장·1박스 20팩으로 다른 확장팩과 구성이 다릅니다. BWR 제크로무 ex가 세트 최고가 카드로 꼽힙니다.",
+      official: "https://pokemoncard.co.kr/card/797",
+      kream: [{ label: "KREAM 한글판", price: 43000, url: "https://kream.co.kr/products/627575" }],
+      dexNote:
+        "AR이 72종 수록된 세트라 시크릿 카드 비중이 큽니다. 아래는 최고가 카드와 대표 SAR·SR만 골랐습니다.",
+      cards: [
+        { id: "sv11b-bwr-zekrom", name: "제크로무 ex", rarity: "BWR", tag: "bwr", num: "174/086", note: "세트 유일한 BWR. 세트 최고가 카드입니다." },
+        { id: "sv11b-sar-nplan", name: "N의 방안", rarity: "SAR", tag: "sar", num: "173/086", note: "트레이너 서포트 'N의 방안'의 스페셜 아트." },
+        { id: "sv11b-sar-genesect", name: "게노세크트 ex", rarity: "SAR", tag: "sar", num: "172/086", note: "게노세크트 ex의 스페셜 아트." },
+        { id: "sv11b-sar-excadrill", name: "몰드류 ex", rarity: "SAR", tag: "sar", num: "171/086", note: "몰드류 ex의 스페셜 아트." },
+        { id: "sv11b-sar-meloetta", name: "메로엣타 ex", rarity: "SAR", tag: "sar", num: "170/086", note: "메로엣타 ex의 스페셜 아트." },
+        { id: "sv11b-sar-zekrom", name: "제크로무 ex", rarity: "SAR", tag: "sar", num: "169/086", note: "BWR과 다른 일러스트의 스페셜 아트 판." },
+        { id: "sv11b-sar-kyurem", name: "큐레무 ex", rarity: "SAR", tag: "sar", num: "168/086", note: "큐레무 ex의 스페셜 아트." },
+        { id: "sv11b-sar-serperior", name: "샤로다 ex", rarity: "SAR", tag: "sar", num: "167/086", note: "샤로다 ex의 스페셜 아트." },
+        { id: "sv11b-sr-nplan", name: "N의 방안", rarity: "SR", tag: "sr", num: "165/086", note: "N의 방안 SR 판. SAR보다 저렴해 덱용으로 많이 찾습니다." },
+        { id: "sv11b-ar-cinccino", name: "치라치노", rarity: "AR", tag: "ar", num: "158/086", note: "AR 72종 가운데 하나. 일러스트 감상용으로 인기가 있습니다." }
+      ]
+    },
+    {
+      id: "sv10",
+      short: "로켓단의 영광",
+      name: "스칼렛&바이올렛 확장팩 「로켓단의 영광」",
+      code: "SV10",
+      series: "스칼렛&바이올렛",
+      release: "2025-06-20",
+      packPrice: 1000,
+      packsPerBox: 30,
+      cardsPerPack: 5,
+      boxPrice: 30000,
+      unit: "팩",
+      total: "132종(기본 98종)",
+      summary:
+        "로켓단 카드군이 메인인 세트. 정가는 30,000원이지만 2026-11-17 KREAM 시세가 세트 가운데 가장 크게 붙었습니다.",
+      official: "https://pokemoncard.co.kr/card/785",
+      kream: [{ label: "KREAM 한글판", price: 41000, url: "https://kream.co.kr/products/627583" }],
+      dexNote:
+        "SAR 6종·UR 3종이 수록됩니다. 아래는 SAR 전 종과 대표 UR·RR을 정리한 것입니다.",
+      cards: [
+        { id: "sv10-sar-mewtwo", name: "로켓단의 뮤츠 ex", rarity: "SAR", tag: "sar", num: "125/098", note: "세트 최고가. 로켓단의 뮤츠 ex 스페셜 아트입니다." },
+        { id: "sv10-sar-ariana", name: "로켓단의 아테나", rarity: "SAR", tag: "sar", num: "129/098", note: "로켓단 간부 아테나의 스페셜 아트." },
+        { id: "sv10-sar-giovanni", name: "로켓단의 비주기", rarity: "SAR", tag: "sar", num: "128/098", note: "로켓단 보스 비주기의 스페셜 아트." },
+        { id: "sv10-sar-crobat", name: "로켓단의 크로뱃 ex", rarity: "SAR", tag: "sar", num: "127/098", note: "로켓단의 크로뱃 ex 스페셜 아트." },
+        { id: "sv10-sar-nidoking", name: "로켓단의 니드킹 ex", rarity: "SAR", tag: "sar", num: "126/098", note: "로켓단의 니드킹 ex 스페셜 아트." },
+        { id: "sv10-sar-moltres", name: "로켓단의 파이어 ex", rarity: "SAR", tag: "sar", num: "124/098", note: "로켓단이 손에 넣은 전설의 새, 파이어의 스페셜 아트." },
+        { id: "sv10-ur-mewtwo", name: "로켓단의 뮤츠 ex", rarity: "UR", tag: "ur", num: "130/098", note: "골드 UR 판. 세트 UR 3종 중 하나입니다." },
+        { id: "sv10-ur-crobat", name: "로켓단의 크로뱃 ex", rarity: "UR", tag: "ur", num: "131/098", note: "크로뱃 ex의 골드 UR 판." },
+        { id: "sv10-ur-jamming", name: "재밍타워", rarity: "UR", tag: "ur", num: "132/098", note: "스타디움 카드의 골드 UR 판." },
+        { id: "sv10-rr-mewtwo", name: "로켓단의 뮤츠 ex", rarity: "RR", tag: "rr", num: "039/098", note: "덱에서 쓰는 기본 더블 레어 판. SAR·UR보다 훨씬 저렴합니다." }
+      ]
+    },
+    {
+      id: "sv9a",
+      short: "열풍의 아레나",
+      name: "스칼렛&바이올렛 강화 확장팩 「열풍의 아레나」",
+      code: "SV9a",
+      series: "스칼렛&바이올렛",
+      release: "2025-05-16",
+      packPrice: 1000,
+      packsPerBox: 30,
+      cardsPerPack: 5,
+      boxPrice: 30000,
+      unit: "팩",
+      total: "92종(기본 63종)",
+      summary:
+        "심향·난천·이슬·페퍼의 포켓몬과 오거폰 가면이 함께 들어간 강화 확장팩입니다. 카드 수가 적어 SAR 5종에 수요가 모입니다.",
+      official: "https://pokemoncard.co.kr/card/772",
+      kream: [{ label: "KREAM 한글판", price: 33000, url: "https://kream.co.kr/products/627587" }],
+      dexNote:
+        "번호 표기 63장에 시크릿 29장이 더해진 92종입니다. 아래는 SAR 5종 전부와 대표 AR·UR을 골랐습니다.",
+      cards: [
+        { id: "sv9a-sar-garchomp", name: "난천의 한카리아스 ex", rarity: "SAR", tag: "sar", num: "087/063", note: "세트 최고가 카드로 꼽힙니다. 난천의 한카리아스 ex 스페셜 아트." },
+        { id: "sv9a-sar-hooh", name: "심향의 칠색조 ex", rarity: "SAR", tag: "sar", num: "086/063", note: "심향의 칠색조 ex 스페셜 아트. 세트 시세 2위입니다." },
+        { id: "sv9a-sar-mabosstiff", name: "페퍼의 마피티프 ex", rarity: "SAR", tag: "sar", num: "088/063", note: "페퍼의 마피티프 ex 스페셜 아트." },
+        { id: "sv9a-sar-adventure", name: "심향의 모험", rarity: "SAR", tag: "sar", num: "089/063", note: "서포트 카드의 스페셜 아트. 심향의 포켓몬과 기본 불꽃 에너지를 최대 3장까지 가져옵니다." },
+        { id: "sv9a-sar-yanmega", name: "메가자리 ex", rarity: "SAR", tag: "sar", num: "085/063", note: "메가자리 ex의 스페셜 아트." },
+        { id: "sv9a-ar-psyduck", name: "이슬의 고라파덕", rarity: "AR", tag: "ar", num: "071/063", note: "AR 12종 중 하나. 가격은 낮지만 일러스트 인기가 많은 카드입니다." },
+        { id: "sv9a-ar-lapras", name: "이슬의 라프라스", rarity: "AR", tag: "ar", num: "072/063", note: "이슬 테마 AR." },
+        { id: "sv9a-ur-garchomp", name: "난천의 한카리아스 ex", rarity: "UR", tag: "ur", num: "091/063", note: "한카리아스 ex의 골드 UR 판." },
+        { id: "sv9a-ur-hooh", name: "심향의 칠색조 ex", rarity: "UR", tag: "ur", num: "090/063", note: "칠색조 ex의 골드 UR 판." },
+        { id: "sv9a-ur-levincia", name: "누룩스시티", rarity: "UR", tag: "ur", num: "092/063", note: "스타디움 카드의 골드 UR 판." }
+      ]
+    },
+    {
+      id: "sv9",
+      short: "배틀 파트너즈",
+      name: "스칼렛&바이올렛 확장팩 「배틀파트너즈」",
+      code: "SV9",
+      series: "스칼렛&바이올렛",
+      release: "2025-03-21",
+      packPrice: 1000,
+      packsPerBox: 30,
+      cardsPerPack: 5,
+      boxPrice: 30000,
+      unit: "팩",
+      total: "132종(기본 100종)",
+      summary:
+        "N·릴리에·호브·모야모의 포켓몬이 중심인 세트. 1팩 1,000원으로 부담이 가장 적어 입문용으로 많이 선택됩니다.",
+      official: "https://pokemoncard.co.kr/card/731",
+      kream: [{ label: "KREAM 한글판", price: 34000, url: "https://kream.co.kr/products/476611" }],
+      dexNote:
+        "SAR 6종·UR 4종이 수록됩니다. 아래는 SAR 6종과 대표 SR·RR을 정리한 것입니다.",
+      cards: [
+        { id: "sv9-sar-zoroark", name: "N의 조로아크 ex", rarity: "SAR", tag: "sar", num: "127/100", note: "세트 대표 체이스. N의 조로아크 ex 스페셜 아트입니다." },
+        { id: "sv9-sar-clefairy", name: "릴리에의 삐삐 ex", rarity: "SAR", tag: "sar", num: "126/100", note: "릴리에의 삐삐 ex 스페셜 아트. SAR 중 시세 상위권입니다." },
+        { id: "sv9-sar-zacian", name: "호브의 자시안 ex", rarity: "SAR", tag: "sar", num: "128/100", note: "호브의 자시안 ex 스페셜 아트." },
+        { id: "sv9-sar-salamence", name: "보만다 ex", rarity: "SAR", tag: "sar", num: "129/100", note: "보만다 ex 스페셜 아트. 배틀에서도 쓰는 카드입니다." },
+        { id: "sv9-sar-bellibolt", name: "모야모의 찌리배리 ex", rarity: "SAR", tag: "sar", num: "125/100", note: "모야모의 찌리배리 ex 스페셜 아트." },
+        { id: "sv9-sar-volcanion", name: "볼케니온 ex", rarity: "SAR", tag: "sar", num: "124/100", note: "볼케니온 ex 스페셜 아트." },
+        { id: "sv9-sr-zoroark", name: "N의 조로아크 ex", rarity: "SR", tag: "sr", num: "117/100", note: "SAR보다 저렴한 SR 판. 덱용 수요가 있습니다." },
+        { id: "sv9-sr-brock", name: "웅의 스카우트", rarity: "SR", tag: "sr", num: "123/100", note: "트레이너 서포트의 SR 판." },
+        { id: "sv9-sr-iris", name: "아이리스의 투지", rarity: "SR", tag: "sr", num: "122/100", note: "트레이너 서포트의 SR 판." },
+        { id: "sv9-ur-spiky", name: "스파이크 에너지", rarity: "UR", tag: "ur", num: "132/100", note: "특수 에너지 카드의 골드 UR 판." },
+        { id: "sv9-rr-zoroark", name: "N의 조로아크 ex", rarity: "RR", tag: "rr", num: "061/100", note: "덱에서 쓰는 기본 더블 레어 판." }
+      ]
+    },
+    {
+      id: "sv8a",
+      short: "테라스탈 페스타 ex",
+      name: "스칼렛&바이올렛 하이클래스팩 「테라스탈 페스타 ex」",
+      code: "SV8a",
+      series: "스칼렛&바이올렛",
+      release: "2025-01-22",
+      packPrice: 5000,
+      packsPerBox: 10,
+      cardsPerPack: 10,
+      boxPrice: 50000,
+      unit: "팩",
+      total: "237종(기본 187종)",
+      summary:
+        "이브이와 진화형 8종의 SAR 9장이 세트 가치를 이끄는 하이클래스팩. 1팩 10장·1상자 10팩으로 팩당 단가가 가장 높습니다.",
+      official: "https://pokemoncard.co.kr/card/708",
+      kream: [{ label: "KREAM 한글판", price: 67000, url: "https://kream.co.kr/products/430328" }],
+      dexNote:
+        "SAR 44종이 수록된 대형 세트라, 시세 상위 이브이 계열과 대표 카드만 골랐습니다. 번호는 한글판 SV8a 기준입니다.",
+      cards: [
+        { id: "sv8a-sar-umbreon", name: "블래키 ex", rarity: "SAR", tag: "sar", num: "217/187", note: "이브이 진화형 SAR 가운데 최고가. 세트 시세 1위 카드입니다." },
+        { id: "sv8a-sar-sylveon", name: "님피아 ex", rarity: "SAR", tag: "sar", num: "212/187", note: "세트 시세 2위. 님피아 ex 스페셜 아트." },
+        { id: "sv8a-sar-leafeon", name: "리피아 ex", rarity: "SAR", tag: "sar", num: "200/187", note: "리피아 ex 스페셜 아트. 이브이 계열 SAR 9장 중 하나." },
+        { id: "sv8a-sar-espeon", name: "에브이 ex", rarity: "SAR", tag: "sar", num: "211/187", note: "에브이 ex 스페셜 아트." },
+        { id: "sv8a-sar-vaporeon", name: "샤미드 ex", rarity: "SAR", tag: "sar", num: "205/187", note: "샤미드 ex 스페셜 아트." },
+        { id: "sv8a-sar-glaceon", name: "글레이시아 ex", rarity: "SAR", tag: "sar", num: "206/187", note: "글레이시아 ex 스페셜 아트." },
+        { id: "sv8a-sar-flareon", name: "부스터 ex", rarity: "SAR", tag: "sar", num: "202/187", note: "부스터 ex 스페셜 아트." },
+        { id: "sv8a-sar-jolteon", name: "쥬피썬더 ex", rarity: "SAR", tag: "sar", num: "209/187", note: "쥬피썬더 ex 스페셜 아트." },
+        { id: "sv8a-sar-eevee", name: "이브이 ex", rarity: "SAR", tag: "sar", num: "223/187", note: "이브이 본체의 스페셜 아트. 같은 카드가 223·224 두 종류로 수록됩니다." },
+        { id: "sv8a-sar-moon", name: "고동치는달 ex", rarity: "SAR", tag: "sar", num: "218/187", note: "고동치는달 ex 스페셜 아트. 이브이 계열 다음으로 시세가 높습니다." },
+        { id: "sv8a-sar-terapagos", name: "테라파고스 ex", rarity: "SAR", tag: "sar", num: "226/187", note: "테라파고스 ex 스페셜 아트." },
+        { id: "sv8a-sar-ceruledge", name: "파라블레이즈 ex", rarity: "SAR", tag: "sar", num: "203/187", note: "파라블레이즈 ex 스페셜 아트." },
+        { id: "sv8a-sar-janine", name: "도희의 비기", rarity: "SAR", tag: "sar", num: "228/187", note: "트레이너 서포트의 스페셜 아트." },
+        { id: "sv8a-ur-pikachu", name: "피카츄 ex", rarity: "UR", tag: "ur", num: "236/187", note: "골드 UR. 세트 UR 5종 가운데 하나입니다." }
+      ]
+    },
+    {
+      id: "sv8",
+      short: "초전 브레이커",
+      name: "스칼렛&바이올렛 확장팩 「초전브레이커」",
+      code: "SV8",
+      series: "스칼렛&바이올렛",
+      release: "2024-11-27",
+      packPrice: 1000,
+      packsPerBox: 30,
+      cardsPerPack: 5,
+      boxPrice: 30000,
+      unit: "팩",
+      total: "138종(기본 106종)",
+      summary:
+        "전기 타입이 테마인 확장팩. 피카츄 ex SAR이 세트 최고가로 꼽히고, 출시 2년이 지난 지금도 시세가 정가 위에 있습니다.",
+      official: "https://pokemoncard.co.kr/card/675",
+      kream: [{ label: "KREAM 한글판", price: 41000, url: "https://kream.co.kr/products/432254" }],
+      dexNote:
+        "SAR 6종·UR 3종이 수록됩니다. 아래는 SAR 전 종과 UR 3종을 정리한 것입니다.",
+      cards: [
+        { id: "sv8-sar-pikachu", name: "피카츄 ex", rarity: "SAR", tag: "sar", num: "132/106", note: "세트 최고가. SAR 가운데 시세가 가장 높습니다." },
+        { id: "sv8-sar-milotic", name: "밀로틱 ex", rarity: "SAR", tag: "sar", num: "131/106", note: "밀로틱 ex 스페셜 아트. 세트 시세 2위권입니다." },
+        { id: "sv8-sar-hydreigon", name: "삼삼드래 ex", rarity: "SAR", tag: "sar", num: "133/106", note: "삼삼드래 ex 스페셜 아트." },
+        { id: "sv8-sar-grusha", name: "규리의 눈빛", rarity: "SAR", tag: "sar", num: "134/106", note: "트레이너 서포트의 스페셜 아트." },
+        { id: "sv8-sar-citron", name: "시트론의 재치", rarity: "SAR", tag: "sar", num: "135/106", note: "트레이너 서포트의 스페셜 아트." },
+        { id: "sv8-sar-ironhands", name: "아이앤트 ex", rarity: "SAR", tag: "sar", num: "130/106", note: "아이앤트 ex 스페셜 아트." },
+        { id: "sv8-ur-pikachu", name: "피카츄 ex", rarity: "UR", tag: "ur", num: "136/106", note: "피카츄 ex의 골드 UR 판. 세트 UR 3종 중 하나입니다." },
+        { id: "sv8-ur-nightstretcher", name: "밤의 들것", rarity: "UR", tag: "ur", num: "137/106", note: "도구 카드의 골드 UR 판." },
+        { id: "sv8-ur-gravity", name: "그래비티 마운틴", rarity: "UR", tag: "ur", num: "138/106", note: "스타디움 카드의 골드 UR 판." }
+      ]
+    },
+    {
+      id: "starter",
+      short: "스타터 세트",
+      name: "MEGA 스타터 세트 ex 「이브이 ex」",
+      code: "구축덱",
+      series: "MEGA",
+      release: "2026-09-30",
+      packPrice: 17000,
+      packsPerBox: 1,
+      cardsPerPack: 60,
+      boxPrice: 17000,
+      unit: "세트",
+      total: "카드 60장(덱 고정)",
+      summary:
+        "덱 60장과 데미지 카운터·플레이매트·동전이 한 번에 들어 있는 구축덱입니다. 확장팩과 달리 팩을 뜯는 상품이 아닙니다.",
+      official: "https://pokemoncard.co.kr/card/966",
+      kream: [{ label: "KREAM 한글판", price: 20000, url: "https://kream.co.kr/products/1109235" }],
+      dexNote:
+        "구축덱은 팩이 아니라 덱 구성이 정해진 상품이라 레어도 대신 덱 구성 카드로 표시합니다. 카드 60장 전체가 아니라 대표 카드만 실었습니다.",
+      cards: [
+        { id: "deck-eevee", name: "이브이 ex", rarity: "덱", tag: "deck", note: "덱의 중심 카드. 60장 덱에 들어 있습니다." },
+        { id: "deck-jolteon", name: "쥬피썬더", rarity: "덱", tag: "deck", note: "전기 타입 진화 라인의 카드입니다." },
+        { id: "deck-pawmot", name: "빠르모트", rarity: "덱", tag: "deck", note: "빠모·빠모트로 이어지는 진화 라인의 최종 진화." },
+        { id: "deck-miraidon", name: "미라이돈", rarity: "덱", tag: "deck", note: "전기 타입 어태커로 쓰이는 카드입니다." },
+        { id: "deck-tauros", name: "켄타로스", rarity: "덱", tag: "deck", note: "무색 타입 어태커." },
+        { id: "deck-lillie", name: "릴리에의 결심", rarity: "덱", tag: "deck", note: "서포트 카드. 패를 정리할 때 씁니다." },
+        { id: "deck-boss", name: "보스의 지령", rarity: "덱", tag: "deck", note: "서포트 카드. 상대 벤치 포켓몬을 끌어옵니다." },
+        { id: "deck-judge", name: "저지맨", rarity: "덱", tag: "deck", note: "서포트 카드. 서로 패를 4장으로 다시 뽑습니다." },
+        { id: "deck-rare-candy", name: "이상한사탕", rarity: "덱", tag: "deck", note: "도구 카드. 진화를 한 단계 건너뜁니다." },
+        { id: "deck-ultra-ball", name: "하이퍼볼", rarity: "덱", tag: "deck", note: "도구 카드. 패 2장을 버리고 포켓몬을 찾습니다." },
+        { id: "deck-dawn", name: "빛나", rarity: "덱", tag: "deck", note: "서포트 카드." },
+        { id: "deck-lightning", name: "기본 번개 에너지", rarity: "덱", tag: "deck", note: "덱의 기본 에너지." }
+      ]
+    }
+  ];
+
   /* ------------------------------------------------------------- 일정 */
   var timeline = [
     {
@@ -1491,6 +1789,7 @@ window.POKEMOA_DATA = (function () {
   return {
     SITE: SITE,
     SET: SET_TARGET,
+    SETS: SETS,
     channels: channels,
     trends: trends,
     cards: cards,

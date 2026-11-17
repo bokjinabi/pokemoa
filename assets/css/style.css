@@ -2612,3 +2612,116 @@ button { font: inherit; color: inherit; cursor: pointer; }
   color: #fff;
 }
 .pm-cluster.has-stock small { color: #ffd964; }
+
+/* ------------------------------------------- 세트별 도감·가이드 (v3.3) */
+.set-picker {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 2px 2px 8px;
+  overflow-x: auto;
+  min-width: 0;
+  max-width: 100%;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+  -webkit-mask-image: linear-gradient(90deg, #000 0, #000 95%, transparent 100%);
+  mask-image: linear-gradient(90deg, #000 0, #000 95%, transparent 100%);
+}
+.set-chip {
+  flex: 0 0 auto;
+  border: 1.5px solid var(--line);
+  background: #fff;
+  border-radius: 14px;
+  padding: 9px 14px;
+  text-align: left;
+  line-height: 1.25;
+  color: var(--ink-2);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.set-chip strong { display: block; font-size: 13.5px; letter-spacing: -0.02em; white-space: nowrap; }
+.set-chip small { display: block; font-size: 10.5px; color: var(--muted); margin-top: 3px; white-space: nowrap; }
+.set-chip:hover { border-color: var(--navy); }
+.set-chip.is-active { background: var(--navy); border-color: var(--navy); color: #fff; }
+.set-chip.is-active small { color: #a9b9d6; }
+
+.set-summary {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.ss-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.ss-code {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--yellow-soft);
+  color: #8a6a00;
+}
+.ss-name { margin: 0; font-size: 21px; letter-spacing: -0.03em; }
+.ss-summary { margin: 8px 0 14px; font-size: 13px; color: var(--ink-2); line-height: 1.65; }
+.ss-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 14px;
+}
+.ss-grid > div {
+  background: var(--paper);
+  border-radius: 10px;
+  padding: 9px 11px;
+  min-width: 0;
+}
+.ss-grid dt { font-size: 10.5px; font-weight: 800; color: var(--muted); }
+.ss-grid dd { margin: 3px 0 0; font-size: 12.5px; font-weight: 700; color: var(--ink); line-height: 1.45; }
+.ss-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.ss-links a {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--navy);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 5px 11px;
+  background: #fff;
+}
+.ss-links a:hover { border-color: var(--navy); background: var(--paper); }
+
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.calc .calc-set { font-size: 11.5px; font-weight: 700; color: #ffd964; margin-left: 2px; }
+
+.art-sr { background: linear-gradient(150deg, #e6edff, #c9d8f5 55%, #e2eafc); }
+.art-ur { background: linear-gradient(150deg, #ffeec2, #f3cf8b 55%, #f7e4b5); }
+.art-mur { background: conic-gradient(from 210deg at 55% 45%, #b8a3ff, #7bd7ff, #ffd93d, #b8a3ff); }
+.art-bwr { background: linear-gradient(150deg, #d7e4ff, #a9c3ef 55%, #e2ecff); }
+.art-rr { background: linear-gradient(150deg, #e0f4ec, #c4e7db 55%, #ebf7f1); }
+.art-deck { background: linear-gradient(150deg, #f6ecd8, #e5d6b9 55%, #f8f1e2); }
+
+.trend-card { display: block; transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s; }
+.trend-card:hover { transform: translateY(-2px); border-color: var(--navy); }
+.trend-go {
+  display: block;
+  margin-top: 10px;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--navy);
+}
+
+@media (min-width: 720px) {
+  .set-picker { flex-wrap: wrap; overflow: visible; -webkit-mask-image: none; mask-image: none; }
+  .ss-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+
+@media (max-width: 679px) {
+  #panel-guide .map-page-head > p { display: block; font-size: 12.5px; line-height: 1.6; }
+  .set-summary { padding: 15px; }
+  .ss-name { font-size: 18px; }
+  .ss-grid { grid-template-columns: 1fr 1fr; }
+  .ss-grid > div:last-child { grid-column: span 2; }
+  .set-chip { padding: 8px 12px; }
+  .set-chip strong { font-size: 12.5px; }
+}

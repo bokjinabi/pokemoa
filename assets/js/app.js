@@ -54,6 +54,8 @@
     if (!name) return;
     e.preventDefault();
     showTab(name);
+    var setId = el.getAttribute("data-goto-set");
+    if (setId) selectSet(setId);
     var href = el.getAttribute("href");
     if (href && href.charAt(0) === "#" && href.length > 1) {
       var target = document.getElementById(href.slice(1));
@@ -735,17 +737,41 @@
     if (chip) chip.textContent = "오늘 " + pad2(today.m) + "-" + pad2(today.d);
   }
 
-  /* --------------------------------------------------------------- 도감 */
+  /* ------------------------------------------------- 도감 · 가이드 (세트별) */
+  var SETS = D.SETS || [];
+  var activeSetId = SETS.length ? SETS[0].id : "";
   var dexGrid = $("#dexGrid");
   var dexCount = $("#dexCount");
+  var dexEyebrow = $("#dexEyebrow");
+  var dexDesc = $("#dexDesc");
+  var dexNoteEl = $("#dexNote");
   var searchInput = $("#cardSearch");
   var searchClear = $("#cardSearchClear");
+  var setPicker = $("#setPicker");
+  var setSummary = $("#setSummary");
+  var compareBody = $("#compareBody");
+  var compareSub = $("#compareSub");
+  var compareNote = $("#compareNote");
+  var rarityChipsEl = $("#rarityChips");
+  var thPrice = $("#thPrice");
+  var thPerUnit = $("#thPerUnit");
+  var calcSetName = $("#calcSetName");
+  var calcHint = $("#calcHint");
+  var calcPerPackLabel = $("#calcPerPackLabel");
   var query = "";
   var rarity = "all";
 
+  var won = function (n) { return Number(n).toLocaleString("ko-KR") + "원"; };
+  function signedRate(v) {
+    var r = Math.round(v);
+    if (r === 0) return "기준";
+    return (r > 0 ? "+" : "−") + Math.abs(r) + "%";
+  }
+
   var artClass = {
-    fur: "art-fur", sar: "art-sar", ar: "art-ar",
-    pika: "art-pika", classic: "art-classic", energy: "art-energy"
+    fur: "art-fur", sar: "art-sar", ar: "art-ar", sr: "art-sr",
+    ur: "art-ur", mur: "art-mur", bwr: "art-bwr", rr: "art-rr",
+    deck: "art-deck", pika: "art-pika", classic: "art-classic", energy: "art-energy"
   };
 
   function artStyle(card) {
@@ -754,21 +780,160 @@
     if (card.tag === "fur") return "";
     if (card.tag === "classic") return "background:linear-gradient(150deg,hsl(38 32% 89%),hsl(32 26% 80%) 55%,hsl(26 22% 75%))";
     if (card.tag === "energy") return "background:linear-gradient(150deg,hsl(210 34% 89%),hsl(220 30% 81%) 55%,hsl(230 26% 85%))";
-    var base = card.tag === "pika" ? 44 : card.tag === "sar" ? 330 : 200;
+    if (card.tag === "deck") return "background:linear-gradient(150deg,hsl(40 44% 92%),hsl(34 32% 85%) 55%,hsl(46 42% 91%))";
+    var base =
+      card.tag === "pika" ? 44 :
+      card.tag === "sar" ? 330 :
+      card.tag === "ur" ? 42 :
+      card.tag === "mur" ? 275 :
+      card.tag === "bwr" ? 220 :
+      card.tag === "sr" ? 196 :
+      card.tag === "rr" ? 165 : 200;
     var hue = (base + (h % 150) - 75 + 360) % 360;
     return "background:linear-gradient(150deg,hsl(" + hue + " 72% 89%),hsl(" + ((hue + 46) % 360) + " 68% 83%) 55%,hsl(" + ((hue + 92) % 360) + " 62% 89%))";
   }
 
+  function activeSet() {
+    for (var i = 0; i < SETS.length; i++) if (SETS[i].id === activeSetId) return SETS[i];
+    return SETS[0];
+  }
+  function isDeck(s) { return !s || s.packsPerBox <= 1; }
+
+  function renderSetNav() {
+    if (!setPicker) return;
+    setPicker.innerHTML = "";
+    SETS.forEach(function (s) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "set-chip" + (s.id === activeSetId ? " is-active" : "");
+      b.setAttribute("data-set", s.id);
+      b.setAttribute("role", "tab");
+      b.setAttribute("aria-selected", s.id === activeSetId ? "true" : "false");
+      b.innerHTML = "<strong>" + s.short + "</strong><small>" + s.code + " · " + s.release.replace(/-/g, ".") + "</small>";
+      b.addEventListener("click", function () { selectSet(s.id); });
+      setPicker.appendChild(b);
+    });
+    var act = setPicker.querySelector(".set-chip.is-active");
+    if (act && setPicker.scrollWidth > setPicker.clientWidth + 4) {
+      setPicker.scrollLeft = Math.max(0, act.offsetLeft - 10);
+    }
+  }
+
+  function renderSetSummary() {
+    if (!setSummary) return;
+    var s = activeSet();
+    var deck = isDeck(s);
+    var kreamTxt = (s.kream || []).map(function (k) { return won(k.price); });
+    var main = s.kream && s.kream[0];
+    var rate = main ? ((main.price - s.boxPrice) / s.boxPrice) * 100 : 0;
+    var rows = [];
+    rows.push(["발매일", s.release]);
+    rows.push([
+      "구성",
+      deck ? "카드 " + s.cardsPerPack + "장 + 플레이 용품" :
+        "1팩 " + s.cardsPerPack + "장 · 1박스 " + s.packsPerBox + "팩(카드 " + s.packsPerBox * s.cardsPerPack + "장)"
+    ]);
+    rows.push([
+      "공식 정가",
+      deck ? won(s.boxPrice) + " (1세트)" : won(s.packPrice) + " / 1박스 " + won(s.boxPrice)
+    ]);
+    rows.push(["수록 카드", s.total]);
+    rows.push([
+      "KREAM 즉시구매",
+      kreamTxt.length ? kreamTxt.join(" · ") + " (" + signedRate(rate) + ")" : "미확인"
+    ]);
+
+    var links = [];
+    if (s.official) links.push('<a href="' + s.official + '" target="_blank" rel="noopener">공식 제품 정보 ↗</a>');
+    if (s.extraLink) links.push('<a href="' + s.extraLink.url + '" target="_blank" rel="noopener">' + s.extraLink.label + " ↗</a>");
+    (s.kream || []).forEach(function (k, i) {
+      links.push('<a href="' + k.url + '" target="_blank" rel="noopener">KREAM 시세' + (i > 0 ? " (" + (i + 1) + ")" : "") + " ↗</a>");
+    });
+
+    setSummary.innerHTML =
+      '<div class="ss-head">' +
+      '<span class="ss-code">' + s.code + " · " + s.series + "</span>" +
+      '<h2 class="ss-name">' + s.short + "</h2>" +
+      "</div>" +
+      '<p class="ss-summary">' + s.summary + "</p>" +
+      '<dl class="ss-grid">' +
+      rows.map(function (r) {
+        return "<div><dt>" + r[0] + "</dt><dd>" + r[1] + "</dd></div>";
+      }).join("") +
+      "</dl>" +
+      '<div class="ss-links">' + links.join("") + "</div>";
+  }
+
+  function renderCompare() {
+    var s = activeSet();
+    var deck = isDeck(s);
+    var unit = deck ? "세트" : "팩";
+    var packs = deck ? 1 : s.packsPerBox;
+    if (thPrice) thPrice.textContent = deck ? "세트 가격" : "박스 가격";
+    if (thPerUnit) thPerUnit.textContent = unit + "당 단가";
+    if (calcPerPackLabel) calcPerPackLabel.textContent = unit + "당 단가";
+    if (!compareBody) return;
+
+    var rows = [{
+      label: "공식 정가 (" + (deck ? "1세트" : "1박스·" + packs + "팩") + ")",
+      price: s.boxPrice,
+      base: true
+    }];
+    (s.extra || []).forEach(function (x) { rows.push({ label: x.label, price: x.price }); });
+    (s.kream || []).forEach(function (x) { rows.push({ label: x.label, price: x.price }); });
+
+    compareBody.innerHTML = rows.map(function (r) {
+      var per = Math.round(r.price / packs);
+      var pct = ((r.price - s.boxPrice) / s.boxPrice) * 100;
+      var cls = r.base || pct < 0 ? "flat" : pct > 0 ? "up" : "";
+      return "<tr><td>" + r.label + "</td>" +
+        '<td class="num">' + won(r.price) + "</td>" +
+        '<td class="num">' + won(per) + "</td>" +
+        '<td class="num ' + cls + '">' + (r.base ? "기준" : signedRate(pct)) + "</td></tr>";
+    }).join("");
+
+    if (compareSub) {
+      compareSub.innerHTML = deck
+        ? "정가 " + won(s.boxPrice) + "(" + s.total + ")를 2026-11-17 KREAM 즉시구매 최저가와 비교한 값입니다."
+        : "정가 기준 1박스 " + won(s.boxPrice) + " = " + unit + "당 " + won(Math.round(s.boxPrice / packs)) +
+          ". 아래는 2026-11-17 KREAM 한글판 1박스 즉시구매 최저가를 정가와 비교한 값입니다(배송비·검수 수수료 별도).";
+    }
+    if (compareNote) {
+      var links = (s.kream || []).map(function (k, i) {
+        return '<a href="' + k.url + '" target="_blank" rel="noopener">' + k.label + "</a>";
+      }).join(" · ");
+      compareNote.innerHTML =
+        "KREAM 시세는 2026-11-17 확인 기준 즉시구매 최저가입니다(한글판 " + (deck ? "스타터 세트" : "1박스") +
+        "). 배송비(빠른배송 5,000원 · 일반배송 3,000원)와 검수 수수료는 별도이고, 시점과 박스 상태(슈링크 여부)에 따라 달라집니다. " +
+        links;
+    }
+  }
+
+  function renderRarityChips() {
+    if (!rarityChipsEl) return;
+    var s = activeSet();
+    var seen = [];
+    s.cards.forEach(function (c) {
+      if (seen.indexOf(c.rarity) === -1) seen.push(c.rarity);
+    });
+    var html = '<button type="button" class="rarity-chip' + (rarity === "all" ? " is-active" : "") + '" data-rarity="all">전체</button>';
+    seen.forEach(function (r) {
+      html += '<button type="button" class="rarity-chip' + (rarity === r ? " is-active" : "") + '" data-rarity="' + r + '">' + r + "</button>";
+    });
+    rarityChipsEl.innerHTML = html;
+  }
+
   function cardMatches(card) {
-    if (rarity !== "all" && card.tag !== rarity) return false;
+    if (rarity !== "all" && card.rarity !== rarity) return false;
     if (!query) return true;
-    var hay = (card.name + " " + card.rarity + " " + (card.illus || "") + " " + card.note).toLowerCase();
+    var hay = (card.name + " " + card.rarity + " " + (card.num || "") + " " + (card.illus || "") + " " + card.note).toLowerCase();
     return hay.indexOf(query.toLowerCase()) !== -1;
   }
 
   function renderDex() {
     if (!dexGrid) return;
-    var list = D.cards.filter(cardMatches);
+    var s = activeSet();
+    var list = s.cards.filter(cardMatches);
     dexGrid.innerHTML = "";
     if (!list.length) {
       var empty = document.createElement("div");
@@ -790,16 +955,30 @@
         "</span>" +
         '<span class="dex-info">' +
         "<strong>" + card.name + "</strong>" +
-        "<small>" + card.rarity + (card.illus ? " · " + card.illus : "") + "</small>" +
+        "<small>" + card.rarity + (card.num ? " · " + card.num : "") + (card.illus ? " · " + card.illus : "") + "</small>" +
         '<span class="dex-note">' + card.note + "</span>" +
         "</span>";
       btn.addEventListener("click", function () { openCardModal(card); });
       dexGrid.appendChild(btn);
     });
     if (dexCount) {
-      dexCount.textContent = query || rarity !== "all" ? "검색 결과 " + list.length + "장" : "전체 " + D.cards.length + "장";
+      dexCount.textContent = query || rarity !== "all" ? "검색 결과 " + list.length + "장" : "전체 " + s.cards.length + "장";
     }
     if (searchClear) searchClear.hidden = !query;
+    if (dexEyebrow) dexEyebrow.textContent = s.short + " 도감";
+    if (dexDesc) dexDesc.innerHTML = "<strong>" + s.total + "</strong> · " + s.summary;
+    if (dexNoteEl) dexNoteEl.textContent = s.dexNote || "";
+  }
+
+  function selectSet(id) {
+    activeSetId = id;
+    rarity = "all";
+    renderSetNav();
+    renderSetSummary();
+    renderCompare();
+    renderRarityChips();
+    renderDex();
+    runCalc();
   }
 
   if (searchInput) {
@@ -816,12 +995,11 @@
       searchInput.focus();
     });
   }
-  var rarityChips = $("#rarityChips");
-  if (rarityChips) {
-    rarityChips.addEventListener("click", function (e) {
+  if (rarityChipsEl) {
+    rarityChipsEl.addEventListener("click", function (e) {
       var btn = e.target.closest(".rarity-chip");
       if (!btn) return;
-      $$(".rarity-chip", rarityChips).forEach(function (b) { b.classList.remove("is-active"); });
+      $$(".rarity-chip", rarityChipsEl).forEach(function (b) { b.classList.remove("is-active"); });
       btn.classList.add("is-active");
       rarity = btn.getAttribute("data-rarity");
       renderDex();
@@ -846,22 +1024,31 @@
   var calcDiff = $("#calcDiff");
   var calcRate = $("#calcRate");
   var calcVerdict = $("#calcVerdict");
-  var fmt = function (n) { return n.toLocaleString("ko-KR"); };
+  var fmt = function (n) { return Number(n).toLocaleString("ko-KR"); };
 
   function runCalc() {
     if (!calcInput) return;
+    var s = activeSet();
+    var deck = isDeck(s);
+    var packs = deck ? 1 : s.packsPerBox;
+    var unit = deck ? "세트" : "팩";
+    var priceWord = deck ? "세트" : "박스";
+    if (calcSetName) calcSetName.textContent = "· " + s.short;
+    if (calcHint) {
+      calcHint.textContent = priceWord + " 가격을 넣으면 " + unit + "당 단가와 정가(" + won(s.boxPrice) + ") 대비 차액을 계산합니다.";
+    }
     var raw = Number(String(calcInput.value).replace(/[^0-9]/g, ""));
     if (!raw || raw <= 0) {
       calcPerPack.textContent = "-";
       calcDiff.textContent = "-";
       calcRate.textContent = "-";
       calcRate.className = "";
-      calcVerdict.textContent = "정가 70,000원을 기준으로 판단합니다.";
+      calcVerdict.textContent = "정가 " + won(s.boxPrice) + "(" + s.short + ")을 기준으로 판단합니다.";
       return;
     }
-    var perPack = Math.round(raw / D.SET.packsPerBox);
-    var diff = raw - D.SET.boxPrice;
-    var rate = Math.round((diff / D.SET.boxPrice) * 1000) / 10;
+    var perPack = Math.round(raw / packs);
+    var diff = raw - s.boxPrice;
+    var rate = Math.round((diff / s.boxPrice) * 1000) / 10;
 
     calcPerPack.textContent = fmt(perPack) + "원";
     calcDiff.textContent = (diff > 0 ? "+" : diff < 0 ? "−" : "") + fmt(Math.abs(diff)) + "원";
@@ -1008,7 +1195,12 @@
   /* --------------------------------------------------------------- 초기화 */
   buildCalendar();
   buildScheduleFold();
+  renderSetNav();
+  renderSetSummary();
+  renderCompare();
+  renderRarityChips();
   renderDex();
+  runCalc();
 
   var hash = (location.hash || "").replace("#", "");
   if (hash === "cards") {
