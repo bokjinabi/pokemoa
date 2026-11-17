@@ -176,7 +176,7 @@ cloudflared tunnel --url http://127.0.0.1:3100   # 출력된 https://….tryclou
 
 ## 5. 배포 전에 바꿀 것 (중요)
 
-1. **도메인**: 소스에는 `https://moa-kr.github.io/pokemoa` 플레이스홀더가 남아 있고, 배포본을 만드는 `tmp/pokemoa-build/deploy.sh`가 `https://moa-kr.github.io/pokemoa`로 일괄 치환합니다
+1. **도메인**: 소스에는 `pokemoa.example` 플레이스홀더(`https://` + 도메인 형태)가 남아 있고, 배포본을 만드는 `tmp/pokemoa-build/deploy.sh`가 그 부분을 `https://moa-kr.github.io/pokemoa`로 일괄 치환합니다
    (`index.html`, `privacy.html`, `terms.html`, `sitemap.xml`, `robots.txt` 대상). 도메인을 또 바꾸려면 `deploy.sh`의 `LIVE` 한 줄만 고쳐 다시 실행하면 됩니다
 2. **AdSense**: `index.html` 상단의 주석 처리된 `adsbygoogle.js` 스크립트를 풀고 `ca-pub-…` 입력,
    각 슬롯 자리에 `<ins class="adsbygoogle" data-ad-client="ca-pub-…" data-ad-slot="…">` 삽입
