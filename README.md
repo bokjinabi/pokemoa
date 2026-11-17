@@ -14,6 +14,7 @@
 - **v3.1 변경**: 지도를 **편의점 4사 전용**으로 정리(4사 외 업종·브랜드는 필터·쿼리·스냅샷에서 제외, Overpass 쿼리는 `shop=convenience`만). 매장 목록·지도 카드에 **취급·재고 카드 상품명 태그**(30th CELEBRATION · 입고 / 배틀 파트너즈 · 소량 / 확인 필요 / 최근 입고 품절)를 표시하고, 툴바에 **카드 상품 필터**를 추가했습니다
 - **v3.2 변경(PokeConv 스타일)**: 지도를 **라이트·저채도 스타일**(OSM 타일 + grayscale 필터)로 정돈하고, 둥근 핀 마커를 **상태 말풍선(알약) 마커**로 교체(`CU · 입고 2종` / `확인` / `없음`, 넓게 볼 때는 `18곳` 클러스터). 상단의 카드 7종 필터 줄과 브랜드 칩 줄을 없애는 대신 **편의점 4사별 현황 요약 바**(전체·GS25·CU·세븐일레븐·이마트24, 클릭하면 그 브랜드만)와 **정렬 드롭다운(재고 우선/가까운 거리순)**, **`재고 있는 매장만` 토글**을 넣었습니다. 매장 카드·지도 팝업은 **개소별 보유 카드**가 주인공이 되도록 정리
 - **v3.3 변경(세트별 도감·가이드)**: 「도감·가이드」 탭을 30th CELEBRATION 단일 세트에서 **포케모아에 수록된 9개 상품(30th CELEBRATION · 어비스아이 · 블랙볼트 · 로켓단의 영광 · 열풍의 아레나 · 배틀 파트너즈 · 테라스탈 페스타 ex · 초전 브레이커 · 스타터 세트)** 으로 확장. 상단 **세트 선택 칩**으로 세트를 고르면 세트 요약(발매일·구성·정가·공식 링크) · **정가 vs KREAM 시세 비교표** · **리셀 프리미엄 계산기 기준 정가** · **수록 카드 도감(검색·레어도 필터)** 이 그 세트 기준으로 즉시 바뀝니다. 홈의 인기 카드팩 카드를 누르면 해당 세트 도감으로 바로 이동합니다
+- **v3.4 변경(쿠팡 파트너스 슬롯 연동)**: 도감·가이드 하단 제휴 슬롯(`coupang-supplies`)을 **실제 제휴 상품 카드**로 교체했습니다. 탑로더+슬리브 세트 상품 이미지를 **로컬 자산 `assets/coupang-supplies.jpg`**로 저장해 핫링크 차단 없이 뜨게 했고, 이미지·버튼 모두 `https://link.coupang.com/a/iKC6PvZjtQ`(`target="_blank" rel="noopener noreferrer sponsored"`)로 연결됩니다. 카드 하단에 쿠팡 파트너스 대가성 문구를 그대로 넣었습니다(`coupang-30th` 슬롯은 링크 교체 대기)
 
 > 타일 참고: 브리프의 CARTO Positron(`basemaps.cartocdn.com/light_all`)은 2026-11 확인 시 **API 키가 없으면 `API KEY REQUIRED` 워터마크 타일**이 내려와 쓸 수 없었습니다. 그래서 OSM 표준 타일에 저채도·밝기 필터를 걸어 Positron과 같은 라이트 느낌을 냈고(한국어 지명 그대로), 타일 서버가 막히면 OSM 독일 미러로 자동 대체합니다.
 
@@ -117,7 +118,7 @@ pokemoa/
 ### 수익화 · 운영 페이지
 - AdSense 슬롯 6곳: `home-top-banner`, `home-infeed-1`, `map-bottom`, `schedule-bottom`,
   `guide-bottom`, `mobile-sticky` — 점선 플레이스홀더 + `data-ad-slot` 속성
-- 쿠팡 파트너스 슬롯 2곳(대가성 문구 포함)
+- 쿠팡 파트너스 슬롯 2곳(대가성 문구 포함) — `coupang-supplies`는 실제 상품(탑로더+슬리브 세트, 로컬 이미지)으로 **연동 완료**, `coupang-30th`는 링크 교체 대기
 - 푸터 모달: 소개 / 개인정보처리방침 / 이용약관 / 운영 문의(재고 제보 폼)
 - `privacy.html`, `terms.html` 단독 문서, `sitemap.xml`, `robots.txt`, OG/Twitter/JSON-LD(WebSite·FAQPage)
 
@@ -127,8 +128,9 @@ pokemoa/
    (`index.html`, `privacy.html`, `terms.html`, `sitemap.xml`, `robots.txt`)
 2. **AdSense**: `index.html` 상단의 주석 처리된 `adsbygoogle.js` 스크립트를 풀고 `ca-pub-…` 입력,
    각 슬롯 자리에 `<ins class="adsbygoogle" data-ad-client="ca-pub-…" data-ad-slot="…">` 삽입
-3. **쿠팡 파트너스**: `data-affiliate="coupang-30th"`, `data-affiliate="coupang-supplies"` 링크의
-   `href`를 실제 파트너스 링크로 교체 (현재는 클릭 시 안내 토스트만 표시)
+3. **쿠팡 파트너스**: `data-affiliate="coupang-30th"` 링크의 `href`를 실제 파트너스 링크로 교체 (현재는 클릭 시 안내 토스트만 표시).
+   `coupang-supplies`는 `https://link.coupang.com/a/iKC6PvZjtQ`(탑로더+슬리브 세트)로 **연동 완료** — 이미지는 핫링크 대신
+   `assets/coupang-supplies.jpg`에 저장했고, 상품·가격이 바뀌면 이미지와 문구(8,600원 · 2026-11-17 기준)도 함께 갱신해야 합니다.
 4. **운영 문의**: `tpl-contact`의 폼을 실제 폼 백엔드(Formspree·Google Forms 등)나 메일 주소로 연결,
    `privacy.html` 문의처에 운영 이메일 기입
 5. **실데이터**: 매장 위치는 Overpass API 실시간 조회 + `assets/js/data.js`의 `osmSnapshot`(2026-11-17 스냅샷)을 사용합니다.

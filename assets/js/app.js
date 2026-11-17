@@ -1171,6 +1171,9 @@
 
   /* --------------------------------------------------------- 제휴 링크 */
   $$("[data-affiliate]").forEach(function (a) {
+    // 실제 파트너스 링크가 들어간 자리는 그대로 새 창으로 이동한다
+    var href = a.getAttribute("href") || "";
+    if (/^https?:/i.test(href)) return;
     a.addEventListener("click", function (e) {
       e.preventDefault();
       toast("제휴 링크 자리입니다. 배포 시 실제 쿠팡 파트너스 링크로 교체됩니다.");
