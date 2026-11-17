@@ -6,6 +6,7 @@
 프레임워크 없이 HTML/CSS/JS로 동작하며, 지도는 Leaflet + OpenStreetMap 타일, 주변 매장은 Overpass API로 조회합니다.
 로고는 패밀리 브랜드(복지모아)의 벤토 그리드 심볼 형태를 그대로 쓰고 색만 포케모아 브랜드(네이비 + 옐로)로 바꿨습니다.
 
+- **배포 주소**: `https://moa-kr.github.io/pokemoa/` — 2026-11-18 GitHub 계정명을 `bokjinabi` → `moa-kr`로 바꾸면서 Pages 주소도 옮겼습니다(같은 저장소 `moa-kr/pokemoa`). 이전 주소 `https://bokjinabi.github.io/pokemoa/` 는 404이므로 canonical·og:url·JSON-LD·sitemap·robots는 새 주소를 씁니다.
 - 데이터 기준일: 2026-11-17 (지도 스냅샷도 같은 날짜)
 - 대상 뷰포트: 모바일 390×844, 데스크톱 1280×800 (그 외 반응형)
 - **v2 변경**: 첫 화면을 「동네에서 찾기」(실제 지도)로, 정가 구매처를 2번 탭으로 이동. SVG 약도 → 실제 OSM 지도 + 실시간 주변 매장 조회 + 로딩 UI
@@ -175,8 +176,8 @@ cloudflared tunnel --url http://127.0.0.1:3100   # 출력된 https://….tryclou
 
 ## 5. 배포 전에 바꿀 것 (중요)
 
-1. **도메인**: `https://bokjinabi.github.io/pokemoa` 를 실제 도메인으로 일괄 치환
-   (`index.html`, `privacy.html`, `terms.html`, `sitemap.xml`, `robots.txt`)
+1. **도메인**: 소스에는 `https://moa-kr.github.io/pokemoa` 플레이스홀더가 남아 있고, 배포본을 만드는 `tmp/pokemoa-build/deploy.sh`가 `https://moa-kr.github.io/pokemoa`로 일괄 치환합니다
+   (`index.html`, `privacy.html`, `terms.html`, `sitemap.xml`, `robots.txt` 대상). 도메인을 또 바꾸려면 `deploy.sh`의 `LIVE` 한 줄만 고쳐 다시 실행하면 됩니다
 2. **AdSense**: `index.html` 상단의 주석 처리된 `adsbygoogle.js` 스크립트를 풀고 `ca-pub-…` 입력,
    각 슬롯 자리에 `<ins class="adsbygoogle" data-ad-client="ca-pub-…" data-ad-slot="…">` 삽입
 3. **쿠팡 파트너스**: 도감·가이드(`data-affiliate-card="coupang-supplies"`)와 정가 구매처(`data-affiliate-card="coupang-30th"`) 모두 **쿠팡 파트너스가 발급한 위젯 iframe 2개**로 구성되어 있습니다(`https://coupa.ng/cq5BV0` · `https://coupa.ng/cq5DGN`, 각 120×240, `data-affiliate-slot="…-widget-1/2"`) — 배너 상품을 바꾸려면 파트너스에서 새 위젯 코드를 받아
@@ -194,15 +195,15 @@ cloudflared tunnel --url http://127.0.0.1:3100   # 출력된 https://….tryclou
 
 ## 6. 검증 기록
 
-- **v3.9 GA4 확인 항목(2026-11-17 라이브 `https://bokjinabi.github.io/pokemoa/`)**: `index.html`·`privacy.html`·`terms.html` 모두 `<head>` 상단에서 `gtag/js?id=G-LWRMBRD0X9` 로드(`typeof gtag === "function"`), `dataLayer`에 `js`·`config`와 `tab_view` 적재, `google-analytics.com/g/collect` 요청에 `tid=G-LWRMBRD0X9`·`en=page_view`로 실제 전송(3페이지 모두). 탭 전환(initial/switch)·반경 20km 변경·도감 세트 선택(m5)·도감/FAQ 더보기·정가 구매처(SSG) 링크 클릭·쿠팡 파트너스 카드 클릭·중계 연결 실패(`status:"error"`)까지 `trackEvent` 8종이 `dataLayer`에 그대로 쌓이는 것을 실제 브라우저 세션에서 확인. `window.gtag`를 지우고 탭을 바꿔도 화면은 그대로 동작(스니펫 차단·미리보기 환경에서도 안전). 자사 자산 4xx/5xx 0건, 페이지 오류 없음(Overpass API 504는 이 환경 네트워크 제한으로 기존과 같음).
+- **v3.9 GA4 확인 항목(2026-11-17 라이브 `https://moa-kr.github.io/pokemoa/`)**: `index.html`·`privacy.html`·`terms.html` 모두 `<head>` 상단에서 `gtag/js?id=G-LWRMBRD0X9` 로드(`typeof gtag === "function"`), `dataLayer`에 `js`·`config`와 `tab_view` 적재, `google-analytics.com/g/collect` 요청에 `tid=G-LWRMBRD0X9`·`en=page_view`로 실제 전송(3페이지 모두). 탭 전환(initial/switch)·반경 20km 변경·도감 세트 선택(m5)·도감/FAQ 더보기·정가 구매처(SSG) 링크 클릭·쿠팡 파트너스 카드 클릭·중계 연결 실패(`status:"error"`)까지 `trackEvent` 8종이 `dataLayer`에 그대로 쌓이는 것을 실제 브라우저 세션에서 확인. `window.gtag`를 지우고 탭을 바꿔도 화면은 그대로 동작(스니펫 차단·미리보기 환경에서도 안전). 자사 자산 4xx/5xx 0건, 페이지 오류 없음(Overpass API 504는 이 환경 네트워크 제한으로 기존과 같음).
 
-- Playwright(Chromium)로 배포 URL(https://bokjinabi.github.io/pokemoa/)에 실제 접속해
+- Playwright(Chromium)로 배포 URL(https://moa-kr.github.io/pokemoa/)에 실제 접속해
   데스크톱 1280×900, 모바일 390×844에서 확인
-- **v3.8 확인 항목(2026-11-17 라이브)**: ① 로컬 `node relay/server.js` 문법 검사·`/health` 200 응답(`{ok, service:"pokemoa-relay", version:"1.0"}`), `OPTIONS /api/nearby` → 204 + `access-control-allow-origin: *`, `POST` → 405(조회 전용), 잘못된 lat → 400. ② 업체 응답을 흉내낸 스텁으로 점포·상품·수량 파싱, 체인 1곳이 403 HTML을 돌려줘도 나머지는 정상(`Promise.allSettled` 격리), 세븐일레븐은 키 미설정 시 `status:"error"`로 격리 — 23/23 통과(`tmp/pokemoa-relay-test/stub-test.js`). ③ `PokeMoaMap.applyRelay` 병합 로직(새 매장 추가·같은 자리 OSM 매장에 실제 재고 덮어쓰기·해제 시 원상복구·중복 없음·`out_of_stock`→`없음`) 19/19 통과. ④ 라이브 모바일 390×844(`downloads/pokemoa-v38-relay-ui.png`, `pokemoa-v38-relay-bar.png`): 상단 `실시간 중계` 바·`중계 연결` 버튼·연결 모달(Termux·cloudflared 안내 3단계) 정상 노출, 닫기/열기 동작. ⑤ `?relay=https://relay-demo.invalid` 자동 연결 시도 → `중계 응답 없음 · relay-demo.invalid · 제보·샘플 재고로 표시`로 폴백하고 지도·목록은 그대로(실패한 주소는 저장하지 않음). ⑥ `https://raw.githubusercontent.com/bokjinabi/pokemoa/main/relay/server.js` 200 · 24,183바이트(로컬 파일과 동일).
+- **v3.8 확인 항목(2026-11-17 라이브)**: ① 로컬 `node relay/server.js` 문법 검사·`/health` 200 응답(`{ok, service:"pokemoa-relay", version:"1.0"}`), `OPTIONS /api/nearby` → 204 + `access-control-allow-origin: *`, `POST` → 405(조회 전용), 잘못된 lat → 400. ② 업체 응답을 흉내낸 스텁으로 점포·상품·수량 파싱, 체인 1곳이 403 HTML을 돌려줘도 나머지는 정상(`Promise.allSettled` 격리), 세븐일레븐은 키 미설정 시 `status:"error"`로 격리 — 23/23 통과(`tmp/pokemoa-relay-test/stub-test.js`). ③ `PokeMoaMap.applyRelay` 병합 로직(새 매장 추가·같은 자리 OSM 매장에 실제 재고 덮어쓰기·해제 시 원상복구·중복 없음·`out_of_stock`→`없음`) 19/19 통과. ④ 라이브 모바일 390×844(`downloads/pokemoa-v38-relay-ui.png`, `pokemoa-v38-relay-bar.png`): 상단 `실시간 중계` 바·`중계 연결` 버튼·연결 모달(Termux·cloudflared 안내 3단계) 정상 노출, 닫기/열기 동작. ⑤ `?relay=https://relay-demo.invalid` 자동 연결 시도 → `중계 응답 없음 · relay-demo.invalid · 제보·샘플 재고로 표시`로 폴백하고 지도·목록은 그대로(실패한 주소는 저장하지 않음). ⑥ `https://raw.githubusercontent.com/moa-kr/pokemoa/main/relay/server.js` 200 · 24,183바이트(로컬 파일과 동일).
 - **실측 한계(2026-11-17)**: 이 작업을 한 데이터센터 회선에서는 이마트24 `everse` 403(WAF), 세븐일레븐 403(Incapsula), CU는 200이지만 `/api/store`의 점포별 `stock`이 `null`이라 실재고 0곳이었습니다. 집 회선(태블릿)에서의 결과는 `curl 'http://127.0.0.1:3100/api/nearby?lat=36.0733&lng=129.3947'`의 `sources`로 바로 확인할 수 있습니다.
 - v3 확인 항목: 전국 17개 시·도 · 55개 지역 2단 셀렉트와 동네 검색(제주·해운대)·기본 지역 포항 북구, 지역 변경 시 지도 중심 이동과 재조회, 포항 북구 20km 활성(반경 20000 · `out center 100` 쿼리), 제주시 20km 유지(allow20), 서울 강남 자동 5km 전환 + 20km 비활성·`도심은 5km까지 지원` 안내, 로딩 스피너·진행 바, 목록 10곳+더보기(18곳→접힘), 마커 카드·브랜드 필터(CU 6곳), 지난 일정 접기(`지난 일정 보기 (6건)`)·캘린더 토글, 모바일 390px 가로 넘침 없음, 페이지 에러 0건
-- v3.2 확인 항목(2026-11-17 라이브 `https://bokjinabi.github.io/pokemoa/`): 지도 제목 `내 주변 편의점 4사, 어떤 카드가 있는지 한눈에`, 라이트(저채도) 타일 렌더링(워터마크 없음), 둥근 핀 0개 → 말풍선 마커 18개(`CU · 입고 3종`/`GS · 입고 3종`/`확인`/`없음`), 편의점 4사별 현황 바 5장(전체 18곳·재고 6·확인 9·없음 3 / GS25 6곳·재고 3 / CU 6곳·재고 2 / 세븐일레븐 5곳·재고 1 / 이마트24 1곳·재고 없음), `카드` 필터 줄·브랜드 칩 줄 제거(productRow=false), 정렬 드롭다운 기본값 `재고 우선`, `재고 있는 매장만` 토글 → 6곳·말풍선 6개로 동기 축소, CU 카드 클릭 → 6곳, 필터 초기화 복원, 20km 선택 시 클러스터 `18곳 · 재고 6` 1개로 묶임(확대하면 말풍선), 서울 강남 자동 5km·20km 비활성·`도심은 5km까지 지원`(21곳), 목록 10곳 → `더보기 (8개 더 보기)` → 18곳 → 접기, 지난 일정 접기·도감 34장·탭 전환 후 지도 복귀까지 정상, 모바일 390px 가로 넘침 0·상품 칩 11px, 페이지 오류 0건(콘솔·요청 실패 0건, Overpass 502는 이 환경 네트워크 제한)
-- **v3.3 확인 항목(2026-11-17 라이브 `https://bokjinabi.github.io/pokemoa/#guide`)**:
+- v3.2 확인 항목(2026-11-17 라이브 `https://moa-kr.github.io/pokemoa/`): 지도 제목 `내 주변 편의점 4사, 어떤 카드가 있는지 한눈에`, 라이트(저채도) 타일 렌더링(워터마크 없음), 둥근 핀 0개 → 말풍선 마커 18개(`CU · 입고 3종`/`GS · 입고 3종`/`확인`/`없음`), 편의점 4사별 현황 바 5장(전체 18곳·재고 6·확인 9·없음 3 / GS25 6곳·재고 3 / CU 6곳·재고 2 / 세븐일레븐 5곳·재고 1 / 이마트24 1곳·재고 없음), `카드` 필터 줄·브랜드 칩 줄 제거(productRow=false), 정렬 드롭다운 기본값 `재고 우선`, `재고 있는 매장만` 토글 → 6곳·말풍선 6개로 동기 축소, CU 카드 클릭 → 6곳, 필터 초기화 복원, 20km 선택 시 클러스터 `18곳 · 재고 6` 1개로 묶임(확대하면 말풍선), 서울 강남 자동 5km·20km 비활성·`도심은 5km까지 지원`(21곳), 목록 10곳 → `더보기 (8개 더 보기)` → 18곳 → 접기, 지난 일정 접기·도감 34장·탭 전환 후 지도 복귀까지 정상, 모바일 390px 가로 넘침 0·상품 칩 11px, 페이지 오류 0건(콘솔·요청 실패 0건, Overpass 502는 이 환경 네트워크 제한)
+- **v3.3 확인 항목(2026-11-17 라이브 `https://moa-kr.github.io/pokemoa/#guide`)**:
   세트 칩 9종(30th CELEBRATION·어비스아이·블랙볼트·로켓단의 영광·열풍의 아레나·배틀 파트너즈·테라스탈 페스타 ex·초전 브레이커·스타터 세트) 렌더링,
   세트를 고르면 요약(발매일·구성·정가·수록 카드·KREAM 즉시구매)·비교표·계산기 기준 정가·카드 도감·레어도 칩이 함께 전환 —
   m6a 4행(정가 70,000 + SSG 73,000 +4% + KREAM 슈링크 76,000 +9% + 논슈링크 72,000 +3%)·34장,
@@ -213,11 +214,11 @@ cloudflared tunnel --url http://127.0.0.1:3100   # 출력된 https://….tryclou
   레어도 칩은 세트별 실제 값만 생성(SV8a `SAR·UR`, SV10 `SAR·UR·RR`, M5 `MUR·SAR·SR` 등), 카드 클릭 모달(SV8a 블래키 ex SAR 217/187) 정상,
   홈 인기 카드팩 카드 클릭 → 해당 세트 도감으로 이동(블랙볼트 확인), 로고·파비콘 교체(헤더 마크 rect 4개 · `#ffcb05` · 네이비 라운드 스퀘어 `#101f3c`),
   모바일 390px 가로 넘침 0 · 세트 칩 가로 스크롤 · 인트로 문단 노출 · 세트 전환 정상, 페이지 오류 0건
-- **v3.4 확인 항목(2026-11-17 라이브 `https://bokjinabi.github.io/pokemoa/#guide`)**: 제휴 상품 이미지 `assets/coupang-supplies.jpg` 200(55.9KB · 480×480)로 로드(`naturalWidth` 480, 실패 요청 0건), 이미지·CTA 두 링크 모두 `https://link.coupang.com/a/iKC6PvZjtQ`(`target="_blank"` · `rel="noopener noreferrer sponsored"`), 클릭하면 새 탭으로 쿠팡 상품 페이지(상품번호 9732320873 · 탑로더+슬리브 세트)로 이동 — `app.js`가 `http(s)` 링크는 토스트로 막지 않으며 `coupang-30th` 자리(플레이스홀더)는 기존 토스트 유지,
+- **v3.4 확인 항목(2026-11-17 라이브 `https://moa-kr.github.io/pokemoa/#guide`)**: 제휴 상품 이미지 `assets/coupang-supplies.jpg` 200(55.9KB · 480×480)로 로드(`naturalWidth` 480, 실패 요청 0건), 이미지·CTA 두 링크 모두 `https://link.coupang.com/a/iKC6PvZjtQ`(`target="_blank"` · `rel="noopener noreferrer sponsored"`), 클릭하면 새 탭으로 쿠팡 상품 페이지(상품번호 9732320873 · 탑로더+슬리브 세트)로 이동 — `app.js`가 `http(s)` 링크는 토스트로 막지 않으며 `coupang-30th` 자리(플레이스홀더)는 기존 토스트 유지,
   카드 하단에 대가성 문구 노출, 데스크톱 1280×900 · 모바일 390×844 가로 넘침 0, 페이지 오류 0건
   (단, 이 환경의 헤드리스 크롬에서 상품 페이지 자체는 쿠팡 봇 차단 `Access Denied`가 뜹니다 — 일반 브라우저·한국 IP에서는 정상)
-- **v3.5 확인 항목(2026-11-17 라이브 `https://bokjinabi.github.io/pokemoa/#guide`)**: 제휴 상품 카드 본문에서 가격·할인 문구가 사라지고 `개봉한 카드를 바로 넣어 보관하는 3×4인치 탑로더와 슬리브 세트입니다. 최신 가격과 배송 조건은 쿠팡 상품 페이지에서 확인해 주세요.`만 남음(본문에 `원`·`정가`·`쿠폰`·`2026-11-17` 표기 없음), 이미지 `assets/coupang-supplies.jpg` 정상 로드, 이미지·CTA 링크 `https://link.coupang.com/a/iKC6PvZjtQ`(`target="_blank"` · `rel="noopener noreferrer sponsored"`) 유지, 대가성 문구 유지, 데스크톱 1280×900 · 모바일 390×844 가로 넘침 0, 페이지 오류 0건
-- **v3.6 확인 항목(2026-11-17 라이브 `https://bokjinabi.github.io/pokemoa/#guide`)**:
+- **v3.5 확인 항목(2026-11-17 라이브 `https://moa-kr.github.io/pokemoa/#guide`)**: 제휴 상품 카드 본문에서 가격·할인 문구가 사라지고 `개봉한 카드를 바로 넣어 보관하는 3×4인치 탑로더와 슬리브 세트입니다. 최신 가격과 배송 조건은 쿠팡 상품 페이지에서 확인해 주세요.`만 남음(본문에 `원`·`정가`·`쿠폰`·`2026-11-17` 표기 없음), 이미지 `assets/coupang-supplies.jpg` 정상 로드, 이미지·CTA 링크 `https://link.coupang.com/a/iKC6PvZjtQ`(`target="_blank"` · `rel="noopener noreferrer sponsored"`) 유지, 대가성 문구 유지, 데스크톱 1280×900 · 모바일 390×844 가로 넘침 0, 페이지 오류 0건
+- **v3.6 확인 항목(2026-11-17 라이브 `https://moa-kr.github.io/pokemoa/#guide`)**:
   도감 `수록 카드와 레어도` 첫 화면이 **4장**(`#dexGrid .dex-card` 4)이고 바로 아래에 `더보기 (30장 더 보기)` 노출(전체 34장),
   버튼 클릭 → **34장 + `접기`**(`aria-expanded="true"`), 다시 클릭 → 4장으로 복귀,
   세트 칩 `테라스탈 페스타 ex` 전환 → 다시 **4장** + `더보기 (10장 더 보기)`(전체 14장)로 리셋, 30th 복귀 정상,
@@ -226,7 +227,7 @@ cloudflared tunnel --url http://127.0.0.1:3100   # 출력된 https://….tryclou
   상품 이미지(212px)·상품명(`포켓몬 카드 탑로더 + 슬리브 세트 50개, 1세트, 클리어`)·`쇼핑하기` 링크가 뜨고, 카드 안에 `원·정가·할인·쿠폰` 문자열 0건,
   상단 `쿠팡 파트너스`·`제휴 상품` 라벨과 하단 대가성 문구 유지,
   데스크톱 1280×900 `scrollWidth 1280`, 모바일 390×844 `scrollWidth 390`(가로 넘침 0)에서 모두 iframe 120×240 로드, 페이지 오류·실패 요청 0건
-- **v3.7 확인 항목(2026-11-17 라이브 `https://bokjinabi.github.io/pokemoa/#guide`)**:
+- **v3.7 확인 항목(2026-11-17 라이브 `https://moa-kr.github.io/pokemoa/#guide`)**:
   FAQ 첫 화면이 **3문항**만 보이고(`.faq-item` 표시 3 / 전체 8) 바로 아래 `더보기 (5개 더 보기)` 노출 → 클릭 시 **8문항 + `접기`**(`aria-expanded="true"`) → 다시 클릭하면 3문항 복귀(펼쳐 둔 답변은 닫힘),
   도감·가이드 제휴 카드의 위젯 행은 **폭 316px · `gap:12px` · `flex-wrap:nowrap` · `justify-content:center`**, 슬롯 2개 x=69·201(각 120×240), iframe `https://coupa.ng/cq5BV0` · `https://coupa.ng/cq5DGN` 실측 120×240,
   두 iframe 안에 `partners.coupangcdn.com` 위젯이 로드되어 상품 1 `포켓몬 카드 탑로더 + 슬리브 세트 50개, 1세트, 클리어`, 상품 2 `BERYFAM 35PT 자석 카드 케이스 고투명 UV 차단 포켓몬 원피스 TCG 스포츠카드`와 각 `쇼핑하기` 링크가 뜸,
