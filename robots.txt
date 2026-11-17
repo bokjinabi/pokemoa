@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+
+# 포케모아(PokeMoa) — 비공식 정보 사이트
+# 배포 도메인을 정한 뒤 Sitemap 주소를 실제 도메인으로 바꿔 주세요.
+Sitemap: https://bokjinabi.github.io/pokemoa/sitemap.xml
