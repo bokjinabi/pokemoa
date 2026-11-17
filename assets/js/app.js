@@ -89,6 +89,9 @@
   var mapReady = false;
   var gotFirstData = false;
   var isLoadingMap = true;
+  var LIST_PAGE = 10;
+  var listExpanded = false;
+  var currentStores = [];
   var filterState = {
     region: regionSelect ? regionSelect.value : "pohang-north",
     brand: "all",
@@ -142,9 +145,15 @@
     if (storeListEl) storeListEl.hidden = !(gotFirstData && !isLoadingMap);
   }
 
-  /* 매장 목록 */
+  /* 매장 목록: 처음 10곳 + 더보기 */
   function renderStores(list) {
+    currentStores = (list || []).slice();
+    drawStoreList();
+  }
+
+  function drawStoreList() {
     if (!storeListEl) return;
+    var list = currentStores;
     var counts = { in: 0, check: 0, none: 0 };
     list.forEach(function (s) { counts[s.status] += 1; });
     if (mapCountEl) {
@@ -163,7 +172,10 @@
       return;
     }
 
-    list.forEach(function (s) {
+    var shown = listExpanded ? list : list.slice(0, LIST_PAGE);
+    var selectedId = (window.PokeMoaMap && window.PokeMoaMap.getState) ? window.PokeMoaMap.getState().selectedId : null;
+
+    shown.forEach(function (s) {
       var b = D.brandMeta[s.brand] || { label: s.brand, short: "?", color: "#1b2a4a" };
       var dist = s.distance < 1000 ? Math.round(s.distance) + "m" : (s.distance / 1000).toFixed(1) + "km";
       var item = document.createElement("li");
@@ -189,15 +201,60 @@
           mapShell.scrollIntoView({ behavior: "smooth", block: "center" });
         }
       });
+      if (selectedId && s.id === selectedId) btn.classList.add("is-active");
       item.appendChild(btn);
       storeListEl.appendChild(item);
     });
+
+    if (list.length > LIST_PAGE) {
+      var wrap = document.createElement("li");
+      wrap.className = "store-more-wrap";
+      var more = document.createElement("button");
+      more.type = "button";
+      more.className = "store-more";
+      more.id = "storeMore";
+      more.setAttribute("aria-expanded", listExpanded ? "true" : "false");
+      more.textContent = listExpanded
+        ? "접기 (처음 " + LIST_PAGE + "곳만 보기)"
+        : "더보기 (" + (list.length - LIST_PAGE) + "개 더 보기)";
+      more.addEventListener("click", function () {
+        listExpanded = !listExpanded;
+        drawStoreList();
+        if (listExpanded && storeListEl) {
+          var first = storeListEl.querySelectorAll(".store-item")[LIST_PAGE - 1];
+          if (first && first.scrollIntoView) first.scrollIntoView({ block: "nearest" });
+        }
+      });
+      wrap.appendChild(more);
+      storeListEl.appendChild(wrap);
+    }
   }
 
   document.addEventListener("pokemoa:loading", function (e) { renderLoading(e.detail); });
 
+  function syncRadiusUI(allow20, radius) {
+    var r20 = $("#radius20");
+    var note = $("#radiusNote");
+    if (r20) {
+      r20.disabled = !allow20;
+      r20.classList.toggle("is-disabled", !allow20);
+      r20.setAttribute("aria-disabled", allow20 ? "false" : "true");
+      r20.title = allow20
+        ? "지방·외곽 지역에서만 선택할 수 있습니다 (최대 100곳 표시)"
+        : "도심은 5km까지 지원합니다";
+    }
+    if (note) note.hidden = !!allow20;
+    if (typeof radius === "number") {
+      filterState.radius = radius;
+      $$(".radius-btn").forEach(function (b) {
+        b.classList.toggle("is-active", Number(b.getAttribute("data-radius")) === radius);
+      });
+    }
+  }
+
   document.addEventListener("pokemoa:data", function (e) {
     var d = e.detail || {};
+    syncRadiusUI(d.allow20, d.radius);
     renderBadge(d.badge);
     if (d.badge && d.badge.text && mapStatusText) {
       mapStatusText.title = d.error ? "마지막 실시간 조회 오류: " + d.error : "";
@@ -271,6 +328,7 @@
       filterState.region = regionSelect.value;
       if (!filterState.region) return;
       gotFirstData = false;
+      listExpanded = false;
       if (storeSkeleton) storeSkeleton.hidden = false;
       if (storeListEl) storeListEl.hidden = true;
       if (mapReady) window.PokeMoaMap.setRegion(filterState.region);
@@ -284,6 +342,7 @@
       $$(".brand-chip", brandChips).forEach(function (b) { b.classList.remove("is-active"); });
       btn.classList.add("is-active");
       filterState.brand = btn.getAttribute("data-brand");
+      listExpanded = false;
       if (mapReady) window.PokeMoaMap.setBrand(filterState.brand);
     });
   }
@@ -293,6 +352,7 @@
       $$(".radius-btn").forEach(function (b) { b.classList.remove("is-active"); });
       btn.classList.add("is-active");
       filterState.radius = Number(btn.getAttribute("data-radius"));
+      listExpanded = false;
       if (mapReady) window.PokeMoaMap.setRadius(filterState.radius);
     });
   });
@@ -302,6 +362,7 @@
     resetBtn.addEventListener("click", function () {
       filterState.brand = "all";
       filterState.radius = 3000;
+      listExpanded = false;
       $$(".brand-chip").forEach(function (b) {
         b.classList.toggle("is-active", b.getAttribute("data-brand") === "all");
       });
@@ -318,35 +379,97 @@
   }
 
   /* ------------------------------------------------------------- 캘린더 */
-  function buildCalendar() {
+  /* 오늘(KST) 이후 일정만 기본 표시 · 지난 기록은 접이식 */
+  function kstNow() {
+    var d = new Date(Date.now() + 9 * 3600 * 1000);
+    return { y: d.getUTCFullYear(), m: d.getUTCMonth() + 1, d: d.getUTCDate() };
+  }
+  function ymdNum(y, m, d) { return y * 10000 + m * 100 + d; }
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+
+  var calShowPast = false;
+
+  function renderCalendar() {
     var grid = $("#calGrid");
     if (!grid) return;
     var c = D.calendar;
-    for (var i = 0; i < c.firstWeekday; i++) {
-      var empty = document.createElement("div");
-      empty.className = "cal-cell is-empty";
-      grid.appendChild(empty);
-    }
+    var year = c.year || 2026;
+    var month = c.month || 11;
+    var today = kstNow();
+    var todayNum = ymdNum(today.y, today.m, today.d);
+    var sameMonth = today.y === year && today.m === month;
+    var html = Array.prototype.map.call(grid.querySelectorAll(".cal-dow"), function (n) {
+      return n.outerHTML;
+    }).join("");
+
+    for (var i = 0; i < c.firstWeekday; i++) html += '<div class="cal-cell is-empty"></div>';
     for (var d = 1; d <= c.days; d++) {
-      var cell = document.createElement("div");
-      cell.className = "cal-cell" + (d === c.today ? " is-today" : "");
-      var num = document.createElement("span");
-      num.textContent = d;
-      cell.appendChild(num);
+      var isPast = ymdNum(year, month, d) < todayNum;
+      var isToday = sameMonth && d === today.d;
       var marks = c.marks[d];
-      if (marks && marks.length) {
-        var m = document.createElement("span");
-        m.className = "marks";
-        marks.forEach(function (k) {
-          var dot = document.createElement("i");
-          dot.className = "m-" + k;
-          m.appendChild(dot);
-        });
-        cell.appendChild(m);
-      }
-      cell.setAttribute("aria-label", "11월 " + d + "일" + (marks ? " 입고 예상 표시" : ""));
-      grid.appendChild(cell);
+      var show = marks && marks.length && (!isPast || calShowPast);
+      html += '<div class="cal-cell' + (isToday ? " is-today" : "") + (isPast ? " is-past" : "") +
+        '" aria-label="' + month + '월 ' + d + '일' + (show ? " 입고 예상 표시" : (isPast ? " 지난 날짜" : "")) + '">' +
+        "<span>" + d + "</span>" +
+        (show ? '<span class="marks">' + marks.map(function (k) { return '<i class="m-' + k + '"></i>'; }).join("") + "</span>" : "") +
+        "</div>";
     }
+    grid.innerHTML = html;
+  }
+
+  function buildCalendar() { renderCalendar(); }
+
+  var calPastToggle = $("#calPastToggle");
+  if (calPastToggle) {
+    calPastToggle.addEventListener("click", function () {
+      calShowPast = !calShowPast;
+      calPastToggle.setAttribute("aria-expanded", calShowPast ? "true" : "false");
+      calPastToggle.textContent = calShowPast ? "지난 입고일 숨기기" : "지난 입고일 보기";
+      var note = $("#calNote");
+      if (note) note.textContent = calShowPast ? "지난 입고일까지 모두 표시합니다." : "오늘 이후 입고 예정일만 표시합니다.";
+      renderCalendar();
+    });
+  }
+
+  /* 추첨 타임라인: 지난 일정 접기 */
+  function buildScheduleFold() {
+    var panel = $("#panel-schedule");
+    if (!panel) return;
+    var today = kstNow();
+    var todayNum = ymdNum(today.y, today.m, today.d);
+    var ul = panel.querySelector(".timeline");
+    if (ul && !panel.querySelector(".timeline-now-label")) {
+      var past = [];
+      Array.prototype.forEach.call(ul.querySelectorAll("li"), function (li) {
+        var end = li.getAttribute("data-end");
+        if (!end) return;
+        if (Number(end.replace(/-/g, "")) < todayNum) past.push(li);
+      });
+
+      var label = document.createElement("p");
+      label.className = "timeline-now-label";
+      label.textContent = past.length
+        ? "다가오는 일정 · 지난 기록 " + past.length + "건은 아래에 접어 두었습니다."
+        : "다가오는 일정";
+      ul.parentNode.insertBefore(label, ul);
+
+      if (past.length) {
+        var box = document.createElement("details");
+        box.className = "past-block";
+        box.id = "pastTimeline";
+        var sum = document.createElement("summary");
+        sum.textContent = "지난 일정 보기 (" + past.length + "건)";
+        var pul = document.createElement("ul");
+        pul.className = "timeline is-past";
+        past.forEach(function (li) { pul.appendChild(li); });
+        box.appendChild(sum);
+        box.appendChild(pul);
+        ul.parentNode.appendChild(box);
+      }
+    }
+
+    var chip = panel.querySelector(".cal-head .chip");
+    if (chip) chip.textContent = "오늘 " + pad2(today.m) + "-" + pad2(today.d);
   }
 
   /* --------------------------------------------------------------- 도감 */
@@ -621,6 +744,7 @@
 
   /* --------------------------------------------------------------- 초기화 */
   buildCalendar();
+  buildScheduleFold();
   renderDex();
 
   var hash = (location.hash || "").replace("#", "");

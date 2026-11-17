@@ -25,6 +25,9 @@ window.PokeMoaMap = (function () {
   var OVERPASS_TIMEOUT = 8000;   /* 8초 안에 안 오면 내장 좌표로 먼저 표시 */
   var LIVE_WINDOW = 45000;       /* 늦게라도 실시간 응답이 오면 교체 */
   var MAX_MARKERS = 90;
+  var MAX_MARKERS_20 = 100;
+  var METRO_IDS = ["seoul-gangnam", "seoul-hongdae", "seoul-nowon", "busan-seomyeon"];
+  var METRO_RADIUS_M = 12000;   /* 내 위치가 대도시 도심 반경 12km 안이면 도심으로 본다 */
 
   var st = {
     map: null,
@@ -51,7 +54,8 @@ window.PokeMoaMap = (function () {
     snapshotLabel: "",
     pendingLive: false,
     currentReq: null,
-    badgeWasSnapshot: false
+    badgeWasSnapshot: false,
+    metro: false
   };
 
   var el = {};
@@ -248,15 +252,17 @@ window.PokeMoaMap = (function () {
   function renderMarkers() {
     st.layer.clearLayers();
     st.markers = {};
+    var cap = st.radius >= 20000 ? MAX_MARKERS_20 : MAX_MARKERS;
     var list = st.all.filter(match).slice().sort(function (a, b) {
       return a.distance - b.distance;
     });
-    /* 카테고리 고르게 보이도록 브랜드 우선순위 → 거리 순으로 상한 적용 */
+    /* 가까운 순으로 상한 적용 (20km는 최대 100곳) */
+    if (list.length > cap) list = list.slice(0, cap);
+    /* 마커는 브랜드가 고르게 보이도록 브랜드 → 거리 순으로 그린다 */
     list.sort(function (a, b) {
       var d = brandOrder(a.brand) - brandOrder(b.brand);
       return d !== 0 ? d : a.distance - b.distance;
     });
-    if (st.brand === "all") list = list.slice(0, MAX_MARKERS);
     st.visible = list.map(function (s) { return s; });
     st.visible.sort(function (a, b) { return a.distance - b.distance; });
 
@@ -374,11 +380,11 @@ window.PokeMoaMap = (function () {
       return { kind: "busy", text: "OpenStreetMap에 주변 매장을 조회하는 중입니다 (최대 8초, 지연 시 내장 좌표로 표시)", action: false };
     }
     if (st.source === "live") {
-      return {
-        kind: "live",
-        text: "실시간 조회 · OpenStreetMap 주변 매장 " + st.all.length + "곳 (Overpass API)",
-        action: false
-      };
+      var cap = st.radius >= 20000 ? MAX_MARKERS_20 : MAX_MARKERS;
+      var txt = st.all.length > cap
+        ? "실시간 조회 · 주변 매장 " + st.all.length + "곳 중 가까운 " + cap + "곳 표시 (Overpass API)"
+        : "실시간 조회 · OpenStreetMap 주변 매장 " + st.all.length + "곳 (Overpass API)";
+      return { kind: "live", text: txt, action: false };
     }
     return {
       kind: "snapshot",
@@ -401,6 +407,8 @@ window.PokeMoaMap = (function () {
       center: st.center,
       radius: st.radius,
       total: st.all.length,
+      allow20: allow20(),
+      markerCap: st.radius >= 20000 ? MAX_MARKERS_20 : MAX_MARKERS,
       snapshotAt: (D.osmSnapshot || {}).fetchedAt || "",
       error: st.lastError
     });
@@ -417,12 +425,14 @@ window.PokeMoaMap = (function () {
     var lat = center.lat.toFixed(5);
     var lng = center.lng.toFixed(5);
     var r = Math.round(radius);
+    /* 넓은 반경(20km)은 결과가 수천 건이 될 수 있어 100건 상한을 건다 */
+    var out = radius >= 20000 ? "out center 100;" : "out center;";
     return "[out:json][timeout:8];(" +
       'nwr(around:' + r + "," + lat + "," + lng + ')[shop=convenience];' +
       'nwr(around:' + r + "," + lat + "," + lng + ')[shop=stationery];' +
       'nwr(around:' + r + "," + lat + "," + lng + ')[shop=toys];' +
       'nwr(around:' + r + "," + lat + "," + lng + ')[shop=gift];' +
-      ");out center;";
+      ");" + out;
   }
 
   function fetchOverpass(center, radius) {
@@ -520,6 +530,7 @@ window.PokeMoaMap = (function () {
 
     var center = st.center;
     var radius = st.radius;
+    st.fetchedRadius = radius;
     var req = fetchOverpass(center, radius);
     st.currentReq = req;
 
@@ -568,6 +579,8 @@ window.PokeMoaMap = (function () {
     emit("pokemoa:loaded", {
       source: st.source,
       total: st.all.length,
+      allow20: allow20(),
+      markerCap: st.radius >= 20000 ? MAX_MARKERS_20 : MAX_MARKERS,
       error: st.lastError,
       late: !!liveNow && st.badgeWasSnapshot
     });
@@ -584,14 +597,24 @@ window.PokeMoaMap = (function () {
     }
   }
 
+  function allow20() { return !st.metro; }
+
   function setRadius(radius) {
+    if (radius > 5000 && !allow20()) radius = 5000;
+    var before = st.radius;
     st.radius = radius;
     if (st.ring) st.ring.setRadius(radius);
+    /* 20km는 반경 전체가 보이도록 지도를 맞춘다 */
+    if (radius >= 20000 && st.map && st.ring) {
+      st.map.fitBounds(st.ring.getBounds(), { padding: [18, 18] });
+    }
     renderMarkers();
     pushData();
-    /* 반경이 넓어졌는데 조회 범위가 좁으면 다시 조회 */
-    var need = st.source === "live" && radius > st.fetchedRadius;
-    if (need) load();
+    /* 조회 범위보다 넓어졌으면(스냅샷 포함) 그 반경으로 다시 조회한다 */
+    if (radius > st.fetchedRadius && radius !== before) {
+      renderMarkers();
+      load();
+    }
   }
 
   function setBrand(brand) {
@@ -604,6 +627,8 @@ window.PokeMoaMap = (function () {
     var r = region(id);
     st.regionId = r.id;
     st.origin = "region";
+    st.metro = METRO_IDS.indexOf(r.id) !== -1;
+    if (st.metro && st.radius > 5000) st.radius = 5000;
     st.center = { lat: r.lat, lng: r.lng };
     st.fetchedRadius = st.radius;
     st.source = "snapshot";
@@ -631,6 +656,11 @@ window.PokeMoaMap = (function () {
       st.geoBusy = false;
       st.origin = "geo";
       st.center = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      st.metro = METRO_IDS.some(function (id) {
+        var m = region(id);
+        return meters(st.center, { lat: m.lat, lng: m.lng }) < METRO_RADIUS_M;
+      });
+      if (st.metro && st.radius > 5000) st.radius = 5000;
       st.fetchedRadius = st.radius;
       st.regionId = "";
       if (st.map) {

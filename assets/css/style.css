@@ -1093,7 +1093,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .status-guide b { display: block; font-size: 13px; margin-bottom: 2px; color: var(--ink); }
 
 /* -------------------------------------------------------------- 일정 탭 */
-.split-2 { display: grid; grid-template-columns: 1fr; gap: 16px; }
+.split-2 { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; }
 
 .timeline { list-style: none; margin: 0; padding: 4px 0 0; position: relative; }
 .timeline::before {
@@ -2094,4 +2094,99 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .map-toolbar { padding: 10px 12px; gap: 8px; }
   .map-toolbar .toolbar-row { gap: 8px; }
   .map-shell { height: 330px; }
+}
+
+/* =========================================================================
+ * v2.1 — 매장 목록 10개+더보기 · 20km 반경 · 지난 일정 접기
+ * ========================================================================= */
+.store-more-wrap { padding: 2px 2px 4px; }
+.store-more {
+  width: 100%;
+  border: 1.5px dashed #c8d4e6;
+  background: #f7f9fc;
+  border-radius: 12px;
+  padding: 11px 12px;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.store-more::after { content: "⌄"; font-size: 12px; line-height: 1; }
+.store-more[aria-expanded="true"]::after { content: "⌃"; }
+.store-more:hover { border-color: var(--navy); background: #eef3fb; }
+
+.radius-btn.is-disabled,
+.radius-btn:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+.radius-note {
+  font-size: 11px;
+  font-weight: 700;
+  color: #8a6d1f;
+  background: #fff7dd;
+  border: 1px solid #f2e2ab;
+  border-radius: 999px;
+  padding: 3px 9px;
+  white-space: nowrap;
+}
+
+.timeline-now-label {
+  margin: 0 0 8px;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: #1f4fbe;
+}
+.past-block {
+  margin-top: 6px;
+  border-top: 1px dashed var(--line);
+  padding-top: 10px;
+}
+.past-block > summary {
+  cursor: pointer;
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--muted);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 12px;
+}
+.past-block > summary::-webkit-details-marker { display: none; }
+.past-block > summary::after { content: "⌄"; font-size: 11px; }
+.past-block[open] > summary::after { content: "⌃"; }
+.past-block[open] > summary { color: var(--navy); border-color: #cbd5e5; }
+.past-block .timeline { margin-top: 12px; padding-top: 0; }
+.timeline.is-past .t-title { font-weight: 700; color: #55637a; }
+.timeline.is-past .t-date { color: #8b98ad; }
+.timeline.is-past li.done .dot { background: #b9c4d6; border-color: #b9c4d6; }
+.timeline.is-past .t-tag { background: #eef1f6; color: #7a879c; }
+
+.cal-cell.is-past { color: #a9b3c4; background: #f6f8fb; border-color: #eef1f6; }
+.cal-cell.is-past.is-today { color: #fff; background: var(--navy); border-color: var(--navy); }
+.cal-note { margin: 8px 0 0; font-size: 11px; color: var(--muted); }
+.cal-past-toggle {
+  margin-top: 8px;
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--navy);
+}
+.cal-past-toggle:hover { border-color: #cbd5e5; background: #f7f9fc; }
+
+@media (max-width: 679px) {
+  .radius-note { order: 9; }
+  .store-more { padding: 10px; font-size: 12px; }
 }
