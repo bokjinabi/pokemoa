@@ -333,7 +333,10 @@ window.PokeMoaMap = (function () {
     if (st.brand !== "all" && s.brand !== st.brand) return false;
     if (s.distance > st.radius) return false;
     if (st.product !== "all") {
-      var hit = (s.products || []).some(function (p) { return p.id === st.product; });
+      /* 그 상품을 취급했거나 입고·확인 중인 매장만 (한 번도 입고 안 된 '미입고'는 제외) */
+      var hit = (s.products || []).some(function (p) {
+        return p.id === st.product && p.state !== "none";
+      });
       if (!hit) return false;
     }
     return true;
