@@ -136,7 +136,7 @@ pokemoa/
 
 ### 켜는 법 (태블릿 · Termux)
 ```bash
-pkg install nodejs cloudflared        # 한 번만
+pkg install nodejs cloudflared        # 한 번만 (cloudflared가 안 보이면 `pkg install tur-repo` 뒤 다시)
 node server.js                        # relay/ 폴더에서 — http://127.0.0.1:3100
 cloudflared tunnel --url http://127.0.0.1:3100   # 출력된 https://….trycloudflare.com 이 중계 주소
 ```
