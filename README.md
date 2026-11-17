@@ -159,6 +159,11 @@ pokemoa/
   레어도 칩은 세트별 실제 값만 생성(SV8a `SAR·UR`, SV10 `SAR·UR·RR`, M5 `MUR·SAR·SR` 등), 카드 클릭 모달(SV8a 블래키 ex SAR 217/187) 정상,
   홈 인기 카드팩 카드 클릭 → 해당 세트 도감으로 이동(블랙볼트 확인), 로고·파비콘 교체(헤더 마크 rect 4개 · `#ffcb05` · 네이비 라운드 스퀘어 `#101f3c`),
   모바일 390px 가로 넘침 0 · 세트 칩 가로 스크롤 · 인트로 문단 노출 · 세트 전환 정상, 페이지 오류 0건
+- **v3.4 확인 항목(2026-11-17 라이브 `https://bokjinabi.github.io/pokemoa/#guide`)**: 제휴 상품 이미지 `assets/coupang-supplies.jpg` 200(55.9KB · 480×480)로 로드(`naturalWidth` 480, 실패 요청 0건), 이미지·CTA 두 링크 모두 `https://link.coupang.com/a/iKC6PvZjtQ`(`target="_blank"` · `rel="noopener noreferrer sponsored"`), 클릭하면 새 탭으로 쿠팡 상품 페이지(상품번호 9732320873 · 탑로더+슬리브 세트)로 이동 — `app.js`가 `http(s)` 링크는 토스트로 막지 않으며 `coupang-30th` 자리(플레이스홀더)는 기존 토스트 유지,
+  카드 하단에 대가성 문구 노출, 데스크톱 1280×900 · 모바일 390×844 가로 넘침 0, 페이지 오류 0건
+  (단, 이 환경의 헤드리스 크롬에서 상품 페이지 자체는 쿠팡 봇 차단 `Access Denied`가 뜹니다 — 일반 브라우저·한국 IP에서는 정상, 가격 `8,600원`은 2026-11-17 조회 시점 쿠폰 적용가)
+- 스크린샷(v3.4): `screenshots/35-coupang-supplies-desktop.png`(카드), `36-coupang-supplies-context-desktop.png`, `37-coupang-supplies-mobile.png`, `38-coupang-live-desktop.png`
+  (라이브 캡처: `downloads/pokemoa-coupang-banner.png`, `downloads/pokemoa-coupang-banner-mobile.png`)
 - 스크린샷(v3.3): 라이브 캡처 `downloads/pokemoa-multiset-guide.png`(테라스탈 페스타 ex 도감·가이드),
   `downloads/pokemoa-multiset-mobile.png`·`pokemoa-multiset-mobile-dex.png`(모바일 390px), `downloads/pokemoa-header-logo.png`(새 로고)
 - 스크린샷(v3.2): `screenshots/30-v32-desktop.png`(요약 바·라이트 지도·말풍선),
