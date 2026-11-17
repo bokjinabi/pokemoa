@@ -76,6 +76,7 @@
   var regionSearch = $("#regionSearch");
   var regionSuggest = $("#regionSuggest");
   var brandChips = $("#brandChips");
+  var productChips = $("#productChips");
   var storeListEl = $("#storeList");
   var storeSkeleton = $("#storeSkeleton");
   var mapCountEl = $("#mapCount");
@@ -98,8 +99,15 @@
   var filterState = {
     region: "pohang-north",
     brand: "all",
+    product: "all",
     radius: 3000
   };
+  function productLabel(id) {
+    if (!id || id === "all") return "";
+    var list = D.cardProducts || [];
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i].short;
+    return "";
+  }
 
   var statusText = { in: "재고 있음", check: "매장 확인 필요", none: "재고 없음" };
 
@@ -153,6 +161,21 @@
     if (storeListEl) storeListEl.hidden = !(gotFirstData && !isLoadingMap);
   }
 
+  /* 매장별 취급·재고 카드 상품명 태그 */
+  function productTagsHtml(s) {
+    var list = s.products || [];
+    if (!list.length) return "";
+    var soldout = list.some(function (p) { return p.state === "soldout"; });
+    var head = s.status === "none"
+      ? '<span class="p-head">' + (soldout ? "최근 입고 품절" : "아직 미입고") + "</span>"
+      : "";
+    var tags = list.map(function (p) {
+      return '<span class="p-tag is-' + p.state + '" title="' + p.name + " · " + p.stateLabel + '">' +
+        p.short + ' <i>· ' + p.stateLabel + "</i></span>";
+    }).join("");
+    return '<span class="s-products">' + head + tags + "</span>";
+  }
+
   /* 매장 목록: 처음 10곳 + 더보기 */
   function renderStores(list) {
     currentStores = (list || []).slice();
@@ -168,7 +191,10 @@
       mapCountEl.innerHTML = "표시 중 <b>" + list.length + "</b>곳 · 재고 " + counts.in + " · 확인 " + counts.check + " · 없음 " + counts.none;
     }
     if (sideSummary) {
-      sideSummary.textContent = list.length ? "가까운 순 · " + list.length + "곳" : "조건에 맞는 매장 없음";
+      var pLabel = productLabel(filterState.product);
+      sideSummary.textContent = list.length
+        ? (pLabel ? pLabel + " · " + list.length + "곳" : "가까운 순 · " + list.length + "곳")
+        : "조건에 맞는 매장 없음";
     }
 
     storeListEl.innerHTML = "";
@@ -201,7 +227,8 @@
         '<span class="status-badge ' + s.status + '">' + statusText[s.status] + "</span>" +
         '<span class="chip chip-sample">샘플 재고</span>' +
         (s.street ? "<small>" + s.street + "</small>" : "") +
-        "</span>";
+        "</span>" +
+        productTagsHtml(s);
       btn.addEventListener("click", function () {
         if (!mapReady) return;
         window.PokeMoaMap.focusStore(s.id);
@@ -518,6 +545,30 @@
     filterState.region = initialRegion.id;
   }
 
+  /* 카드 상품 필터 (data.js cardProducts 로 칩을 만든다) */
+  function renderProductChips() {
+    if (!productChips) return;
+    var html = '<button type="button" class="product-chip is-active" data-product="all">전체 카드</button>';
+    (D.cardProducts || []).forEach(function (p) {
+      html += '<button type="button" class="product-chip" data-product="' + p.id +
+        '" title="' + p.name + " · " + p.unit + '">' + p.short + "</button>";
+    });
+    productChips.innerHTML = html;
+  }
+  renderProductChips();
+
+  if (productChips) {
+    productChips.addEventListener("click", function (e) {
+      var btn = e.target.closest(".product-chip");
+      if (!btn) return;
+      $$(".product-chip", productChips).forEach(function (b) { b.classList.remove("is-active"); });
+      btn.classList.add("is-active");
+      filterState.product = btn.getAttribute("data-product");
+      listExpanded = false;
+      if (mapReady) window.PokeMoaMap.setProduct(filterState.product);
+    });
+  }
+
   if (brandChips) {
     brandChips.addEventListener("click", function (e) {
       var btn = e.target.closest(".brand-chip");
@@ -544,16 +595,21 @@
   if (resetBtn) {
     resetBtn.addEventListener("click", function () {
       filterState.brand = "all";
+      filterState.product = "all";
       filterState.radius = 3000;
       listExpanded = false;
       $$(".brand-chip").forEach(function (b) {
         b.classList.toggle("is-active", b.getAttribute("data-brand") === "all");
+      });
+      $$(".product-chip").forEach(function (b) {
+        b.classList.toggle("is-active", b.getAttribute("data-product") === "all");
       });
       $$(".radius-btn").forEach(function (b) {
         b.classList.toggle("is-active", b.getAttribute("data-radius") === "3000");
       });
       if (mapReady) {
         window.PokeMoaMap.setBrand("all");
+        window.PokeMoaMap.setProduct("all");
         window.PokeMoaMap.setRadius(3000);
         window.PokeMoaMap.closeCard();
       }

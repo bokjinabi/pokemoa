@@ -2,7 +2,8 @@
  * 포케모아 — 실제 지도 엔진 (Leaflet + OpenStreetMap 타일 + Overpass API)
  *
  * · 지도 타일: OpenStreetMap 표준 타일 (실제 도로·건물)
- * · 주변 매장: Overpass API 실시간 조회 (편의점 4사 + 문구·완구·선물)
+ * · 주변 매장: Overpass API 실시간 조회 (편의점 4사만: GS25·CU·세븐일레븐·이마트24)
+ * · 매장마다 취급·재고 카드 상품명(30th CELEBRATION 등)을 함께 표시한다.
  * · 실시간 조회가 8초 안에 끝나지 않거나 응답 제한(429/502)이면
  *   내장된 실제 좌표 스냅샷으로 부드럽게 대체하고 배지에 상태를 표기한다.
  * · 재고 상태는 편의점 앱 API 미연동 → 제보·샘플 기반임을 화면에서 밝힌다.
@@ -42,6 +43,7 @@ window.PokeMoaMap = (function () {
     all: [],          /* 현재 중심 기준 조회 결과(반경 밖 포함) */
     visible: [],
     brand: "all",
+    product: "all",
     radius: 3000,
     regionId: "pohang-north",
     origin: "region",  /* region | geo */
@@ -106,12 +108,58 @@ window.PokeMoaMap = (function () {
     return "11-17 " + hh + ":" + mm;
   }
 
+  /* ------------------------------------ 매장별 취급·재고 카드 상품 (샘플) */
+  var PRODUCTS = (D.cardProducts || []);
+  var PRODUCT_STATE_LABEL = {
+    in: "입고",
+    low: "소량",
+    check: "확인 필요",
+    soldout: "품절",
+    none: "미입고"
+  };
+  function productById(id) {
+    for (var i = 0; i < PRODUCTS.length; i++) if (PRODUCTS[i].id === id) return PRODUCTS[i];
+    return null;
+  }
+  /* 같은 매장은 항상 같은 상품 구성이 나오도록 id 해시로만 고른다. */
+  function storeProducts(id, status) {
+    if (!PRODUCTS.length) return [];
+    var pool = PRODUCTS.slice().sort(function (a, b) {
+      return (hash(id + "#" + a.id) % 997) - (hash(id + "#" + b.id) % 997);
+    });
+    /* 30th CELEBRATION은 10곳 중 7곳에 우선 포함 */
+    if (hash(id + "#30th") % 10 < 7) {
+      pool = pool.filter(function (p) { return p.id !== "celebration30"; });
+      var thirty = productById("celebration30");
+      if (thirty) pool.unshift(thirty);
+    }
+    var n = status === "in" ? 2 + (hash(id + "#n") % 2) : 1 + (hash(id + "#n") % 2);
+    var out = [];
+    for (var i = 0; i < pool.length && out.length < n; i++) {
+      var p = pool[i];
+      var h = hash(id + "|" + p.id);
+      var stt;
+      if (status === "in") stt = h % 4 === 0 ? "low" : "in";
+      else if (status === "check") stt = "check";
+      else stt = h % 3 === 0 ? "none" : "soldout";
+      out.push({
+        id: p.id,
+        name: p.name,
+        short: p.short,
+        unit: p.unit,
+        state: stt,
+        stateLabel: PRODUCT_STATE_LABEL[stt]
+      });
+    }
+    return out;
+  }
+
   /* ------------------------------------------------------- 브랜드 분류 */
+  /* 편의점 4사만 분류한다. 그 밖의 업종·브랜드는 null로 돌려 화면에 올리지 않는다. */
   var NAME_RULES = [
     ["gs25", /gs\s*25|지에스\s*25/],
     ["seven", /세븐일레븐|7\s*-?\s*eleven|seven\s*eleven/],
-    ["emart24", /emart\s*24|이마트\s*24/],
-    ["artbox", /artbox|아트박스/]
+    ["emart24", /emart\s*24|이마트\s*24/]
   ];
   function classify(tags) {
     tags = tags || {};
@@ -123,11 +171,6 @@ window.PokeMoaMap = (function () {
     for (var i = 0; i < NAME_RULES.length; i++) {
       if (NAME_RULES[i][1].test(n)) return NAME_RULES[i][0];
     }
-    var shop = tags.shop;
-    var hasName = !!(tags.name || tags["name:ko"] || tags.brand || tags["brand:ko"] || tags.operator);
-    if (shop === "stationery" || shop === "toys" || shop === "gift") return "stationery";
-    /* 이름·브랜드가 없는 매장은 편의점으로 오태그된 경우가 많아 제외 */
-    if (shop === "convenience" && hasName) return "other";
     return null;
   }
 
@@ -158,6 +201,7 @@ window.PokeMoaMap = (function () {
       observed: sampleObserved(id),
       unit: "낱팩",
       note: "",
+      products: [],
       source: o.source
     };
   }
@@ -168,7 +212,7 @@ window.PokeMoaMap = (function () {
       var s = toStore(list[i]);
       s.source = source;
       s.distance = meters(center, s);
-      s.lat = s.lat;
+      s.products = storeProducts(s.id, s.status);
       out.push(s);
     }
     return out;
@@ -250,7 +294,7 @@ window.PokeMoaMap = (function () {
   }
 
   function brandOrder(b) {
-    return ({ gs25: 0, cu: 1, seven: 2, emart24: 3, artbox: 4, stationery: 5, other: 6 })[b] || 9;
+    return ({ gs25: 0, cu: 1, seven: 2, emart24: 3 })[b] || 9;
   }
 
   function renderMarkers() {
@@ -288,6 +332,10 @@ window.PokeMoaMap = (function () {
   function match(s) {
     if (st.brand !== "all" && s.brand !== st.brand) return false;
     if (s.distance > st.radius) return false;
+    if (st.product !== "all") {
+      var hit = (s.products || []).some(function (p) { return p.id === st.product; });
+      if (!hit) return false;
+    }
     return true;
   }
 
@@ -319,6 +367,24 @@ window.PokeMoaMap = (function () {
     return s === "in" ? "재고 있음" : s === "check" ? "매장 확인 필요" : "재고 없음";
   }
 
+  /* 취급·재고 카드 상품명 태그 (목록·팝업 공용) */
+  function productTagsHtml(s, cls, withHead) {
+    var list = s.products || [];
+    if (!list.length) return "";
+    var soldout = list.some(function (p) { return p.state === "soldout"; });
+    var head = "";
+    if (s.status === "none") {
+      head = '<span class="p-head">' + (soldout ? "최근 입고 품절" : "아직 미입고") + "</span>";
+    } else if (withHead) {
+      head = '<span class="p-head">취급 카드</span>';
+    }
+    var tags = list.map(function (p) {
+      return '<span class="p-tag is-' + p.state + '" title="' + p.name + " · " + p.stateLabel + '">' +
+        p.short + ' <i>· ' + p.stateLabel + "</i></span>";
+    }).join("");
+    return '<div class="store-products ' + (cls || "") + '">' + head + tags + "</div>";
+  }
+
   function renderCard(s) {
     if (!el.card) return;
     var meta = D.brandMeta[s.brand] || { label: s.brand, color: "#1b2a4a", short: "?" };
@@ -337,7 +403,8 @@ window.PokeMoaMap = (function () {
       '<span class="chip chip-sample">샘플 재고</span>' +
       '<span class="chip">' + s.observed + "</span>" +
       "</div>" +
-      '<p class="pm-card-note">매장 위치는 OpenStreetMap 실제 데이터입니다. 재고 상태는 편의점 앱 API 미연동으로 <b>제보·샘플 기반</b> 표시이니, 방문 전 공식 앱이나 매장 전화로 확인하세요.</p>' +
+      productTagsHtml(s, "pm-card-products", true) +
+      '<p class="pm-card-note">매장 위치는 OpenStreetMap 실제 데이터입니다. 재고 상태와 <b>취급 카드 상품명</b>은 편의점 앱 API 미연동으로 <b>제보·샘플 기반</b> 표시이니, 방문 전 공식 앱이나 매장 전화로 확인하세요.</p>' +
       '<a class="btn btn-sm btn-dark pm-card-link" target="_blank" rel="noopener" href="' + navLink + '">네이버 지도에서 보기</a>';
     el.card.querySelector(".pm-card-close").addEventListener("click", function (e) {
       e.stopPropagation();
@@ -413,6 +480,7 @@ window.PokeMoaMap = (function () {
       center: st.center,
       radius: st.radius,
       total: st.all.length,
+      product: st.product,
       allow20: allow20(),
       markerCap: st.radius >= 20000 ? MAX_MARKERS_20 : MAX_MARKERS,
       snapshotAt: (D.osmSnapshot || {}).fetchedAt || "",
@@ -437,11 +505,9 @@ window.PokeMoaMap = (function () {
     var r = Math.round(radius);
     /* 넓은 반경(20km)은 결과가 수천 건이 될 수 있어 100건 상한을 건다 */
     var out = radius >= 20000 ? "out center 100;" : "out center;";
+    /* 편의점 4사만: shop=convenience 만 조회하고, 브랜드 분류에서 4사 외는 버린다 */
     return "[out:json][timeout:8];(" +
       'nwr(around:' + r + "," + lat + "," + lng + ')[shop=convenience];' +
-      'nwr(around:' + r + "," + lat + "," + lng + ')[shop=stationery];' +
-      'nwr(around:' + r + "," + lat + "," + lng + ')[shop=toys];' +
-      'nwr(around:' + r + "," + lat + "," + lng + ')[shop=gift];' +
       ");" + out;
   }
 
@@ -635,6 +701,12 @@ window.PokeMoaMap = (function () {
     pushData();
   }
 
+  function setProduct(id) {
+    st.product = id || "all";
+    renderMarkers();
+    pushData();
+  }
+
   function setRegion(id) {
     var r = region(id);
     st.regionId = r.id;
@@ -738,6 +810,7 @@ window.PokeMoaMap = (function () {
     init: init,
     setRegion: setRegion,
     setBrand: setBrand,
+    setProduct: setProduct,
     setRadius: setRadius,
     locate: locate,
     retry: retry,
