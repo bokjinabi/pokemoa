@@ -1487,11 +1487,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
   mix-blend-mode: overlay;
 }
 .dex-art::before {
-  content: "30";
+  content: attr(data-mark);
   position: absolute;
-  right: 4px;
-  bottom: 22%;
-  font-size: 46px;
+  right: 5px;
+  bottom: 20%;
+  font-size: 30px;
   font-weight: 900;
   letter-spacing: -0.06em;
   color: rgba(255, 255, 255, 0.55);

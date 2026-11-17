@@ -258,6 +258,7 @@ window.POKEMOA_DATA = (function () {
   var SETS = [
     {
       id: "m6a",
+      mark: "30",
       short: "30th CELEBRATION",
       name: "MEGA 확장팩 「30th CELEBRATION」",
       code: "M6a",
@@ -287,6 +288,7 @@ window.POKEMOA_DATA = (function () {
     },
     {
       id: "m5",
+      mark: "M5",
       short: "어비스아이",
       name: "MEGA 확장팩 「어비스아이」",
       code: "M5",
@@ -319,6 +321,7 @@ window.POKEMOA_DATA = (function () {
     },
     {
       id: "sv11b",
+      mark: "SV11B",
       short: "블랙볼트",
       name: "스칼렛&바이올렛 확장팩 「블랙볼트」",
       code: "SV11B",
@@ -351,6 +354,7 @@ window.POKEMOA_DATA = (function () {
     },
     {
       id: "sv10",
+      mark: "SV10",
       short: "로켓단의 영광",
       name: "스칼렛&바이올렛 확장팩 「로켓단의 영광」",
       code: "SV10",
@@ -383,6 +387,7 @@ window.POKEMOA_DATA = (function () {
     },
     {
       id: "sv9a",
+      mark: "SV9a",
       short: "열풍의 아레나",
       name: "스칼렛&바이올렛 강화 확장팩 「열풍의 아레나」",
       code: "SV9a",
@@ -415,6 +420,7 @@ window.POKEMOA_DATA = (function () {
     },
     {
       id: "sv9",
+      mark: "SV9",
       short: "배틀 파트너즈",
       name: "스칼렛&바이올렛 확장팩 「배틀파트너즈」",
       code: "SV9",
@@ -448,6 +454,7 @@ window.POKEMOA_DATA = (function () {
     },
     {
       id: "sv8a",
+      mark: "SV8a",
       short: "테라스탈 페스타 ex",
       name: "스칼렛&바이올렛 하이클래스팩 「테라스탈 페스타 ex」",
       code: "SV8a",
@@ -484,6 +491,7 @@ window.POKEMOA_DATA = (function () {
     },
     {
       id: "sv8",
+      mark: "SV8",
       short: "초전 브레이커",
       name: "스칼렛&바이올렛 확장팩 「초전브레이커」",
       code: "SV8",
@@ -515,6 +523,7 @@ window.POKEMOA_DATA = (function () {
     },
     {
       id: "starter",
+      mark: "DECK",
       short: "스타터 세트",
       name: "MEGA 스타터 세트 ex 「이브이 ex」",
       code: "구축덱",

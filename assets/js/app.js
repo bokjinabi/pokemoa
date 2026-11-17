@@ -948,7 +948,7 @@
       btn.className = "dex-card";
       btn.setAttribute("data-card", card.id);
       btn.innerHTML =
-        '<span class="dex-art ' + (artClass[card.tag] || "art-energy") + '" style="' + artStyle(card) + '">' +
+        '<span class="dex-art ' + (artClass[card.tag] || "art-energy") + '" data-mark="' + (s.mark || "") + '" style="' + artStyle(card) + '">' +
         '<span class="rarity-tag">' + card.rarity + "</span>" +
         (card.num ? '<span class="art-num">' + card.num + "</span>" : "") +
         '<span class="art-name">' + card.name + "</span>" +
