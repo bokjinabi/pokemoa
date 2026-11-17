@@ -112,8 +112,10 @@ window.PokeMoaMap = (function () {
       if (NAME_RULES[i][1].test(n)) return NAME_RULES[i][0];
     }
     var shop = tags.shop;
+    var hasName = !!(tags.name || tags["name:ko"] || tags.brand || tags["brand:ko"] || tags.operator);
     if (shop === "stationery" || shop === "toys" || shop === "gift") return "stationery";
-    if (shop === "convenience") return "other";
+    /* 이름·브랜드가 없는 매장은 편의점으로 오태그된 경우가 많아 제외 */
+    if (shop === "convenience" && hasName) return "other";
     return null;
   }
 
