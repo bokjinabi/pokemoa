@@ -118,7 +118,10 @@ pokemoa/
   - 502·타임아웃: `실시간 조회 지연/제한 → 내장 실제 좌표 스냅샷 사용` 배지 + `실시간 다시 조회` 버튼
 - 페이지 에러 0건. 콘솔에는 Overpass가 돌려준 502 응답 오류만 남고(외부 API 상태), 스크립트 오류는 없습니다.
 - 스크린샷: `screenshots/01-pricing-desktop.png`, `02-map-desktop.png`, `03-map-loading-desktop.png`,
-  `04-card-mobile.png`, `05-mobile-map.png`, `06-mobile-store-list.png`, `07-mobile-pricing.png`, `08-cards-guide.png`
+  `04-card-mobile.png`, `05-mobile-map.png`, `06-mobile-store-list.png`, `07-mobile-pricing.png`, `08-cards-guide.png`,
+  `10-store-list-10-more.png`(10곳+더보기), `11-store-list-expanded.png`, `12-radius-20km.png`(20km 조회 로딩),
+  `13-seoul-5km-note.png`(도심 20km 비활성), `14-schedule-folded.png`(지난 일정 접힘), `15-schedule-past-open.png`,
+  `16-channels-links.png`, `17-mobile-schedule.png`
   (배포 화면 라이브 캡처: `downloads/pokemoa-v2-live-map.png`, `downloads/pokemoa-v2-live-stores.png`)
 
 ## 6. 참고 자료
