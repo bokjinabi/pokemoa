@@ -22,7 +22,8 @@ window.PokeMoaMap = (function () {
     "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js",
     "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
   ];
-  var OVERPASS_TIMEOUT = 8000;   /* brief: 8초 타임아웃 → 폴백 */
+  var OVERPASS_TIMEOUT = 8000;   /* 8초 안에 안 오면 내장 좌표로 먼저 표시 */
+  var LIVE_WINDOW = 45000;       /* 늦게라도 실시간 응답이 오면 교체 */
   var MAX_MARKERS = 90;
 
   var st = {
@@ -47,7 +48,10 @@ window.PokeMoaMap = (function () {
     geoBusy: false,
     lastError: null,
     fetchedRadius: 0,
-    snapshotLabel: ""
+    snapshotLabel: "",
+    pendingLive: false,
+    currentReq: null,
+    badgeWasSnapshot: false
   };
 
   var el = {};
@@ -375,7 +379,9 @@ window.PokeMoaMap = (function () {
     }
     return {
       kind: "snapshot",
-      text: "실시간 조회 지연/제한 → 내장 실제 좌표 스냅샷 사용 (" + st.snapshotLabel + ")",
+      text: (st.pendingLive
+        ? "실시간 조회가 느려 내장 실제 좌표로 먼저 표시 (조금 더 기다리는 중 · " + st.snapshotLabel + ")"
+        : "실시간 조회 지연/제한 → 내장 실제 좌표 스냅샷 사용 (" + st.snapshotLabel + ")"),
       action: true
     };
   }
@@ -419,49 +425,53 @@ window.PokeMoaMap = (function () {
   function fetchOverpass(center, radius) {
     var q = overpassQuery(center, radius);
     var controllers = [];
-    var timer = null;
+    var hardTimer = null;
+    var pending = OVERPASS_ENDPOINTS.length;
 
-    function attempt(url) {
-      var ctrl = new AbortController();
-      controllers.push(ctrl);
-      var url2 = url + "?data=" + encodeURIComponent(q);
-      return fetch(url2, { signal: ctrl.signal, mode: "cors", cache: "no-store" }).then(function (res) {
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        return res.json();
-      });
-    }
-
-    var all = OVERPASS_ENDPOINTS.map(attempt);
-
-    return new Promise(function (resolve, reject) {
+    var promise = new Promise(function (resolve, reject) {
       var settled = false;
-      timer = setTimeout(function () {
-        if (settled) return;
-        settled = true;
+      function cleanup() {
+        clearTimeout(hardTimer);
         controllers.forEach(function (c) { try { c.abort(); } catch (e) {} });
-        reject(new Error("timeout"));
-      }, OVERPASS_TIMEOUT);
-
+      }
       function done(payload) {
         if (settled) return;
         settled = true;
-        clearTimeout(timer);
-        controllers.forEach(function (c) { try { c.abort(); } catch (e) {} });
+        cleanup();
         resolve(payload);
       }
       function fail(err) {
         if (settled) return;
         settled = true;
-        clearTimeout(timer);
-        controllers.forEach(function (c) { try { c.abort(); } catch (e) {} });
+        cleanup();
         reject(err);
       }
-      all.forEach(function (p) { p.then(done, function () {}); });
-      Promise.all(all.map(function (p) { return p.catch(function (e) { return { __err: e }; }); }))
-        .then(function (rs) {
-          if (rs.every(function (r) { return r && r.__err; })) fail(rs[0].__err);
+      OVERPASS_ENDPOINTS.forEach(function (ep) {
+        var ctrl = new AbortController();
+        controllers.push(ctrl);
+        fetch(ep + "?data=" + encodeURIComponent(q), {
+          signal: ctrl.signal,
+          mode: "cors",
+          cache: "no-store"
+        }).then(function (res) {
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          return res.json();
+        }).then(done, function (err) {
+          pending -= 1;
+          if (pending === 0) fail(err || new Error("network"));
         });
+      });
+      /* 8초(OVERPASS_TIMEOUT)는 화면 표시용 소프트 한도이고,
+         요청 자체는 LIVE_WINDOW 동안 살려 두어 늦게라도 도착하면 실시간 값으로 바꾼다. */
+      hardTimer = setTimeout(function () { fail(new Error("timeout")); }, LIVE_WINDOW);
     });
+
+    return {
+      promise: promise,
+      abort: function () {
+        controllers.forEach(function (c) { try { c.abort(); } catch (e) {} });
+      }
+    };
   }
 
   function parseOverpass(payload) {
@@ -497,36 +507,68 @@ window.PokeMoaMap = (function () {
     var seq = ++st.seq;
     st.loading.data = true;
     st.lastError = null;
+    st.pendingLive = false;
+    if (st.currentReq) {
+      try { st.currentReq.abort(); } catch (e) {}
+      st.currentReq = null;
+    }
     pushLoading();
     pushData();
 
     var center = st.center;
     var radius = st.radius;
+    var req = fetchOverpass(center, radius);
+    st.currentReq = req;
 
-    fetchOverpass(center, radius).then(function (payload) {
+    var softTimer = setTimeout(function () {
       if (seq !== st.seq) return;
+      if (st.source === "live") return;
+      st.pendingLive = true;
+      applySnapshot(seq, "timeout");
+    }, OVERPASS_TIMEOUT);
+
+    req.promise.then(function (payload) {
+      clearTimeout(softTimer);
+      if (seq !== st.seq) return;
+      st.currentReq = null;
       var rows = parseOverpass(payload);
       st.all = prepare(rows, center, "live");
       st.source = "live";
+      st.lastError = null;
+      st.pendingLive = false;
       st.loading.data = false;
-      finishLoad(seq);
+      finishLoad(seq, true);
     }).catch(function (err) {
+      clearTimeout(softTimer);
       if (seq !== st.seq) return;
-      var rows = snapshotList();
-      st.all = prepare(rows, center, "snapshot");
-      st.source = "snapshot";
-      st.lastError = String((err && err.message) || err);
-      st.loading.data = false;
-      finishLoad(seq);
+      st.currentReq = null;
+      if (st.source === "live") return;
+      applySnapshot(seq, String((err && err.message) || err));
     });
   }
 
-  function finishLoad(seq) {
+  function applySnapshot(seq, reason) {
+    var center = st.center;
+    var rows = snapshotList();
+    st.all = prepare(rows, center, "snapshot");
+    st.source = "snapshot";
+    st.lastError = reason;
+    st.loading.data = false;
+    finishLoad(seq, false);
+  }
+
+  function finishLoad(seq, liveNow) {
     if (seq !== st.seq) return;
     renderMarkers();
     pushLoading();
     pushData();
-    emit("pokemoa:loaded", { source: st.source, total: st.all.length, error: st.lastError });
+    emit("pokemoa:loaded", {
+      source: st.source,
+      total: st.all.length,
+      error: st.lastError,
+      late: !!liveNow && st.badgeWasSnapshot
+    });
+    st.badgeWasSnapshot = st.source === "snapshot";
   }
 
   /* ---------------------------------------------------------- 공개 API */

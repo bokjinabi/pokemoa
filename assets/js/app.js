@@ -218,6 +218,8 @@
     var d = e.detail || {};
     if (d.source === "snapshot") {
       toast("실시간 조회가 지연되어 내장 실제 좌표로 표시합니다.");
+    } else if (d.source === "live" && d.late) {
+      toast("실시간 주변 매장 데이터를 받아 지도에 반영했습니다.");
     }
   });
 
