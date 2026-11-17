@@ -490,7 +490,10 @@
     }).catch(function (err) {
       relay.state = "error";
       relayRender();
-      relayMsg("연결하지 못했습니다 — " + (err && err.message ? err.message : "응답 없음") +
+      var reason = err && err.name === "AbortError"
+        ? "응답 시간 초과(6.5초)"
+        : (err && err.message) || "응답 없음";
+      relayMsg("연결하지 못했습니다 — " + reason +
         ". 태블릿의 server.js·터널 주소를 확인해 주세요.", "warn");
     });
   }
