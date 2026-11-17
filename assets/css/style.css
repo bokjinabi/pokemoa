@@ -2190,3 +2190,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .radius-note { order: 9; }
   .store-more { padding: 10px; font-size: 12px; }
 }
+
+/* 더보기 버튼: 목록 스크롤 영역 밖에 고정 */
+.map-side { display: flex; flex-direction: column; }
+.map-side .store-list { flex: 1 1 auto; }
+.store-more-wrap { padding: 0 8px 10px; }
+.store-more-wrap[hidden] { display: none; }

@@ -206,27 +206,30 @@
       storeListEl.appendChild(item);
     });
 
-    if (list.length > LIST_PAGE) {
-      var wrap = document.createElement("li");
-      wrap.className = "store-more-wrap";
-      var more = document.createElement("button");
-      more.type = "button";
-      more.className = "store-more";
-      more.id = "storeMore";
-      more.setAttribute("aria-expanded", listExpanded ? "true" : "false");
-      more.textContent = listExpanded
-        ? "접기 (처음 " + LIST_PAGE + "곳만 보기)"
-        : "더보기 (" + (list.length - LIST_PAGE) + "개 더 보기)";
+    syncMoreButton(list.length);
+  }
+
+  /* 더보기 버튼 (목록 스크롤 밖에 고정) */
+  function syncMoreButton(total) {
+    var wrap = $("#storeMoreWrap");
+    var more = $("#storeMore");
+    if (!wrap || !more) return;
+    if (total <= LIST_PAGE) {
+      wrap.hidden = true;
+      return;
+    }
+    wrap.hidden = false;
+    more.setAttribute("aria-expanded", listExpanded ? "true" : "false");
+    more.textContent = listExpanded
+      ? "접기 (처음 " + LIST_PAGE + "곳만 보기)"
+      : "더보기 (" + (total - LIST_PAGE) + "개 더 보기)";
+    if (!more.dataset.bound) {
+      more.dataset.bound = "1";
       more.addEventListener("click", function () {
         listExpanded = !listExpanded;
         drawStoreList();
-        if (listExpanded && storeListEl) {
-          var first = storeListEl.querySelectorAll(".store-item")[LIST_PAGE - 1];
-          if (first && first.scrollIntoView) first.scrollIntoView({ block: "nearest" });
-        }
+        if (!listExpanded && storeListEl) storeListEl.scrollTop = 0;
       });
-      wrap.appendChild(more);
-      storeListEl.appendChild(wrap);
     }
   }
 
