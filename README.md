@@ -101,13 +101,19 @@ pokemoa/
 
 ## 5. 검증 기록
 
-- Playwright(Chromium)로 데스크톱 1280×800, 모바일 390×844에서 확인
-- v2: 첫 화면이 동네 찾기인지, OSM 타일 로드, 로딩 스피너/스켈레톤 노출, 내 위치(허용·차단 양쪽),
-  지역·브랜드·반경 필터, 실시간(live)·스냅샷 폴백 배지, 탭 4개 전환, 카드 검색·레어도 필터·
-  카드 모달, FAQ 아코디언, 푸터 모달 4종, 계산기, 모바일 하단 광고 닫기
-- 콘솔 에러 0건, 페이지 에러 0건
-- 스크린샷: `screenshots/01-home-desktop.png`, `02-map-desktop.png`,
-  `03-cards-guide.png`, `04-mobile-home.png` (+ `05-mobile-map.png`)
+- Playwright(Chromium)로 배포 URL(https://bokjinabi.github.io/pokemoa/)에 실제 접속해
+  데스크톱 1280×900, 모바일 390×844에서 확인
+- v2 확인 항목: 첫 화면이 「동네 찾기」인지, OSM 타일(`tile.openstreetmap.org`) 로드, 로딩 스피너·진행 바·스켈레톤 노출,
+  배지의 조회 상태 표기, 지역 변경(포항 북구→부산 서면), 브랜드 필터(CU 6곳)·반경 필터(1/3/5km), 마커 선택 카드,
+  내 위치(권한 허용·차단 양쪽), 2번 탭 「정가 구매처」, 지도 탭 왕복 후 지도 크기, 모바일 하단 내비 순서·가로 넘침 없음
+- Overpass 응답 상태에 따른 세 가지 경로 모두 확인
+  - 즉시 응답: `실시간 조회 · OpenStreetMap 주변 매장 N곳` (포항 북구 3km에서 실제 31곳 확인)
+  - 8초 초과: 내장 좌표 스냅샷 15곳을 먼저 표시(`조금 더 기다리는 중`) → 42초에 실시간 응답 도착 시 31곳으로 자동 교체
+  - 502·타임아웃: `실시간 조회 지연/제한 → 내장 실제 좌표 스냅샷 사용` 배지 + `실시간 다시 조회` 버튼
+- 페이지 에러 0건. 콘솔에는 Overpass가 돌려준 502 응답 오류만 남고(외부 API 상태), 스크립트 오류는 없습니다.
+- 스크린샷: `screenshots/01-pricing-desktop.png`, `02-map-desktop.png`, `03-map-loading-desktop.png`,
+  `04-card-mobile.png`, `05-mobile-map.png`, `06-mobile-store-list.png`, `07-mobile-pricing.png`, `08-cards-guide.png`
+  (배포 화면 라이브 캡처: `downloads/pokemoa-v2-live-map.png`, `downloads/pokemoa-v2-live-stores.png`)
 
 ## 6. 참고 자료
 
