@@ -393,7 +393,8 @@ window.PokeMoaMap = (function () {
     return {
       kind: "snapshot",
       text: (st.pendingLive
-        ? "실시간 조회가 느려 내장 실제 좌표로 먼저 표시 (조금 더 기다리는 중 · " + st.snapshotLabel + ")"
+        ? "실시간 조회가 느려 내장 실제 좌표로 먼저 표시 (조금 더 기다리는 중 · " + st.snapshotLabel +
+          " · 반경 " + Math.round(((D.osmSnapshot || {}).radius || 3000) / 1000) + "km 기준)"
         : "실시간 조회 지연/제한 → 내장 실제 좌표 스냅샷 사용 (" + st.snapshotLabel + " · 반경 " +
           Math.round(((D.osmSnapshot || {}).radius || 3000) / 1000) + "km 기준)"),
       action: true
