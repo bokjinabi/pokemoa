@@ -566,6 +566,8 @@ window.PokeMoaMap = (function () {
       if (seq !== st.seq) return;
       st.currentReq = null;
       if (st.source === "live") return;
+      /* 요청이 끝까지 실패했으므로 '조금 더 기다리는 중' 표기를 내린다 */
+      st.pendingLive = false;
       applySnapshot(seq, String((err && err.message) || err));
     });
   }
