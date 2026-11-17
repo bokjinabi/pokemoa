@@ -370,6 +370,9 @@ window.PokeMoaMap = (function () {
     if (st.geoBusy) {
       return { kind: "busy", text: "내 위치 확인 중 · 브라우저 위치 권한을 허용해 주세요", action: false };
     }
+    if (st.loading.data) {
+      return { kind: "busy", text: "OpenStreetMap에 주변 매장을 조회하는 중입니다 (최대 8초, 지연 시 내장 좌표로 표시)", action: false };
+    }
     if (st.source === "live") {
       return {
         kind: "live",
