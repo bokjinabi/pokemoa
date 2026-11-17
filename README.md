@@ -132,21 +132,29 @@ pokemoa/
 
 - Playwright(Chromium)로 배포 URL(https://bokjinabi.github.io/pokemoa/)에 실제 접속해
   데스크톱 1280×900, 모바일 390×844에서 확인
-- v3 확인 항목: 전국 17개 시·도·55개 지역 셀렉트, 포항 북구 20km 활성/서울 강남 5km 제한(20km 비활성 + 자동 5km 전환), 제주시 20km 조회 `out center 100` 쿼리, 동네 검색(제주·해운대) 제안·선택, 지도 중심 이동, 로딩 스피너·진행 바, 목록 10곳+더보기, 지난 일정 접기, 페이지 에러 0건
+- v3 확인 항목: 전국 17개 시·도 · 55개 지역 2단 셀렉트와 동네 검색(제주·해운대)·기본 지역 포항 북구, 지역 변경 시 지도 중심 이동과 재조회, 포항 북구 20km 활성(반경 20000 · `out center 100` 쿼리), 제주시 20km 유지(allow20), 서울 강남 자동 5km 전환 + 20km 비활성·`도심은 5km까지 지원` 안내, 로딩 스피너·진행 바, 목록 10곳+더보기(18곳→접힘), 마커 카드·브랜드 필터(CU 6곳), 지난 일정 접기(`지난 일정 보기 (6건)`)·캘린더 토글, 모바일 390px 가로 넘침 없음, 페이지 에러 0건
+- v3 Overpass 상태(2026-11-17 라이브 확인)
+  - 실시간 응답: `실시간 조회 · OpenStreetMap 주변 매장 31곳 (Overpass API)` — 포항 북구 3km, 마커 31개·목록 10+더보기 21
+  - 8초 초과: 내장 스냅샷 18곳을 먼저 표시(`조금 더 기다리는 중`) → 응답 도착 시 31곳으로 자동 교체(실제로 확인)
+  - 502·타임아웃: `실시간 조회 지연/제한 → 내장 실제 좌표 스냅샷 사용 (2026-11-17 · 반경 3km 기준)` 배지 + `실시간 다시 조회` 버튼. 검증 시점에 overpass-api.de가 용량 초과로 간헐적 502를 반환해 스냅샷 경로가 자주 쓰였습니다
+- 스크린샷(v3): `screenshots/18-nationwide-loading.png`(로딩), `19-nationwide-desktop.png`, `20-pohang-20km.png`,
+  `21-region-search.png`(동네 검색), `22-jeju-20km.png`, `23-seoul-5km.png`(도심 20km 비활성),
+  `24-mobile-nationwide.png`, `25-live-pohang.png`, `28-nationwide-final.png`
+  (배포 화면 라이브 캡처: `downloads/pokemoa-v3-nationwide.png`)
+- 스크린샷(v2.1 이전): `screenshots/01-pricing-desktop.png`, `02-map-desktop.png`, `03-map-loading-desktop.png`,
+  `04-card-mobile.png`, `05-mobile-map.png`, `06-mobile-store-list.png`, `07-mobile-pricing.png`, `08-cards-guide.png`,
+  `10-store-list-10-more.png`, `11-store-list-expanded.png`, `12-radius-20km.png`, `13-seoul-5km-note.png`,
+  `14-schedule-folded.png`, `15-schedule-past-open.png`, `16-channels-links.png`, `17-mobile-schedule.png`
 - v2.1 확인 항목: 하단 내비 `동네에서 찾기`, 목록 10곳+더보기(펼침/접힘·필터 초기화), 20km 활성/비활성과 자동 5km 전환, `out center 100` 쿼리, 지난 일정 접기·캘린더 토글, 채널 링크 7종
 - v2 확인 항목: 첫 화면이 「동네에서 찾기」인지, OSM 타일(`tile.openstreetmap.org`) 로드, 로딩 스피너·진행 바·스켈레톤 노출,
   배지의 조회 상태 표기, 지역 변경(포항 북구→부산 서면), 브랜드 필터(CU 6곳)·반경 필터(1/3/5km), 마커 선택 카드,
   내 위치(권한 허용·차단 양쪽), 2번 탭 「정가 구매처」, 지도 탭 왕복 후 지도 크기, 모바일 하단 내비 순서·가로 넘침 없음
-- Overpass 응답 상태에 따른 세 가지 경로 모두 확인
-  - 즉시 응답: `실시간 조회 · OpenStreetMap 주변 매장 N곳` (포항 북구 3km에서 실제 31곳 확인)
-  - 8초 초과: 내장 좌표 스냅샷 15곳을 먼저 표시(`조금 더 기다리는 중`) → 42초에 실시간 응답 도착 시 31곳으로 자동 교체
-  - 502·타임아웃: `실시간 조회 지연/제한 → 내장 실제 좌표 스냅샷 사용` 배지 + `실시간 다시 조회` 버튼
+- Overpass 응답 세 가지 경로(실시간 / 8초 지연 후 교체 / 502·타임아웃 스냅샷) 모두 위 v3 항목에서 다시 확인
 - 페이지 에러 0건. 콘솔에는 Overpass가 돌려준 502 응답 오류만 남고(외부 API 상태), 스크립트 오류는 없습니다.
-- 스크린샷: `screenshots/01-pricing-desktop.png`, `02-map-desktop.png`, `03-map-loading-desktop.png`,
-  `04-card-mobile.png`, `05-mobile-map.png`, `06-mobile-store-list.png`, `07-mobile-pricing.png`, `08-cards-guide.png`,
-  `10-store-list-10-more.png`(10곳+더보기), `11-store-list-expanded.png`, `12-radius-20km.png`(20km 조회 로딩),
-  `13-seoul-5km-note.png`(도심 20km 비활성), `14-schedule-folded.png`(지난 일정 접힘), `15-schedule-past-open.png`,
-  `16-channels-links.png`, `17-mobile-schedule.png`
+- 스크린샷(v2 이전): `screenshots/02-map-desktop.png`, `03-map-loading-desktop.png`,
+  `04-card-mobile.png`, `05-mobile-map.png`, `06-mobile-store-list.png`, `07-mobile-pricing.png`,
+  `10-store-list-10-more.png`, `11-store-list-expanded.png`, `12-radius-20km.png`,
+  `13-seoul-5km-note.png`, `14-schedule-folded.png`, `15-schedule-past-open.png`, `16-channels-links.png`
   (배포 화면 라이브 캡처: `downloads/pokemoa-v2-live-map.png`, `downloads/pokemoa-v2-live-stores.png`)
 
 ## 6. 참고 자료
