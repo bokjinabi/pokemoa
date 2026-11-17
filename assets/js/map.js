@@ -391,7 +391,7 @@ window.PokeMoaMap = (function () {
       return { kind: "live", text: txt, action: false };
     }
     var snapKm = Math.round(((D.osmSnapshot || {}).radius || 3000) / 1000);
-    var wideNote = st.radius > snapKm * 1000 ? " · 넓은 반경은 실시간 조회에서만 표시" : "";
+    var wideNote = st.radius >= 20000 ? " · 넓은 반경은 실시간 조회에서만 표시" : "";
     return {
       kind: "snapshot",
       text: (st.pendingLive
@@ -650,8 +650,12 @@ window.PokeMoaMap = (function () {
     closeCard();
     if (st.map) {
       st.loading.tiles = false;
-      setView(st.center, r.zoom || 15);
+      setView(st.center, st.radius >= 20000 ? (r.zoom || 12) : (r.zoom || 15));
       if (st.ring) st.ring.setRadius(st.radius);
+      /* 20km 반경을 고른 상태에서 지역만 바꾸면 반경 전체가 보이도록 맞춘다 */
+      if (st.radius >= 20000 && st.ring) {
+        st.map.fitBounds(st.ring.getBounds(), { padding: [18, 18] });
+      }
     }
     renderMarkers();
     load();
