@@ -130,7 +130,8 @@ pokemoa/
 - **Google Analytics 4**: `G-LWRMBRD0X9` — `index.html`·`privacy.html`·`terms.html` `<head>`에 gtag 스니펫, `assets/js/app.js`의 `trackEvent()` 래퍼로 주요 행동 이벤트를 전송(v3.9)
   - `tab_view`(`tab`, `entry`: initial/switch) · `region_search`(`region`, `region_name`, `radius_km`)
   - `store_outbound_click`(`store_name`, `url`) · `dex_set_select`(`set_id`) · `dex_expand`(`expanded`) · `faq_expand`(`expanded`)
-  - `affiliate_interact`(`slot`, `action`: click/focus) · `relay_connect`(`status`: online/error)
+  - `affiliate_interact`(`slot`, `action`: click/focus — iframe 내부 클릭은 cross-origin이라 감지하지 못하므로 카드·슬롯 상자의 클릭·포커스만 집계)
+  - `relay_connect`(`status`: online/error)
   - 측정 ID를 바꾸려면 HTML 3개 파일의 gtag 스니펫 `id=`와 `gtag('config', …)` 두 곳만 교체하면 됩니다.
 - `privacy.html`, `terms.html` 단독 문서, `sitemap.xml`, `robots.txt`, OG/Twitter/JSON-LD(WebSite·FAQPage)
 
@@ -193,7 +194,7 @@ cloudflared tunnel --url http://127.0.0.1:3100   # 출력된 https://….tryclou
 
 ## 6. 검증 기록
 
-- **v3.9 GA4 확인 항목(2026-11-17 라이브 `https://bokjinabi.github.io/pokemoa/`)**: `index.html`·`privacy.html`·`terms.html` 모두 `<head>` 상단에 `gtag/js?id=G-LWRMBRD0X9` 로드, `dataLayer`에 `js`·`config` 적재, `google-analytics.com/g/collect` 요청 정상(204), 콘솔·페이지 오류 0건. 탭 전환·지역 검색·도감 세트 선택·도감/FAQ 더보기·정가 구매처 링크 클릭·쿠팡 위젯 포커스·중계 연결 실패까지 `trackEvent` 8종이 `dataLayer`에 쌓이는 것을 Playwright로 확인.
+- **v3.9 GA4 확인 항목(2026-11-17 라이브 `https://bokjinabi.github.io/pokemoa/`)**: `index.html`·`privacy.html`·`terms.html` 모두 `<head>` 상단에서 `gtag/js?id=G-LWRMBRD0X9` 로드(`typeof gtag === "function"`), `dataLayer`에 `js`·`config`와 `tab_view` 적재, `google-analytics.com/g/collect` 요청에 `tid=G-LWRMBRD0X9`·`en=page_view`로 실제 전송(3페이지 모두). 탭 전환(initial/switch)·반경 20km 변경·도감 세트 선택(m5)·도감/FAQ 더보기·정가 구매처(SSG) 링크 클릭·쿠팡 파트너스 카드 클릭·중계 연결 실패(`status:"error"`)까지 `trackEvent` 8종이 `dataLayer`에 그대로 쌓이는 것을 실제 브라우저 세션에서 확인. `window.gtag`를 지우고 탭을 바꿔도 화면은 그대로 동작(스니펫 차단·미리보기 환경에서도 안전). 자사 자산 4xx/5xx 0건, 페이지 오류 없음(Overpass API 504는 이 환경 네트워크 제한으로 기존과 같음).
 
 - Playwright(Chromium)로 배포 URL(https://bokjinabi.github.io/pokemoa/)에 실제 접속해
   데스크톱 1280×900, 모바일 390×844에서 확인
