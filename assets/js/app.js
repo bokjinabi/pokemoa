@@ -877,6 +877,12 @@
       filterState.radius = Number(btn.getAttribute("data-radius"));
       listExpanded = false;
       if (mapReady) window.PokeMoaMap.setRadius(filterState.radius);
+      var r = regionById(filterState.region);
+      trackEvent("region_search", {
+        region: filterState.region,
+        region_name: r ? r.name : "",
+        radius_km: filterState.radius / 1000
+      });
     });
   });
 
@@ -1516,9 +1522,14 @@
   });
 
   /* ------------------------------------------- 쿠팡 파트너스 영역 반응 */
+  /* iframe 내부 클릭은 cross-origin이라 부모 페이지에서 볼 수 없다. 카드·슬롯 상자의
+     클릭·포커스만 집계하고, 슬롯이 없으면 카드 ID를 slot으로 쓴다. */
   function affiliateSlotOf(el) {
-    var slot = el && el.closest ? el.closest("[data-affiliate-slot]") : null;
-    return slot ? slot.getAttribute("data-affiliate-slot") || "" : "";
+    var card = el && el.closest ? el.closest("[data-affiliate-card], .affiliate") : null;
+    if (!card) return "";
+    var slot = el.closest("[data-affiliate-slot]");
+    if (slot) return slot.getAttribute("data-affiliate-slot") || "";
+    return card.getAttribute("data-affiliate-card") || "";
   }
   document.addEventListener("click", function (e) {
     var slot = affiliateSlotOf(e.target);
