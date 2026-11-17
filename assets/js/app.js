@@ -189,13 +189,13 @@
 
   /* 매장 목록: 재고 우선/가까운 순 정렬 + 처음 10곳 + 더보기 */
   function renderStores(list) {
-    currentStores = sortStores(list);
+    currentStores = (list || []).slice();
     drawStoreList();
   }
 
   function drawStoreList() {
     if (!storeListEl) return;
-    var list = currentStores;
+    var list = sortStores(currentStores);
     var counts = { in: 0, check: 0, none: 0 };
     list.forEach(function (s) { counts[s.status] += 1; });
     if (mapCountEl) {
