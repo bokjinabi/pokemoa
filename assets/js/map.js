@@ -75,7 +75,9 @@ window.PokeMoaMap = (function () {
     currentReq: null,
     badgeWasSnapshot: false,
     metro: false,
-    allow20: true
+    allow20: true,
+    relay: null,        /* 집 태블릿 중계에서 받은 실재고 요약 { ok, sources, at, count } */
+    relayAt: ""
   };
 
   var el = {};
@@ -99,6 +101,12 @@ window.PokeMoaMap = (function () {
     var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(la1) * Math.cos(la2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
     return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
 
   function hash(str) {
@@ -350,6 +358,10 @@ window.PokeMoaMap = (function () {
       html = s.status === "in"
         ? '<span class="pm-pill is-chip status-in" style="--brand:' + b.color + '">' + b.short + "</span>"
         : '<span class="pm-pill is-dot status-' + s.status + '"></span>';
+    } else if (s.status === "in" && s.relay) {
+      var q = s.relayQty || 0;
+      html = '<span class="pm-pill status-in is-relay" style="--brand:' + b.color + '">' +
+        "<b>" + b.short + "</b><span>" + (q ? q + "개" : "재고") + "</span></span>";
     } else if (s.status === "in") {
       var n = stockProductCount(s);
       html = '<span class="pm-pill status-in" style="--brand:' + b.color + '">' +
@@ -357,7 +369,7 @@ window.PokeMoaMap = (function () {
     } else {
       html = '<span class="pm-pill status-' + s.status + '">' +
         '<i class="pm-dot" style="background:' + b.color + '"></i>' +
-        "<span>" + (s.status === "check" ? "확인" : "없음") + "</span></span>";
+        "<span>" + (s.status === "check" ? "확인" : (s.relay ? "실시간 0개" : "없음")) + "</span></span>";
     }
     return L.divIcon({
       className: "pm-marker status-" + s.status + (st.compact ? " is-compact" : ""),
@@ -542,11 +554,15 @@ window.PokeMoaMap = (function () {
       "</div>" +
       '<div class="pm-card-meta">' +
       '<span class="status-badge ' + s.status + '">' + statusLabel(s.status) + "</span>" +
-      '<span class="chip chip-sample">샘플 재고</span>' +
+      (s.relay
+        ? '<span class="chip chip-relay">실시간 재고</span>'
+        : '<span class="chip chip-sample">샘플 재고</span>') +
       '<span class="chip">' + s.observed + "</span>" +
       "</div>" +
       productTagsHtml(s, "pm-card-products", true) +
-      '<p class="pm-card-note">매장 위치는 OpenStreetMap 실제 데이터입니다. 재고 상태와 <b>취급 카드 상품명</b>은 편의점 앱 API 미연동으로 <b>제보·샘플 기반</b> 표시이니, 방문 전 공식 앱이나 매장 전화로 확인하세요.</p>' +
+      (s.relay
+        ? '<p class="pm-card-note">집 태블릿 중계 서버가 편의점 앱에서 <b>조회한 실제 재고</b>입니다(조회 ' + escapeHtml(s.observed) + '). 수량은 조회 시점 기준이므로 방문 전 매장 전화로 한 번 더 확인하세요.</p>'
+        : '<p class="pm-card-note">매장 위치는 OpenStreetMap 실제 데이터입니다. 재고 상태와 <b>취급 카드 상품명</b>은 편의점 앱 API 미연동으로 <b>제보·샘플 기반</b> 표시이니, 방문 전 공식 앱이나 매장 전화로 확인하세요.</p>') +
       '<a class="btn btn-sm btn-dark pm-card-link" target="_blank" rel="noopener" href="' + navLink + '">네이버 지도에서 보기</a>';
     el.card.querySelector(".pm-card-close").addEventListener("click", function (e) {
       e.stopPropagation();
@@ -589,8 +605,22 @@ window.PokeMoaMap = (function () {
     if (st.geoBusy) {
       return { kind: "busy", text: "내 위치 확인 중 · 브라우저 위치 권한을 허용해 주세요", action: false };
     }
-    if (st.loading.data) {
+    if (st.loading.data && !(st.relay && st.relay.count)) {
       return { kind: "busy", text: "OpenStreetMap에 주변 매장을 조회하는 중입니다 (최대 8초, 지연 시 내장 좌표로 표시)", action: false };
+    }
+    /* 집 태블릿 중계로 실제 재고를 받았으면 그 사실을 먼저 알린다 */
+    if (st.relay && st.relay.count) {
+      var names = [];
+      RELAY_ORDER.forEach(function (k) {
+        var src = (st.relay.sources || {})[k];
+        if (src && src.ok && src.count) names.push(RELAY_LABEL[k]);
+      });
+      return {
+        kind: "relay",
+        text: "실시간 중계 · " + (names.length ? names.join("·") + " " : "") + "실제 재고 " + st.relay.count +
+          "곳 · 조회 " + relayTimeLabel(st.relayAt),
+        action: false
+      };
     }
     if (st.source === "live") {
       var cap = st.radius >= 20000 ? MAX_MARKERS_20 : MAX_MARKERS;
@@ -828,6 +858,141 @@ window.PokeMoaMap = (function () {
     st.badgeWasSnapshot = st.source === "snapshot";
   }
 
+  /* ------------------------------------- 집 태블릿 중계 실재고(relay) */
+  /* 중계 서버는 편의점 앱 재고를 대신 조회해 { stores: [{ brand, name, address,
+     lat, lng, distanceM, status, items:[{name,qty,code}], updatedAt }] } 로 준다.
+     이 값은 실제 재고이므로 같은 자리의 OSM 매장이 있으면 그 매장 카드에 얹고,
+     없으면 중계 매장을 새로 그린다. 해제하면 원래 샘플 상태로 되돌린다. */
+  var RELAY_ORDER = ["emart24", "cu", "seven"];
+  var RELAY_LABEL = { emart24: "이마트24", cu: "CU", seven: "세븐일레븐" };
+
+  function relayTimeLabel(iso) {
+    var d = iso ? new Date(iso) : new Date();
+    if (isNaN(d.getTime())) d = new Date();
+    return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+  }
+
+  function relayProducts(items) {
+    return (items || []).map(function (it) {
+      var qty = Number(it.qty);
+      if (!isFinite(qty)) qty = 0;
+      var state = qty > 0 ? "in" : "soldout";
+      return {
+        id: String(it.code || it.name || ""),
+        name: String(it.name || it.code || ""),
+        short: String(it.name || it.code || ""),
+        unit: "개",
+        qty: qty,
+        state: state,
+        stateLabel: qty > 0 ? qty + "개" : "0개"
+      };
+    });
+  }
+
+  function toRelayStore(s) {
+    var brand = RELAY_ORDER.indexOf(s.brand) >= 0 ? s.brand : null;
+    if (!brand) return null;
+    var lat = Number(s.lat);
+    var lng = Number(s.lng);
+    if (!isFinite(lat) || !isFinite(lng)) return null;
+    var meta = D.brandMeta[brand] || { label: RELAY_LABEL[brand] || brand };
+    var products = relayProducts(s.items);
+    var total = 0;
+    products.forEach(function (p) { total += p.qty; });
+    return {
+      id: "relay-" + (s.id || brand + ":" + (s.name || "") + ":" + lat + ":" + lng),
+      brand: brand,
+      brandLabel: meta.label || brand,
+      shop: "convenience",
+      name: (s.name || "").trim() || (RELAY_LABEL[brand] || brand),
+      lat: lat,
+      lng: lng,
+      street: s.address || "",
+      distance: 0,
+      status: s.status === "in_stock" ? "in" : "none",
+      observed: relayTimeLabel(s.updatedAt),
+      unit: "개",
+      note: "",
+      products: products,
+      relay: true,
+      relayQty: total,
+      source: "relay"
+    };
+  }
+
+  function applyRelay(payload) {
+    if (!st.center) return 0;
+    var list = ((payload && payload.stores) || []).map(toRelayStore).filter(Boolean);
+    /* 이전 중계 결과는 원래 상태로 되돌리고 새로 얹는다 */
+    restoreRelayBase();
+    var base = st.all;
+    list.forEach(function (r) {
+      r.distance = meters(st.center, r);
+      var twin = null;
+      for (var i = 0; i < base.length; i++) {
+        var b = base[i];
+        if (b.brand === r.brand && meters(b, r) < 80) { twin = b; break; }
+      }
+      if (twin && !twin.relay) {
+        /* OSM으로 그려둔 같은 매장 — 원래 값을 저장해 두고 중계 값으로 잠시 버꿔 쓴다 */
+        twin.relayBase = {
+          name: twin.name, status: twin.status, observed: twin.observed,
+          products: twin.products, street: twin.street, source: twin.source, relayQty: null
+        };
+        twin.name = r.name || twin.name;
+        twin.status = r.status;
+        twin.observed = r.observed;
+        twin.products = r.products;
+        twin.relay = true;
+        twin.relayQty = r.relayQty;
+        twin.source = "relay";
+        if (r.street) twin.street = r.street;
+      } else if (!twin) {
+        r.distance = meters(st.center, r);
+        base.push(r);
+      }
+    });
+    st.relayAt = (payload && payload.generatedAt) || new Date().toISOString();
+    st.relay = {
+      ok: !!(payload && payload.ok),
+      sources: (payload && payload.sources) || {},
+      at: Date.now(),
+      count: list.length
+    };
+    renderMarkers();
+    pushData();
+    return list.length;
+  }
+
+  function restoreRelayBase() {
+    if (!st.all) return;
+    st.all = st.all.filter(function (s) {
+      if (s.relay && s.relayBase) {
+        s.name = s.relayBase.name;
+        s.status = s.relayBase.status;
+        s.observed = s.relayBase.observed;
+        s.products = s.relayBase.products;
+        s.street = s.relayBase.street;
+        s.relay = false;
+        delete s.relayQty;
+        s.source = s.relayBase.source || "live";
+        delete s.relayBase;
+        return true;
+      }
+      return !s.relay;   /* 순수 중계 매장은 빼고 OSM·스냅샷 매장만 남깁니다 */
+    });
+  }
+
+  function clearRelay() {
+    if (!st.relay) return;
+    restoreRelayBase();
+    st.relay = null;
+    st.relayAt = "";
+    if (st.selectedId && !st.all.some(function (s) { return s.id === st.selectedId; })) closeCard();
+    renderMarkers();
+    pushData();
+  }
+
   /* ---------------------------------------------------------- 공개 API */
   function setView(center, zoom) {
     if (!st.map) return;
@@ -988,6 +1153,8 @@ window.PokeMoaMap = (function () {
     closeCard: closeCard,
     getState: function () { return st; },
     getVisible: function () { return st.visible.slice(); },
+    applyRelay: applyRelay,
+    clearRelay: clearRelay,
     invalidate: function () { if (st.map) st.map.invalidateSize(); }
   };
   return API;

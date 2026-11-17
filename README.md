@@ -19,6 +19,8 @@
 - **v3.6 변경(도감 4장 접기 + 파트너스 위젯)**: ① 「도감·가이드」의 `수록 카드와 레어도` 목록이 모바일에서 길어지지 않도록 **처음 4장만 보여 주고** 아래에 `더보기 (N장 더 보기)` / `접기` 토글 버튼을 넣었습니다(4장 이하인 세트·검색 결과에서는 버튼 자동 숨김, 세트 칩을 바꾸면 다시 4장 상태로 리셋). ② 제휴 슬롯은 손으로 만든 상품 카드 대신 **쿠팡 파트너스 공식 상품 배너 위젯 `<iframe>`**(`https://coupa.ng/cq5BV0`, 120×240, `scrolling="no"`, `referrerpolicy="unsafe-url"`, 모바일·데스크톱 가운데 정렬)으로 교체했습니다 — 카드 상단 `쿠팡 파트너스 · 제휴 상품` 라벨과 하단 대가성 문구는 그대로 두고, 금액 표기는 없습니다(배너 안내 문구는 쿠팡이 내려주는 값).
 - **v3.7 변경(FAQ 3개 접기 + 파트너스 위젯 2열)**: ① 「구매 전에 가장 많이 묻는 것들」 FAQ를 **처음 3문항만 보이고** 아래 `더보기 (N개 더 보기)` / `접기` 토글로 나머지를 펼치게 바꿨습니다(도감 더보기 버튼과 같은 점선·네이비 톤, 3문항 이하이면 버튼·토글 자동 숨김, `접기` 시 FAQ 머리로 부드럽게 스크롤, 펼침 상태에서 다시 접으면 열려 있던 항목은 닫힘). ② 도감·가이드 하단 제휴 슬롯을 **120×240 위젯 2개 가로 2열**(`display:flex; flex-wrap:nowrap; justify-content:center; gap:12px`)로 바꿔 왼쪽 1번 `https://coupa.ng/cq5BV0`, 오른쪽 2번 `https://coupa.ng/cq5DGN`이 모바일 390px에서도 **가로 넘침 없이 한 줄**로 나란히 놓입니다(320px 화면용으로 카드 패딩·gap·슬롯 폭을 줄이는 미디어 쿼리 포함). 슬롯은 `data-affiliate-slot="coupang-widget-1"`·`"coupang-widget-2"`로 구분해 위젯 코드가 바뀌면 해당 iframe `src`만 교체하면 됩니다. ③ 같은 2열 위젯 카드를 「정가 구매처」 탭 중간(`data-affiliate-card="coupang-30th"`)에도 그대로 넣었습니다 — 기존 `30th CELEBRATION 최저가 확인` 플레이스홀더·`쿠팡에서 시세 보기` 토스트 버튼을 없애고 `쿠팡 파트너스 · 제휴 상품` 라벨, 2열 위젯(`coupang-30th-widget-1/2`), 하단 대가성 문구로 도감·가이드와 동일하게 맞췄습니다.
 
+- **v3.8 변경(집 태블릿 실재고 중계)**: 「동네에서 찾기」 상단에 **`실시간 중계` 상태 바**(연결 안 됨 / 확인 중 / 연결됨 / 응답 없음)와 `중계 연결` 버튼을 넣었습니다. 모달에서 태블릿 중계 서버 주소를 넣으면 `/health`로 확인해 localStorage에 저장하고, `?relay=https://…` 쿼리로도 자동 연결됩니다. 연결된 동안에는 조회 지역이 바뀔 때마다 `{relay}/api/nearby?lat&lng&keyword`를 호출해 **실제 매장명·실제 카드명·실제 수량(N개)**을 지도 말풍선(`CU · 3개`)·매장 카드·목록에 `실시간 재고` 배지로 표시하고, 끊기면 기존 OSM + 제보·샘플 모드로 조용히 돌아갑니다. 서버는 `relay/server.js` 단일 파일(외부 패키지 0, 포트 3100, CORS `*`, OPTIONS 204, 체인별 8초 제한 + `Promise.allSettled` 격리 + 60초 캐시)로, 이마트24·CU·세븐일레븐 앱/웹 재고 API를 조회 전용으로 호출합니다.
+
 > 타일 참고: 브리프의 CARTO Positron(`basemaps.cartocdn.com/light_all`)은 2026-11 확인 시 **API 키가 없으면 `API KEY REQUIRED` 워터마크 타일**이 내려와 쓸 수 없었습니다. 그래서 OSM 표준 타일에 저채도·밝기 필터를 걸어 Positron과 같은 라이트 느낌을 냈고(한국어 지명 그대로), 타일 서버가 막히면 OSM 독일 미러로 자동 대체합니다.
 
 ---
@@ -48,10 +50,12 @@ pokemoa/
 │  ├─ css/style.css          # 전체 스타일 (모바일 우선)
 │  └─ js/
 │     ├─ data.js             # 지역·OSM 좌표 스냅샷·카드·일정·구매처 데이터
-│     ├─ map.js              # Leaflet + OSM 타일 + Overpass 조회 지도 엔진
-│     └─ app.js              # 탭·필터·검색·모달·계산기
+│     ├─ map.js              # Leaflet + OSM 타일 + Overpass 조회 지도 엔진 (+ 중계 실재고 반영)
+│     └─ app.js              # 탭·필터·검색·모달·계산기 (+ 실시간 중계 연결 UI)
+├─ relay/
+│  └─ server.js              # 집 태블릿(Termux)용 무의존 실재고 중계 서버 (Node 20+, 포트 3100)
 ├─ screenshots/              # 검증 스크린샷
-└─ pokemoa-web.zip           # 배포용 압축본 (index/privacy/terms/assets/robots/sitemap/README)
+└─ pokemoa-web.zip           # 배포용 압축본 (index/privacy/terms/assets/relay/robots/sitemap/README)
 ```
 
 ## 3. 주요 기능
@@ -125,7 +129,45 @@ pokemoa/
 - 푸터 모달: 소개 / 개인정보처리방침 / 이용약관 / 운영 문의(재고 제보 폼)
 - `privacy.html`, `terms.html` 단독 문서, `sitemap.xml`, `robots.txt`, OG/Twitter/JSON-LD(WebSite·FAQPage)
 
-## 4. 배포 전에 바꿀 것 (중요)
+## 4. 실시간 중계 — 집 태블릿 실재고 (v3.8)
+
+매장별 **실제 재고 수량**이 필요할 때 쓰는 선택 기능입니다. 사이트는 정적 Pages라 편의점 앱 API를 직접 부를 수 없어서,
+집 태블릿이 대신 조회해 주는 작은 서버(`relay/server.js`)를 두고 지도가 그 서버를 통해 실재고를 받아 옵니다.
+
+### 켜는 법 (태블릿 · Termux)
+```bash
+pkg install nodejs cloudflared        # 한 번만
+node server.js                        # relay/ 폴더에서 — http://127.0.0.1:3100
+cloudflared tunnel --url http://127.0.0.1:3100   # 출력된 https://….trycloudflare.com 이 중계 주소
+```
+- 서버는 **외부 npm 패키지 없이** Node 내장 모듈만 씁니다(파일 1개, `node server.js` 한 줄).
+- `127.0.0.1:3100`은 태블릿 안에서만 열리는 주소라, 바깥(휴대폰)에서 쓰려면 cloudflared 같은 터널로 https 주소를 만들어 그 주소를 입력합니다.
+- 같은 와이파이에서만 쓸 때는 `HOST=0.0.0.0 node server.js` 후 `http://<태블릿 IP>:3100`을 넣어도 됩니다.
+
+### 사이트에서 연결
+- 「동네에서 찾기」 상단의 **`실시간 중계`** 바 → `중계 연결` → 주소 입력 → `/health`로 확인 후 저장(localStorage).
+- `https://…/pokemoa/?relay=https://xxxx.trycloudflare.com` 처럼 **쿼리로 열면 자동 저장·연결**됩니다(태블릿 홈 화면 북마크용).
+- 연결된 동안 지도는 조회 지역이 바뀔 때마다 중계에 다시 물어보고, 받은 매장은 **`실시간 재고`** 배지와 `브랜드 · N개` 말풍선으로 표시됩니다.
+- 중계가 꺼져 있거나 응답이 없으면 조용히 기존 **OSM + 제보·샘플** 모드로 돌아가고 상태 바에 그 사실이 남습니다.
+
+### 서버가 하는 일
+| 경로 | 내용 |
+| --- | --- |
+| `GET /health` | `{ ok, service: "pokemoa-relay", version, time }` — 사이트가 연결 확인에 씁니다 |
+| `GET /api/nearby?lat&lng&keyword` | 주변 점포의 실재고를 모아 `{ ok, relay, lat, lng, sources, stores[] }` 로 반환 |
+| `GET /` | 브라우저로 열었을 때 보이는 사용 안내 |
+
+체인별 구현(모두 **조회만** 합니다 — 주문·결제·선점 요청 없음):
+- **이마트24** `everse.emart24.co.kr` — `POST /store/getNearStoreList`(주변 점포) → `POST /stock/stock/search`(상품 `pluCd`) → `GET /api/stock/v3/stock-search/store?searchPluCode&bizNoArr`(점포별 `BIZQTY`). 상품 검색은 `content-type`에 `charset=UTF-8`이 빠지면 한글 검색이 조용히 0건이 되므로 반드시 붙입니다.
+- **CU** `www.pocketcu.co.kr` — `POST /api/search/rest/stock/main`(상품 `item_cd`) → `POST /api/store`(주변 점포). 앱 웹뷰 식별자 User-Agent(`…;BGFCU`)가 있어야 응답합니다. 점포별 수량 필드(`stock`)가 비어 오는 경우가 많아, **수량을 받은 점포만** 결과에 넣습니다.
+- **세븐일레븐** `new.7-elevenapp.co.kr` — `GET /api/v1/auth/session/is-authenticated`까지 시도하고, 좌표가 RSA-OAEP(SHA-256)로 암호화돼 있어 공개키(`SEVEN_RSA_KEY_B64`)와 상품 코드(`SEVEN_SM_CD`)가 없으면 **그 체인만 `status:"error"`로 격리**합니다(나머지 체인 결과는 정상 반환).
+- 체인 하나가 403·타임아웃이어도 전체가 죽지 않도록 `Promise.allSettled` + 체인별 8초 제한, 같은 좌표는 60초 캐시(`RELAY_CACHE_MS`).
+
+### 확인된 한계 (2026-11-17 실측)
+- 이 서버를 만든 데이터센터 회선에서는 **이마트24·세븐일레븐이 403**(각 사 WAF/Incapsula), **CU는 응답은 오지만 점포별 수량이 비어** 있었습니다. 집(한국 가정 회선)에서 이마트24가 정상 응답하는지는 태블릿에서 `curl 'http://127.0.0.1:3100/api/nearby?lat=36.0733&lng=129.3947'`으로 바로 확인할 수 있습니다.
+- 응답은 `sources: { emart24: { ok, count, error? }, cu: …, seven: … }`에 체인별 상태를 그대로 담으므로, 어느 체인이 막혔는지 화면과 로그에서 바로 보입니다.
+
+## 5. 배포 전에 바꿀 것 (중요)
 
 1. **도메인**: `https://bokjinabi.github.io/pokemoa` 를 실제 도메인으로 일괄 치환
    (`index.html`, `privacy.html`, `terms.html`, `sitemap.xml`, `robots.txt`)
@@ -144,7 +186,7 @@ pokemoa/
    이미지 사용 권한을 확보한 경우에만 교체하세요.
 7. **광고 정책**: 만 14세 미만 이용자 대상이 아니며, 카드 도박·현금 거래를 조장하는 문구는 넣지 않았습니다.
 
-## 5. 검증 기록
+## 6. 검증 기록
 
 - Playwright(Chromium)로 배포 URL(https://bokjinabi.github.io/pokemoa/)에 실제 접속해
   데스크톱 1280×900, 모바일 390×844에서 확인
@@ -227,7 +269,7 @@ pokemoa/
   `13-seoul-5km-note.png`, `14-schedule-folded.png`, `15-schedule-past-open.png`, `16-channels-links.png`
   (배포 화면 라이브 캡처: `downloads/pokemoa-v2-live-map.png`, `downloads/pokemoa-v2-live-stores.png`)
 
-## 6. 참고 자료
+## 7. 참고 자료
 
 - 포켓몬 카드 게임 공식 제품 정보 — https://pokemoncard.co.kr/card/960
 - 포켓몬스토어 30주년 특설 페이지 — https://www.pokemonstore.co.kr/pages/pokemoncardgame30th/product/index.html

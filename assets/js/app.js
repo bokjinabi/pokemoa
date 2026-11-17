@@ -18,6 +18,12 @@
     toastTimer = setTimeout(function () { toastEl.classList.remove("is-show"); }, 2600);
   }
 
+  function escapeHtml(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
   /* --------------------------------------------------------------- 탭 */
   var panels = {
     home: $("#panel-home"),
@@ -237,8 +243,10 @@
         "</span>" +
         '<span class="s-meta">' +
         '<span class="status-badge ' + s.status + '">' + statusText[s.status] + "</span>" +
-        '<span class="chip chip-sample">샘플</span>' +
-        (s.street ? "<small>" + s.street + "</small>" : "") +
+        (s.relay
+          ? '<span class="chip chip-relay">실시간 ' + (s.relayQty || 0) + '개</span>'
+          : '<span class="chip chip-sample">샘플</span>') +
+        (s.street ? "<small>" + escapeHtml(s.street) + "</small>" : "") +
         "</span>" +
         productTagsHtml(s);
       btn.addEventListener("click", function () {
@@ -362,6 +370,237 @@
   document.addEventListener("pokemoa:store-cleared", function () {
     $$(".store-item").forEach(function (b) { b.classList.remove("is-active"); });
   });
+
+  /* ------------------------------------------- 집 태블릿 실시간 중계 연결 */
+  /* 태블릿(Termux)에서 켜 둔 relay/server.js 주소를 저장하고, 연결된 동안에는
+     주변 매장 조회마다 중계 서버의 실제 재고를 받아 지도·매장 카드에 반영한다.
+     연결이 없거나 응답이 없으면 기존 OSM + 샘플·제보 모드로 자연스럽게 돌아간다. */
+  var RELAY_KEY = "pokemoa.relayUrl";
+  var relayBar = $("#relayBar");
+  var relayStateText = $("#relayStateText");
+  var relayOpenBtn = $("#relayOpenBtn");
+  var relayRefreshBtn = $("#relayRefreshBtn");
+  var relayModal = $("#relayModal");
+  var relayModalMsg = $("#relayModalMsg");
+  var relayUrlInput = $("#relayUrlInput");
+  var relayConnectBtn = $("#relayConnectBtn");
+  var relayDisconnectBtn = $("#relayDisconnectBtn");
+  var relayModalClose = $("#relayModalClose");
+
+  var relay = {
+    url: "",
+    state: "off",        /* off | checking | online | error */
+    busy: false,
+    lastCount: 0,
+    lastKey: "",
+    noticeShown: "",
+    timer: null
+  };
+
+  function relayNormalize(raw) {
+    var v = String(raw || "").trim().replace(/\s+/g, "");
+    if (!v) return "";
+    if (!/^https?:\/\//i.test(v)) v = "https://" + v;
+    v = v.replace(/\/+$/, "");
+    if (!/^https?:\/\/[a-z0-9][a-z0-9.-]*\.[a-z]{2,}(:\d+)?(\/[^\s]*)?$/i.test(v)) return "";
+    return v;
+  }
+
+  function relaySaved() {
+    try { return localStorage.getItem(RELAY_KEY) || ""; } catch (e) { return ""; }
+  }
+  function relaySave(url) {
+    try { if (url) localStorage.setItem(RELAY_KEY, url); else localStorage.removeItem(RELAY_KEY); } catch (e) {}
+  }
+  function relayHost() {
+    return relay.url ? relay.url.replace(/^https?:\/\//, "") : "";
+  }
+
+  function relayMsg(text, kind) {
+    if (!relayModalMsg) return;
+    relayModalMsg.textContent = text || "";
+    relayModalMsg.className = "rm-msg" + (kind ? " is-" + kind : "");
+  }
+
+  function relayRender() {
+    if (relayBar) relayBar.setAttribute("data-state", relay.state);
+    if (relayStateText) {
+      if (relay.state === "online") {
+        relayStateText.textContent = "연결됨 · " + relayHost() +
+          (relay.lastCount ? " · 실제 재고 " + relay.lastCount + "곳" : " · 실재고 확인 중");
+      } else if (relay.state === "checking") {
+        relayStateText.textContent = "연결 확인 중… (" + relayHost() + ")";
+      } else if (relay.state === "error") {
+        relayStateText.textContent = "중계 응답 없음 · " + relayHost() + " · 제보·샘플 재고로 표시";
+      } else {
+        relayStateText.textContent = "연결 안 됨 · 지금은 제보·샘플 재고로 표시합니다";
+      }
+    }
+    if (relayOpenBtn) relayOpenBtn.textContent = relay.state === "online" ? "설정" : relay.state === "error" ? "다시 연결" : "중계 연결";
+    if (relayRefreshBtn) relayRefreshBtn.hidden = relay.state !== "online";
+  }
+
+  function relayOpen() {
+    if (!relayModal) return;
+    relayUrlInput.value = relay.url || relaySaved();
+    relayMsg("");
+    relayModal.hidden = false;
+    setTimeout(function () { try { relayUrlInput.focus(); } catch (e) {} }, 40);
+  }
+
+  function relayClose() {
+    if (relayModal) relayModal.hidden = true;
+  }
+
+  function relayCheck(url) {
+    var ctrl = new AbortController();
+    var timer = setTimeout(function () { ctrl.abort(); }, 6500);
+    return fetch(url + "/health", { signal: ctrl.signal, mode: "cors", cache: "no-store" })
+      .then(function (res) {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      })
+      .then(function (d) {
+        if (!d || d.service !== "pokemoa-relay") throw new Error("중계 서버 응답이 아닙니다");
+        return d;
+      })
+      .finally(function () { clearTimeout(timer); });
+  }
+
+  function relayConnect(raw, opts) {
+    opts = opts || {};
+    var target = relayNormalize(raw);
+    if (!target) {
+      relayMsg("주소 형식을 확인해 주세요. 예: https://example.trycloudflare.com", "warn");
+      return;
+    }
+    relay.url = target;
+    relay.state = "checking";
+    relay.lastCount = 0;
+    relayRender();
+    relayMsg("연결을 확인하는 중입니다…");
+    relayCheck(target).then(function () {
+      relaySave(target);
+      relay.state = "online";
+      relayRender();
+      relayMsg("연결됐습니다. 실재고를 불러오는 중…", "ok");
+      toast("실시간 중계에 연결했습니다. 실제 재고를 불러옵니다.");
+      if (!opts.keepOpen) relayClose();
+      relayRefresh(true);
+    }).catch(function (err) {
+      relay.state = "error";
+      relayRender();
+      relayMsg("연결하지 못했습니다 — " + (err && err.message ? err.message : "응답 없음") +
+        ". 태블릿의 server.js·터널 주소를 확인해 주세요.", "warn");
+    });
+  }
+
+  function relayDisconnect() {
+    relaySave("");
+    relay.url = "";
+    relay.state = "off";
+    relay.lastCount = 0;
+    relay.noticeShown = "";
+    relayRender();
+    if (mapReady && window.PokeMoaMap) window.PokeMoaMap.clearRelay();
+    relayMsg("연결을 해제했습니다. 제보·샘플 재고로 표시합니다.", "ok");
+    toast("실시간 중계 연결을 해제했습니다.");
+  }
+
+  function relayRefresh(manual) {
+    if (relay.state !== "online" || !relay.url || !mapReady || !window.PokeMoaMap) return;
+    var mstate = window.PokeMoaMap.getState();
+    if (!mstate || !mstate.center) return;
+    var lat = Number(mstate.center.lat).toFixed(4);
+    var lng = Number(mstate.center.lng).toFixed(4);
+    var key = lat + "," + lng;
+    if (relay.busy) return;
+    relay.busy = true;
+    var ctrl = new AbortController();
+    var timer = setTimeout(function () { ctrl.abort(); }, 18000);
+    var url = relay.url + "/api/nearby?lat=" + lat + "&lng=" + lng + "&keyword=" + encodeURIComponent("포켓몬");
+    fetch(url, { signal: ctrl.signal, mode: "cors", cache: "no-store" })
+      .then(function (res) {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      })
+      .then(function (payload) {
+        var n = window.PokeMoaMap.applyRelay(payload);
+        relay.lastCount = n;
+        relay.lastKey = key;
+        relayRender();
+        if (!n) {
+          if (relay.noticeShown !== "empty:" + key) {
+            relay.noticeShown = "empty:" + key;
+            toast("중계는 연결됐지만 이 지역에서 받은 실재고가 없습니다 · 제보·샘플로 표시합니다.");
+          }
+        } else if (manual || relay.noticeShown !== key) {
+          relay.noticeShown = key;
+          toast("실제 재고 " + n + "곳을 지도에 반영했습니다.");
+        }
+      })
+      .catch(function () {
+        relay.state = "error";
+        relay.lastCount = 0;
+        relayRender();
+        if (window.PokeMoaMap) window.PokeMoaMap.clearRelay();
+        toast("중계 서버 응답이 없습니다 · 기존 샘플 모드로 표시합니다.");
+      })
+      .finally(function () {
+        clearTimeout(timer);
+        relay.busy = false;
+      });
+  }
+
+  function relayScheduleRefresh() {
+    if (relay.state !== "online") return;
+    clearTimeout(relay.timer);
+    relay.timer = setTimeout(function () { relayRefresh(false); }, 900);
+  }
+
+  if (relayOpenBtn) relayOpenBtn.addEventListener("click", relayOpen);
+  if (relayRefreshBtn) relayRefreshBtn.addEventListener("click", function () { relayRefresh(true); });
+  if (relayModalClose) relayModalClose.addEventListener("click", relayClose);
+  if (relayConnectBtn) {
+    relayConnectBtn.addEventListener("click", function () { relayConnect(relayUrlInput.value); });
+  }
+  if (relayUrlInput) {
+    relayUrlInput.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { e.preventDefault(); relayConnect(relayUrlInput.value); }
+    });
+  }
+  if (relayDisconnectBtn) relayDisconnectBtn.addEventListener("click", relayDisconnect);
+  if (relayModal) {
+    relayModal.addEventListener("click", function (e) {
+      if (e.target === relayModal) relayClose();
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !relayModal.hidden) relayClose();
+    });
+  }
+
+  /* 지도가 새로 조회를 끝낼 때마다(지역 변경·내 위치) 중계도 같이 새로 받는다 */
+  document.addEventListener("pokemoa:loaded", relayScheduleRefresh);
+  document.addEventListener("pokemoa:geo-done", relayScheduleRefresh);
+
+  /* ?relay=https://… 로 열면 그 주소를 저장하고 바로 연결한다 */
+  function relayInit() {
+    relayRender();
+    var param = "";
+    try {
+      param = new URLSearchParams(location.search).get("relay") || "";
+    } catch (e) {
+      param = "";
+    }
+    var fromQuery = relayNormalize(param);
+    if (fromQuery) {
+      relayConnect(fromQuery, { keepOpen: false });
+      return;
+    }
+    var saved = relayNormalize(relaySaved());
+    if (saved) relayConnect(saved, { keepOpen: true, silent: true });
+  }
+  relayInit();
 
   if (mapRetry) {
     mapRetry.addEventListener("click", function () {
