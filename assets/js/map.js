@@ -26,7 +26,10 @@ window.PokeMoaMap = (function () {
   var LIVE_WINDOW = 45000;       /* 늦게라도 실시간 응답이 오면 교체 */
   var MAX_MARKERS = 90;
   var MAX_MARKERS_20 = 100;
-  var METRO_IDS = ["seoul-gangnam", "seoul-hongdae", "seoul-nowon", "busan-seomyeon"];
+  /* 도심(allow20:false) 지역 좌표 — 내 위치가 이 근처면 20km를 막는다 */
+  function metroRegions() {
+    return D.regions.filter(function (r) { return r.allow20 === false; });
+  }
   var METRO_RADIUS_M = 12000;   /* 내 위치가 대도시 도심 반경 12km 안이면 도심으로 본다 */
 
   var st = {
@@ -55,7 +58,8 @@ window.PokeMoaMap = (function () {
     pendingLive: false,
     currentReq: null,
     badgeWasSnapshot: false,
-    metro: false
+    metro: false,
+    allow20: true
   };
 
   var el = {};
@@ -390,7 +394,8 @@ window.PokeMoaMap = (function () {
       kind: "snapshot",
       text: (st.pendingLive
         ? "실시간 조회가 느려 내장 실제 좌표로 먼저 표시 (조금 더 기다리는 중 · " + st.snapshotLabel + ")"
-        : "실시간 조회 지연/제한 → 내장 실제 좌표 스냅샷 사용 (" + st.snapshotLabel + ")"),
+        : "실시간 조회 지연/제한 → 내장 실제 좌표 스냅샷 사용 (" + st.snapshotLabel + " · 반경 " +
+          Math.round(((D.osmSnapshot || {}).radius || 3000) / 1000) + "km 기준)"),
       action: true
     };
   }
@@ -417,7 +422,11 @@ window.PokeMoaMap = (function () {
   /* --------------------------------------------------- 데이터 조회 */
   function snapshotList() {
     var snap = (D.osmSnapshot && D.osmSnapshot.items) || [];
-    if (st.origin === "geo") return snap.slice();
+    if (st.origin === "geo") {
+      /* 내 위치 기준일 때는 25km 안에 있는 스냅샷만 후보로 둔다 */
+      var c = st.center;
+      return snap.filter(function (s) { return meters(c, s) <= 25000; });
+    }
     return snap.filter(function (s) { return s.regionId === st.regionId; });
   }
 
@@ -597,7 +606,7 @@ window.PokeMoaMap = (function () {
     }
   }
 
-  function allow20() { return !st.metro; }
+  function allow20() { return st.allow20 !== false; }
 
   function setRadius(radius) {
     if (radius > 5000 && !allow20()) radius = 5000;
@@ -627,8 +636,9 @@ window.PokeMoaMap = (function () {
     var r = region(id);
     st.regionId = r.id;
     st.origin = "region";
-    st.metro = METRO_IDS.indexOf(r.id) !== -1;
-    if (st.metro && st.radius > 5000) st.radius = 5000;
+    st.allow20 = r.allow20 !== false;
+    st.metro = !st.allow20;
+    if (!st.allow20 && st.radius > 5000) st.radius = 5000;
     st.center = { lat: r.lat, lng: r.lng };
     st.fetchedRadius = st.radius;
     st.source = "snapshot";
@@ -656,11 +666,11 @@ window.PokeMoaMap = (function () {
       st.geoBusy = false;
       st.origin = "geo";
       st.center = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-      st.metro = METRO_IDS.some(function (id) {
-        var m = region(id);
-        return meters(st.center, { lat: m.lat, lng: m.lng }) < METRO_RADIUS_M;
+      st.metro = metroRegions().some(function (r) {
+        return meters(st.center, { lat: r.lat, lng: r.lng }) < METRO_RADIUS_M;
       });
-      if (st.metro && st.radius > 5000) st.radius = 5000;
+      st.allow20 = !st.metro;
+      if (!st.allow20 && st.radius > 5000) st.radius = 5000;
       st.fetchedRadius = st.radius;
       st.regionId = "";
       if (st.map) {

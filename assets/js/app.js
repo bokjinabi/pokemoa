@@ -71,7 +71,10 @@
   /* --------------------------------------------------------------- 지도 */
   /* 실제 지도 엔진(map.js) 연동: 로딩 상태 · 배지 · 매장 목록 · 내 위치 */
   var mapShell = $("#mapShell");
-  var regionSelect = $("#regionSelect");
+  var provinceSelect = $("#provinceSelect");
+  var districtSelect = $("#districtSelect");
+  var regionSearch = $("#regionSearch");
+  var regionSuggest = $("#regionSuggest");
   var brandChips = $("#brandChips");
   var storeListEl = $("#storeList");
   var storeSkeleton = $("#storeSkeleton");
@@ -93,7 +96,7 @@
   var listExpanded = false;
   var currentStores = [];
   var filterState = {
-    region: regionSelect ? regionSelect.value : "pohang-north",
+    region: "pohang-north",
     brand: "all",
     radius: 3000
   };
@@ -104,6 +107,9 @@
     if (mapReady || !window.PokeMoaMap || !mapShell) return;
     mapReady = true;
     window.PokeMoaMap.init({ container: mapShell, card: mapCard });
+    if (filterState.region && window.PokeMoaMap.getState().regionId !== filterState.region) {
+      window.PokeMoaMap.setRegion(filterState.region);
+    }
   }
 
   /* 로딩 오버레이 */
@@ -245,7 +251,7 @@
       r20.classList.toggle("is-disabled", !allow20);
       r20.setAttribute("aria-disabled", allow20 ? "false" : "true");
       r20.title = allow20
-        ? "지방·외곽 지역에서만 선택할 수 있습니다 (최대 100곳 표시)"
+        ? "넓은 반경으로 주변 매장을 최대 100곳까지 봅니다"
         : "도심은 5km까지 지원합니다";
     }
     if (note) note.hidden = !!allow20;
@@ -296,7 +302,8 @@
   });
   document.addEventListener("pokemoa:geo-done", function (e) {
     if (geoBtn) geoBtn.classList.remove("is-busy");
-    if (regionSelect) regionSelect.value = "";
+    if (regionSearch) regionSearch.value = "";
+    closeSuggest();
     toast("내 위치 주변 매장을 조회했습니다.");
   });
   document.addEventListener("pokemoa:geo-error", function (e) {
@@ -328,16 +335,187 @@
     });
   }
 
-  if (regionSelect) {
-    regionSelect.addEventListener("change", function () {
-      filterState.region = regionSelect.value;
-      if (!filterState.region) return;
-      gotFirstData = false;
-      listExpanded = false;
-      if (storeSkeleton) storeSkeleton.hidden = false;
-      if (storeListEl) storeListEl.hidden = true;
-      if (mapReady) window.PokeMoaMap.setRegion(filterState.region);
+  /* --------------------------------------------- 지역 선택기 (전국 2단 + 검색) */
+  function regionById(id) {
+    for (var i = 0; i < D.regions.length; i++) if (D.regions[i].id === id) return D.regions[i];
+    return null;
+  }
+
+  function optionLabel(r) {
+    /* "경북 · 포항 · 북구 (환호동)" → "포항 · 북구 (환호동)" */
+    var prefix = r.province + " · ";
+    return r.name.indexOf(prefix) === 0 ? r.name.slice(prefix.length) : r.name;
+  }
+
+  function fillDistricts(province, selectedId) {
+    if (!districtSelect) return;
+    districtSelect.innerHTML = "";
+    var list = D.regions.filter(function (r) { return r.province === province; });
+    list.forEach(function (r) {
+      var o = document.createElement("option");
+      o.value = r.id;
+      o.textContent = optionLabel(r);
+      if (r.id === selectedId) o.selected = true;
+      districtSelect.appendChild(o);
     });
+    if (selectedId && list.some(function (r) { return r.id === selectedId; })) {
+      districtSelect.value = selectedId;
+    }
+  }
+
+  function applyRegion(id) {
+    var r = regionById(id);
+    if (!r) return;
+    filterState.region = r.id;
+    gotFirstData = false;
+    listExpanded = false;
+    if (storeSkeleton) storeSkeleton.hidden = false;
+    if (storeListEl) storeListEl.hidden = true;
+    if (mapReady) window.PokeMoaMap.setRegion(r.id);
+  }
+
+  /* 시·도 · 시군구 드롭다운과 동네 검색이 같은 지역을 가리키도록 맞춘다 */
+  function selectRegion(id, opts) {
+    var r = regionById(id);
+    if (!r) return;
+    if (provinceSelect) provinceSelect.value = r.province;
+    fillDistricts(r.province, r.id);
+    if (regionSearch && (!opts || !opts.keepQuery)) regionSearch.value = "";
+    closeSuggest();
+    applyRegion(r.id);
+  }
+
+  var suggestItems = [];
+  var suggestActive = -1;
+
+  function closeSuggest() {
+    if (!regionSuggest) return;
+    regionSuggest.hidden = true;
+    regionSuggest.innerHTML = "";
+    suggestItems = [];
+    suggestActive = -1;
+    if (regionSearch) regionSearch.setAttribute("aria-expanded", "false");
+  }
+
+  function normText(s) {
+    return (s || "").toLowerCase().replace(/\s+/g, "");
+  }
+
+  function searchRegions(q) {
+    var n = normText(q);
+    if (!n) return [];
+    var hits = [];
+    D.regions.forEach(function (r) {
+      var hay = normText(r.name) + "|" + normText(r.short) + "|" + normText(r.district) +
+        "|" + normText(r.label) + "|" + normText(r.province);
+      if (hay.indexOf(n) !== -1) hits.push(r);
+    });
+    /* 이름 앞부분에서 바로 맞는 지역을 먼저 */
+    hits.sort(function (a, b) {
+      var ai = normText(a.name).indexOf(n) === 0 || normText(a.short).indexOf(n) === 0 ? 0 : 1;
+      var bi = normText(b.name).indexOf(n) === 0 || normText(b.short).indexOf(n) === 0 ? 0 : 1;
+      return ai - bi;
+    });
+    return hits.slice(0, 8);
+  }
+
+  function highlightSuggest(i) {
+    suggestActive = i;
+    $$("li.region-suggest-item", regionSuggest).forEach(function (li, idx) {
+      var on = idx === i;
+      li.classList.toggle("is-active", on);
+      li.setAttribute("aria-selected", on ? "true" : "false");
+    });
+  }
+
+  function renderSuggest(q) {
+    if (!regionSuggest || !regionSearch) return;
+    var hits = searchRegions(q);
+    suggestItems = hits;
+    suggestActive = hits.length ? 0 : -1;
+    regionSuggest.innerHTML = "";
+    if (!normText(q)) { closeSuggest(); return; }
+    if (!hits.length) {
+      var empty = document.createElement("li");
+      empty.className = "region-suggest-empty";
+      empty.textContent = "일치하는 지역이 없습니다. 시·도와 시·군·구에서 골라 주세요.";
+      regionSuggest.appendChild(empty);
+    }
+    hits.forEach(function (r, i) {
+      var li = document.createElement("li");
+      li.className = "region-suggest-item" + (i === suggestActive ? " is-active" : "");
+      li.setAttribute("role", "option");
+      li.setAttribute("aria-selected", i === suggestActive ? "true" : "false");
+      li.setAttribute("data-region", r.id);
+      li.innerHTML = "<strong>" + r.name + "</strong><span>" +
+        (r.allow20 ? "20km까지" : "도심 · 5km까지") + "</span>";
+      li.addEventListener("mousedown", function (e) {
+        e.preventDefault();
+        selectRegion(r.id);
+        if (regionSearch) regionSearch.blur();
+      });
+      regionSuggest.appendChild(li);
+    });
+    regionSuggest.hidden = false;
+    regionSearch.setAttribute("aria-expanded", "true");
+  }
+
+  if (provinceSelect) {
+    provinceSelect.addEventListener("change", function () {
+      var prov = provinceSelect.value;
+      var first = D.regions.filter(function (r) { return r.province === prov; })[0];
+      if (!first) return;
+      fillDistricts(prov, first.id);
+      applyRegion(first.id);
+    });
+  }
+
+  if (districtSelect) {
+    districtSelect.addEventListener("change", function () {
+      if (!districtSelect.value) return;
+      if (regionSearch) regionSearch.value = "";
+      closeSuggest();
+      applyRegion(districtSelect.value);
+    });
+  }
+
+  if (regionSearch) {
+    regionSearch.addEventListener("input", function () { renderSuggest(regionSearch.value); });
+    regionSearch.addEventListener("focus", function () {
+      if (regionSearch.value) renderSuggest(regionSearch.value);
+    });
+    regionSearch.addEventListener("keydown", function (e) {
+      var open = regionSuggest && !regionSuggest.hidden;
+      if (e.key === "ArrowDown" && open) {
+        e.preventDefault();
+        highlightSuggest(Math.min(suggestItems.length - 1, suggestActive + 1));
+      } else if (e.key === "ArrowUp" && open) {
+        e.preventDefault();
+        highlightSuggest(Math.max(0, suggestActive - 1));
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (suggestActive >= 0 && suggestItems[suggestActive]) {
+          selectRegion(suggestItems[suggestActive].id);
+          regionSearch.blur();
+        } else if (suggestItems.length === 1) {
+          selectRegion(suggestItems[0].id);
+          regionSearch.blur();
+        }
+      } else if (e.key === "Escape") {
+        closeSuggest();
+      }
+    });
+    regionSearch.addEventListener("blur", function () {
+      setTimeout(closeSuggest, 120);
+    });
+  }
+
+  /* 첫 화면: 포항 북구(환호동)를 기본 선택 */
+  var initialRegion = regionById(filterState.region) || D.regions[0];
+  if (initialRegion) {
+    if (provinceSelect) provinceSelect.value = initialRegion.province;
+    fillDistricts(initialRegion.province, initialRegion.id);
+    filterState.region = initialRegion.id;
   }
 
   if (brandChips) {

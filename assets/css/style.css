@@ -719,6 +719,57 @@ button { font: inherit; color: inherit; cursor: pointer; }
   color: var(--muted);
   pointer-events: none;
 }
+
+/* 전국 지역 선택기 (시·도 + 시·군·구 + 동네 검색) */
+.select-province select { min-width: 92px; }
+.select-district select { min-width: 186px; max-width: 250px; }
+.region-search { position: relative; flex: 1 1 200px; min-width: 168px; max-width: 268px; }
+.region-search-input {
+  width: 100%;
+  border: 1.5px solid var(--line);
+  background: #fff;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.region-search-input::placeholder { color: #9aa6ba; font-weight: 500; }
+.region-search-input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(47, 109, 246, 0.14); }
+.region-suggest {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 5px);
+  left: 0;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  min-width: 292px;
+  max-width: 360px;
+  max-height: 272px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 14px 30px rgba(16, 31, 60, 0.18);
+}
+.region-suggest[hidden] { display: none; }
+.region-suggest-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--ink);
+}
+.region-suggest-item strong { font-weight: 800; }
+.region-suggest-item span { font-size: 11px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+.region-suggest-item.is-active,
+.region-suggest-item:hover { background: var(--blue-soft); }
+.region-suggest-empty { padding: 10px; font-size: 12px; line-height: 1.5; color: var(--muted); }
 .brand-chips {
   display: flex;
   gap: 6px;
@@ -2078,7 +2129,21 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .map-popup.pm-card { width: calc(100% - 20px); left: 10px; bottom: 10px; padding: 11px; }
   .pm-card-note { font-size: 11px; }
   .ml-box { padding: 16px 18px; }
-  .toolbar-row .geo-btn { padding: 9px 12px; font-size: 12.5px; }
+  .toolbar-row .geo-btn { padding: 8px 11px; font-size: 12px; }
+  .map-toolbar .toolbar-row .row-label { display: none; }
+  .map-toolbar { padding: 9px 10px; gap: 7px; }
+  .map-toolbar .toolbar-row { gap: 6px; }
+  .select-province { flex: 0 0 84px; }
+  .select-province select { min-width: 0; width: 100%; padding: 8px 22px 8px 9px; font-size: 13px; }
+  .select-district { flex: 1 1 150px; min-width: 132px; }
+  .select-district select { min-width: 0; width: 100%; padding: 8px 24px 8px 9px; font-size: 13px; }
+  .region-search { flex: 1 1 150px; min-width: 120px; max-width: none; }
+  .region-search-input { padding: 8px 10px; font-size: 12.5px; }
+  .region-suggest { min-width: 0; width: max(100%, 250px); max-width: none; }
+  .region-suggest-item { font-size: 12.5px; }
+  .map-toolbar .radius-btn { padding: 5px 9px; font-size: 12px; }
+  .map-toolbar .toolbar-spacer { margin-left: 0; padding: 7px 11px; font-size: 12px; }
+  .toolbar-count { order: 9; flex: 1 1 100%; font-size: 11px; padding-top: 1px; }
 }
 
 /* 모바일: 첫 화면에서 지도가 바로 보이도록 압축 */

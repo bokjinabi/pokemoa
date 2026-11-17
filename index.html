@@ -484,7 +484,7 @@
     <div class="map-page-head">
       <span class="eyebrow">동네에서 찾기 · 첫 화면</span>
       <h1 id="map-title">내 주변 편의점·아트박스, 실제 지도에서 찾기</h1>
-      <p>OpenStreetMap 실제 지도 위에 주변 편의점 4사(GS25·CU·세븐일레븐·이마트24)와 문구·완구·선물 매장을 표시합니다. 지역을 고르거나 <b>'내 위치로 찾기'</b>를 누르면 그 반경의 매장을 새로 조회합니다.</p>
+      <p>OpenStreetMap 실제 지도 위에 주변 편의점 4사(GS25·CU·세븐일레븐·이마트24)와 문구·완구·선물 매장을 표시합니다. <b>전국 17개 시·도</b>에서 시·군·구를 고르거나 동네 이름으로 검색하고, <b>'내 위치로 찾기'</b>를 누르면 그 반경의 매장을 새로 조회합니다.</p>
     </div>
 
     <div class="demo-notice">
@@ -496,19 +496,48 @@
     <div class="map-toolbar">
       <div class="toolbar-row">
         <span class="row-label">지역</span>
-        <span class="select-wrap">
-          <select id="regionSelect" aria-label="지역 선택">
-            <option value="pohang-north">포항 · 북구 (환호동)</option>
-            <option value="pohang-south">포항 · 남구 (이동)</option>
-            <option value="seoul-gangnam">서울 · 강남 (역삼·선릉)</option>
-            <option value="seoul-hongdae">서울 · 마포 (홍대·합정)</option>
-            <option value="seoul-nowon">서울 · 노원 (노원·상계)</option>
-            <option value="busan-seomyeon">부산 · 부산진 (서면)</option>
+        <span class="select-wrap select-province">
+          <select id="provinceSelect" aria-label="시·도 선택">
+            <option value="서울">서울</option>
+            <option value="부산">부산</option>
+            <option value="대구">대구</option>
+            <option value="인천">인천</option>
+            <option value="광주">광주</option>
+            <option value="대전">대전</option>
+            <option value="울산">울산</option>
+            <option value="세종">세종</option>
+            <option value="경기">경기</option>
+            <option value="강원">강원</option>
+            <option value="충북">충북</option>
+            <option value="충남">충남</option>
+            <option value="전북">전북</option>
+            <option value="전남">전남</option>
+            <option value="경북" selected>경북</option>
+            <option value="경남">경남</option>
+            <option value="제주">제주</option>
           </select>
+        </span>
+        <span class="select-wrap select-district">
+          <select id="districtSelect" aria-label="시·군·구 선택">
+            <option value="pohang-north" selected>포항 · 북구 (환호동)</option>
+            <option value="pohang-south">포항 · 남구 (이동)</option>
+            <option value="gyeongbuk-gyeongju">경주</option>
+            <option value="gyeongbuk-gumi">구미</option>
+            <option value="gyeongbuk-andong">안동</option>
+          </select>
+        </span>
+        <span class="region-search">
+          <input type="text" id="regionSearch" class="region-search-input" placeholder="동네 검색 (예: 판교, 해운대)"
+                 autocomplete="off" role="combobox" aria-label="동네·지역 검색" aria-expanded="false"
+                 aria-controls="regionSuggest" aria-autocomplete="list">
+          <ul class="region-suggest" id="regionSuggest" role="listbox" aria-label="지역 검색 결과" hidden></ul>
         </span>
         <button type="button" class="btn btn-dark btn-sm geo-btn" id="geoBtn">
           <span aria-hidden="true">◎</span> 내 위치로 찾기
         </button>
+      </div>
+      <div class="toolbar-row">
+        <span class="row-label">반경</span>
         <div class="radius-group" role="group" aria-label="반경 필터">
           <button type="button" class="radius-btn" data-radius="1000">1km</button>
           <button type="button" class="radius-btn is-active" data-radius="3000">3km</button>
