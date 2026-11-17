@@ -1482,7 +1482,7 @@ window.POKEMOA_DATA = (function () {
   var facts = [
     { label: "정가·구성", text: "포켓몬 카드 게임 공식 제품 정보 (1팩 3,500원 / 1상자 70,000원, 1팩 6장, 1상자 20팩)", url: "https://pokemoncard.co.kr/card/960" },
     { label: "추첨 일정", text: "포켓몬스토어 30주년 특설 페이지 및 2차 추첨 안내 보도(10/20)", url: "https://www.pokemonstore.co.kr/pages/pokemoncardgame30th/product/index.html" },
-    { label: "편의점 입고", text: "편의점 3사 판매 일정 보도(10/9 세계일보 · 10/20 TCG뉴스 정리)", url: "https://tcgnews.kr/article/34" },
+    { label: "편의점 입고", text: "편의점 판매 일정 보도(10/9 세계일보 · 10/20 TCG뉴스 정리)", url: "https://tcgnews.kr/article/34" },
     { label: "SSG 판매 조건", text: "SSG 공식인증샵 상품 페이지 (70,000원 + 배송비 3,000원)", url: "https://www.ssg.com/item/itemView.ssg?itemId=1000881834004" },
     { label: "수록 카드", text: "30th CELEBRATION 카드 목록 (176종 · FUR 2종 · SAR 10종 · AR 20종 · 복각 30종)", url: "https://www.tcgheart.com/set/30th-celebration-korean" }
   ];

@@ -374,7 +374,8 @@ window.PokeMoaMap = (function () {
     var soldout = list.some(function (p) { return p.state === "soldout"; });
     var head = "";
     if (s.status === "none") {
-      head = '<span class="p-head">' + (soldout ? "최근 입고 품절" : "아직 미입고") + "</span>";
+      /* 품절 이력이 있으면 머리표로, 전부 미입고면 태그의 '미입고'만으로 충분하다 */
+      head = soldout ? '<span class="p-head">최근 입고 품절</span>' : "";
     } else if (withHead) {
       head = '<span class="p-head">취급 카드</span>';
     }

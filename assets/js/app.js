@@ -166,8 +166,8 @@
     var list = s.products || [];
     if (!list.length) return "";
     var soldout = list.some(function (p) { return p.state === "soldout"; });
-    var head = s.status === "none"
-      ? '<span class="p-head">' + (soldout ? "최근 입고 품절" : "아직 미입고") + "</span>"
+    var head = s.status === "none" && soldout
+      ? '<span class="p-head">최근 입고 품절</span>'
       : "";
     var tags = list.map(function (p) {
       return '<span class="p-tag is-' + p.state + '" title="' + p.name + " · " + p.stateLabel + '">' +

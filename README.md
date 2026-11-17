@@ -95,7 +95,7 @@ pokemoa/
 
 ### 일정 · 입고
 - **오늘(KST) 이후 일정만 기본 표시**: 지난 추첨·입고 기록은 `지난 일정 보기 (N건)` 접이식으로 숨김, 캘린더도 오늘 이후 입고일만 표시(`지난 입고일 보기` 토글로 확인)
-- 포켓몬스토어 1·2차 추첨, FUTURISTIC BOX, 편의점 3사 입고 일정 타임라인
+- 포켓몬스토어 1·2차 추첨, FUTURISTIC BOX, 편의점 4사 입고 일정 타임라인
 - 요일별 입고 체크 가이드, 11월 입고 캘린더(예상 샘플), 최근 입고 피드, 공지 확인처 링크
 
 ### 도감 · 가이드
@@ -136,12 +136,17 @@ pokemoa/
 - Playwright(Chromium)로 배포 URL(https://bokjinabi.github.io/pokemoa/)에 실제 접속해
   데스크톱 1280×900, 모바일 390×844에서 확인
 - v3 확인 항목: 전국 17개 시·도 · 55개 지역 2단 셀렉트와 동네 검색(제주·해운대)·기본 지역 포항 북구, 지역 변경 시 지도 중심 이동과 재조회, 포항 북구 20km 활성(반경 20000 · `out center 100` 쿼리), 제주시 20km 유지(allow20), 서울 강남 자동 5km 전환 + 20km 비활성·`도심은 5km까지 지원` 안내, 로딩 스피너·진행 바, 목록 10곳+더보기(18곳→접힘), 마커 카드·브랜드 필터(CU 6곳), 지난 일정 접기(`지난 일정 보기 (6건)`)·캘린더 토글, 모바일 390px 가로 넘침 없음, 페이지 에러 0건
+- v3.1 확인 항목(2026-11-17 라이브): 지도 제목·부제가 `내 주변 편의점 4사, 실제 지도에서 찾기`로 바뀌고 본문에 4사 외 업종 언급이 없음, 브랜드 칩 5종(전체·GS25·CU·세븐일레븐·이마트24), 카드 상품 칩 7종(전체 카드·30th CELEBRATION·배틀 파트너즈·테라스탈 페스타 ex·로켓단의 영광·초전 브레이커·스타터 세트), 매장 목록·지도 카드의 상품명 태그(입고/소량/확인 필요/품절/미입고 + `최근 입고 품절` 머리표), `30th CELEBRATION` 필터 선택 시 24곳으로 축소·마커 동기화, CU 필터 12곳, 필터 초기화 복원, 10곳+더보기(31곳→10곳), 서울 강남 자동 5km 전환과 `도심은 5km까지 지원`, 모바일 390px 가로 넘침 0·태그 10.5px, 페이지 오류 0건(콘솔의 502는 Overpass 응답)
+- v3.1 스냅샷: Overpass 스냅샷에서 4사 외 항목 285건을 제거해 **1,272건 → 987건**(전국 55개 지역 유지)
 - v3 Overpass 상태(2026-11-17 라이브 확인)
   - 실시간 응답: `실시간 조회 · OpenStreetMap 주변 매장 31곳 (Overpass API)` — 포항 북구 3km, 마커 31개·목록 10+더보기 21
   - 20km 실시간: 포항 북구 **97곳**(`out center 100` · 확대 10), 제주시 **87곳**
   - 도심 5km 실시간: 서울 강남 반경 5km에서 1,045곳 응답 중 가까운 **90곳** 표시(마커 상한)
   - 8초 초과: 내장 스냅샷 18곳을 먼저 표시(`조금 더 기다리는 중`) → 응답 도착 시 31곳으로 자동 교체(실제로 확인)
   - 502·타임아웃: `실시간 조회 지연/제한 → 내장 실제 좌표 스냅샷(반경 3km) 사용 (2026-11-17)` 배지 + `실시간 다시 조회` 버튼. 20km를 고른 상태면 `· 넓은 반경은 실시간 조회에서만 표시`를 덧붙입니다. 검증 시점에 overpass-api.de가 용량 초과로 간헐적 502를 반환해 스냅샷 경로가 자주 쓰였습니다
+- 스크린샷(v3.1): `screenshots/26-v31-desktop-stores.png`(매장 목록 카드명), `27-v31-map-card.png`(지도 팝업 카드명),
+  `28-v31-product-filter.png`(30th CELEBRATION 필터), `29-v31-mobile.png`
+  (배포 화면 라이브 캡처: `downloads/pokemoa-v31-stores.png`, `pokemoa-v31-card.png`, `pokemoa-v31-filter.png`, `pokemoa-v31-mobile.png`)
 - 스크린샷(v3): `screenshots/18-nationwide-loading.png`(로딩), `19-nationwide-desktop.png`, `20-pohang-20km.png`,
   `21-region-search.png`(동네 검색), `22-jeju-20km.png`, `23-seoul-5km.png`(도심 20km 비활성),
   `24-mobile-nationwide.png`, `25-live-pohang.png`
@@ -168,6 +173,6 @@ pokemoa/
 - 포켓몬스토어 30주년 특설 페이지 — https://www.pokemonstore.co.kr/pages/pokemoncardgame30th/product/index.html
 - SSG 공식인증샵 상품 페이지 — https://www.ssg.com/item/itemView.ssg?itemId=1000881834004
 - 30th Celebration 카드 목록(176종) — https://www.tcgheart.com/set/30th-celebration-korean
-- 편의점 3사 판매 일정 보도 — https://tcgnews.kr/article/34
+- 편의점 판매 일정 보도 — https://tcgnews.kr/article/34
 
 포케모아는 포켓몬코리아 및 권리자와 무관한 비공식 정보 사이트입니다.
