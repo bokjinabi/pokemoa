@@ -1470,7 +1470,7 @@ window.POKEMOA_DATA = (function () {
     },
     {
       q: "리셀가는 어느 정도면 비싼 건가요?",
-      a: "정가 기준으로 계산하세요. 박스 70,000원은 팩당 3,500원입니다. 12만 원에 올라온 박스는 팩당 6,000원으로 정가보다 팩당 2,500원, 박스 기준 50,000원(+71%) 비싼 것입니다. 가이드 탭의 계산기에 금액을 넣으면 바로 환산됩니다."
+      a: "정가 기준으로 계산하세요. 박스 70,000원은 팩당 3,500원입니다. 2026-11-17 KREAM 미개봉 시세는 슈링크 76,000원(팩당 3,800원, +9%), 논슈링크 72,000원(팩당 3,600원, +3%)이고 배송비는 별도입니다. 배송비를 더한 총액은 정가보다 약 7~16% 높습니다. 가이드 탭의 계산기에 금액을 넣으면 바로 환산됩니다."
     },
     {
       q: "확장팩만 사면 바로 대전할 수 있나요?",
@@ -1484,7 +1484,8 @@ window.POKEMOA_DATA = (function () {
     { label: "추첨 일정", text: "포켓몬스토어 30주년 특설 페이지 및 2차 추첨 안내 보도(10/20)", url: "https://www.pokemonstore.co.kr/pages/pokemoncardgame30th/product/index.html" },
     { label: "편의점 입고", text: "편의점 판매 일정 보도(10/9 세계일보 · 10/20 TCG뉴스 정리)", url: "https://tcgnews.kr/article/34" },
     { label: "SSG 판매 조건", text: "SSG 공식인증샵 상품 페이지 (70,000원 + 배송비 3,000원)", url: "https://www.ssg.com/item/itemView.ssg?itemId=1000881834004" },
-    { label: "수록 카드", text: "30th CELEBRATION 카드 목록 (176종 · FUR 2종 · SAR 10종 · AR 20종 · 복각 30종)", url: "https://www.tcgheart.com/set/30th-celebration-korean" }
+    { label: "수록 카드", text: "30th CELEBRATION 카드 목록 (176종 · FUR 2종 · SAR 10종 · AR 20종 · 복각 30종)", url: "https://www.tcgheart.com/set/30th-celebration-korean" },
+    { label: "KREAM 시세", text: "KREAM 미개봉 1박스 (2026-11-17 확인 · 한글판 · 슈링크 76,000원 / 논슈링크 72,000원 · 배송비·수수료 별도)", url: "https://kream.co.kr/search?keyword=30th%20CELEBRATION" }
   ];
 
   return {
