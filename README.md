@@ -127,6 +127,11 @@ pokemoa/
   `guide-bottom`, `mobile-sticky` — 점선 플레이스홀더 + `data-ad-slot` 속성
 - 쿠팡 파트너스 슬롯 2곳(대가성 문구 포함) — 둘 다 **같은 2열 위젯 카드**로 통일(v3.7): 「도감·가이드」 하단 `coupang-supplies`(`coupang-widget-1` = `https://coupa.ng/cq5BV0` / `coupang-widget-2` = `https://coupa.ng/cq5DGN`)와 「정가 구매처」 중간 `coupang-30th`(`coupang-30th-widget-1` / `-2`, 같은 위젯 코드) — 각 120×240, `flex-wrap:nowrap`·`gap:12px`, 모바일 390px에서도 한 줄
 - 푸터 모달: 소개 / 개인정보처리방침 / 이용약관 / 운영 문의(재고 제보 폼)
+- **Google Analytics 4**: `G-LWRMBRD0X9` — `index.html`·`privacy.html`·`terms.html` `<head>`에 gtag 스니펫, `assets/js/app.js`의 `trackEvent()` 래퍼로 주요 행동 이벤트를 전송(v3.9)
+  - `tab_view`(`tab`, `entry`: initial/switch) · `region_search`(`region`, `region_name`, `radius_km`)
+  - `store_outbound_click`(`store_name`, `url`) · `dex_set_select`(`set_id`) · `dex_expand`(`expanded`) · `faq_expand`(`expanded`)
+  - `affiliate_interact`(`slot`, `action`: click/focus) · `relay_connect`(`status`: online/error)
+  - 측정 ID를 바꾸려면 HTML 3개 파일의 gtag 스니펫 `id=`와 `gtag('config', …)` 두 곳만 교체하면 됩니다.
 - `privacy.html`, `terms.html` 단독 문서, `sitemap.xml`, `robots.txt`, OG/Twitter/JSON-LD(WebSite·FAQPage)
 
 ## 4. 실시간 중계 — 집 태블릿 실재고 (v3.8)
@@ -187,6 +192,8 @@ cloudflared tunnel --url http://127.0.0.1:3100   # 출력된 https://….tryclou
 7. **광고 정책**: 만 14세 미만 이용자 대상이 아니며, 카드 도박·현금 거래를 조장하는 문구는 넣지 않았습니다.
 
 ## 6. 검증 기록
+
+- **v3.9 GA4 확인 항목(2026-11-17 라이브 `https://bokjinabi.github.io/pokemoa/`)**: `index.html`·`privacy.html`·`terms.html` 모두 `<head>` 상단에 `gtag/js?id=G-LWRMBRD0X9` 로드, `dataLayer`에 `js`·`config` 적재, `google-analytics.com/g/collect` 요청 정상(204), 콘솔·페이지 오류 0건. 탭 전환·지역 검색·도감 세트 선택·도감/FAQ 더보기·정가 구매처 링크 클릭·쿠팡 위젯 포커스·중계 연결 실패까지 `trackEvent` 8종이 `dataLayer`에 쌓이는 것을 Playwright로 확인.
 
 - Playwright(Chromium)로 배포 URL(https://bokjinabi.github.io/pokemoa/)에 실제 접속해
   데스크톱 1280×900, 모바일 390×844에서 확인

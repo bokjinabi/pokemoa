@@ -7,6 +7,12 @@
   var $ = function (sel, root) { return (root || document).querySelector(sel); };
   var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
 
+  /* ------------------------------------------------------- GA4 이벤트 */
+  /* gtag(GA4)가 없는 경우(스크립트 차단·오프라인·단일 파일 미리보기) 조용히 넘어간다. */
+  function trackEvent(name, params) {
+    if (typeof window.gtag === "function") window.gtag("event", name, params || {});
+  }
+
   /* ------------------------------------------------------------ 공통 UI */
   var toastEl = $("#toast");
   var toastTimer = null;
@@ -33,6 +39,7 @@
   };
   var navBtns = $$(".nav-btn");
   var currentTab = "map";
+  var tabBooted = false;
   function showTab(name, opts) {
     if (!panels[name]) name = "map";
     Object.keys(panels).forEach(function (k) {
@@ -42,6 +49,10 @@
       b.classList.toggle("is-active", b.getAttribute("data-tab") === name);
     });
     currentTab = name;
+    /* 첫 화면 진입과 탭 전환을 구분해 보낸다(페이지뷰·체류 시간 해석용) */
+    var tabEntry = tabBooted ? "switch" : "initial";
+    tabBooted = true;
+    trackEvent("tab_view", { tab: name, entry: tabEntry });
     if (name === "map") {
       ensureMap();
       if (mapReady && window.PokeMoaMap) {
@@ -485,6 +496,7 @@
       relayRender();
       relayMsg("연결됐습니다. 실재고를 불러오는 중…", "ok");
       toast("실시간 중계에 연결했습니다. 실제 재고를 불러옵니다.");
+      trackEvent("relay_connect", { status: "online" });
       if (!opts.keepOpen) relayClose();
       relayRefresh(true);
     }).catch(function (err) {
@@ -495,6 +507,7 @@
         : (err && err.message) || "응답 없음";
       relayMsg("연결하지 못했습니다 — " + reason +
         ". 태블릿의 server.js·터널 주소를 확인해 주세요.", "warn");
+      trackEvent("relay_connect", { status: "error" });
     });
   }
 
@@ -654,6 +667,11 @@
     if (storeSkeleton) storeSkeleton.hidden = false;
     if (storeListEl) storeListEl.hidden = true;
     if (mapReady) window.PokeMoaMap.setRegion(r.id);
+    trackEvent("region_search", {
+      region: r.id,
+      region_name: r.name,
+      radius_km: filterState.radius / 1000
+    });
   }
 
   /* 시·도 · 시군구 드롭다운과 동네 검색이 같은 지역을 가리키도록 맞춘다 */
@@ -1233,6 +1251,7 @@
   }
 
   function selectSet(id) {
+    trackEvent("dex_set_select", { set_id: id });
     activeSetId = id;
     rarity = "all";
     dexExpanded = false; /* 세트를 바꾸면 다시 4장만 */
@@ -1272,6 +1291,7 @@
     dexMore.addEventListener("click", function () {
       dexExpanded = !dexExpanded;
       renderDex();
+      trackEvent("dex_expand", { expanded: dexExpanded });
       if (!dexExpanded && dexGrid) {
         var top = dexGrid.getBoundingClientRect().top + window.scrollY - 90;
         window.scrollTo({ top: top > 0 ? top : 0, behavior: "smooth" });
@@ -1322,6 +1342,7 @@
     faqMore.addEventListener("click", function () {
       faqExpanded = !faqExpanded;
       syncFaqMore();
+      trackEvent("faq_expand", { expanded: faqExpanded });
       if (!faqExpanded && faqList) {
         var top = faqList.getBoundingClientRect().top + window.scrollY - 90;
         window.scrollTo({ top: top > 0 ? top : 0, behavior: "smooth" });
@@ -1480,6 +1501,32 @@
   }
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape") closeModal();
+  });
+
+  /* ---------------------------------------- 정가 구매처 밖으로 나가는 클릭 */
+  document.addEventListener("click", function (e) {
+    var a = e.target && e.target.closest ? e.target.closest(".channel-links a[href^='http']") : null;
+    if (!a) return;
+    var card = a.closest(".channel-card");
+    var nameEl = card ? card.querySelector(".channel-name") : null;
+    trackEvent("store_outbound_click", {
+      store_name: nameEl ? nameEl.textContent.trim() : "",
+      url: a.href
+    });
+  });
+
+  /* ------------------------------------------- 쿠팡 파트너스 영역 반응 */
+  function affiliateSlotOf(el) {
+    var slot = el && el.closest ? el.closest("[data-affiliate-slot]") : null;
+    return slot ? slot.getAttribute("data-affiliate-slot") || "" : "";
+  }
+  document.addEventListener("click", function (e) {
+    var slot = affiliateSlotOf(e.target);
+    if (slot) trackEvent("affiliate_interact", { slot: slot, action: "click" });
+  }, true);
+  document.addEventListener("focusin", function (e) {
+    var slot = affiliateSlotOf(e.target);
+    if (slot) trackEvent("affiliate_interact", { slot: slot, action: "focus" });
   });
 
   /* --------------------------------------------------------- 제휴 링크 */
