@@ -390,13 +390,13 @@ window.PokeMoaMap = (function () {
         : "실시간 조회 · OpenStreetMap 주변 매장 " + st.all.length + "곳 (Overpass API)";
       return { kind: "live", text: txt, action: false };
     }
+    var snapKm = Math.round(((D.osmSnapshot || {}).radius || 3000) / 1000);
+    var wideNote = st.radius > snapKm * 1000 ? " · 넓은 반경은 실시간 조회에서만 표시" : "";
     return {
       kind: "snapshot",
       text: (st.pendingLive
-        ? "실시간 조회가 느려 내장 실제 좌표로 먼저 표시 (조금 더 기다리는 중 · " + st.snapshotLabel +
-          " · 반경 " + Math.round(((D.osmSnapshot || {}).radius || 3000) / 1000) + "km 기준)"
-        : "실시간 조회 지연/제한 → 내장 실제 좌표 스냅샷 사용 (" + st.snapshotLabel + " · 반경 " +
-          Math.round(((D.osmSnapshot || {}).radius || 3000) / 1000) + "km 기준)"),
+        ? "실시간 조회가 느려 내장 실제 좌표(반경 " + snapKm + "km)로 먼저 표시 (조금 더 기다리는 중 · " + st.snapshotLabel + ")"
+        : "실시간 조회 지연/제한 → 내장 실제 좌표 스냅샷(반경 " + snapKm + "km) 사용 (" + st.snapshotLabel + ")" + wideNote),
       action: true
     };
   }
