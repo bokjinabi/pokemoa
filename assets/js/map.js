@@ -1,622 +1,641 @@
 /* =========================================================================
- * 포케모아 — 자체 SVG 인터랙티브 지도 (외부 지도 API·CDN 미사용)
- * 월드 좌표 = 지역 중심 기준 미터 단위 (x: 동쪽+, y: 남쪽+)
+ * 포케모아 — 실제 지도 엔진 (Leaflet + OpenStreetMap 타일 + Overpass API)
+ *
+ * · 지도 타일: OpenStreetMap 표준 타일 (실제 도로·건물)
+ * · 주변 매장: Overpass API 실시간 조회 (편의점 4사 + 문구·완구·선물)
+ * · 실시간 조회가 8초 안에 끝나지 않거나 응답 제한(429/502)이면
+ *   내장된 실제 좌표 스냅샷으로 부드럽게 대체하고 배지에 상태를 표기한다.
+ * · 재고 상태는 편의점 앱 API 미연동 → 제보·샘플 기반임을 화면에서 밝힌다.
  * ========================================================================= */
 window.PokeMoaMap = (function () {
   "use strict";
-  var NS = "http://www.w3.org/2000/svg";
-  var D = window.POKEMOA_DATA;
 
-  var el = {};
+  var D = window.POKEMOA_DATA;
+  var TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+  var TILE_ATTRIB = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> 기여자';
+  var OVERPASS_ENDPOINTS = [
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+    "https://overpass.private.coffee/api/interpreter"
+  ];
+  var LEAFLET_CDN = [
+    "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js",
+    "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  ];
+  var OVERPASS_TIMEOUT = 8000;   /* brief: 8초 타임아웃 → 폴백 */
+  var MAX_MARKERS = 90;
+
   var st = {
-    region: null,
-    stores: [],
+    map: null,
+    tiles: null,
+    layer: null,
+    ring: null,
+    meMarker: null,
+    markers: {},
+    all: [],          /* 현재 중심 기준 조회 결과(반경 밖 포함) */
+    visible: [],
     brand: "all",
-    radius: 3,
-    z: 1,
-    cx: 0,
-    cy: 0,
-    w: 0,
-    h: 0,
-    baseMpp: 5,
+    radius: 3000,
+    regionId: "pohang-north",
+    origin: "region",  /* region | geo */
+    center: null,
+    source: "snapshot",/* live | snapshot */
+    fetchedAt: null,
+    loading: { tiles: true, data: true },
     selectedId: null,
-    markerEls: {}
+    seq: 0,
+    geoBusy: false,
+    lastError: null,
+    fetchedRadius: 0,
+    snapshotLabel: ""
   };
 
-  function svgEl(tag, attrs) {
-    var n = document.createElementNS(NS, tag);
-    if (attrs) {
-      for (var k in attrs) {
-        if (Object.prototype.hasOwnProperty.call(attrs, k)) n.setAttribute(k, attrs[k]);
-      }
+  var el = {};
+
+  /* ------------------------------------------------------------- 유틸 */
+  function emit(name, detail) {
+    document.dispatchEvent(new CustomEvent(name, { detail: detail || {} }));
+  }
+
+  function region(id) {
+    for (var i = 0; i < D.regions.length; i++) if (D.regions[i].id === id) return D.regions[i];
+    return D.regions[0];
+  }
+
+  function meters(a, b) {
+    var R = 6371008.8;
+    var dLat = (b.lat - a.lat) * Math.PI / 180;
+    var dLng = (b.lng - a.lng) * Math.PI / 180;
+    var la1 = a.lat * Math.PI / 180;
+    var la2 = b.lat * Math.PI / 180;
+    var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(la1) * Math.cos(la2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+  }
+
+  function hash(str) {
+    var h = 2166136261;
+    for (var i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 16777619);
     }
-    return n;
+    return (h >>> 0);
   }
 
-  function mulberry32(a) {
-    return function () {
-      a |= 0;
-      a = (a + 0x6d2b79f5) | 0;
-      var t = Math.imul(a ^ (a >>> 15), 1 | a);
-      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
+  /* 매장 재고 상태: 편의점 앱 API 미연동 → 결정적(항상 같은) 샘플 제보값 */
+  var STATUS = ["in", "check", "check", "none", "in", "check"];
+  function sampleStatus(id) {
+    return STATUS[hash(id) % STATUS.length];
+  }
+  function sampleObserved(id) {
+    var h = hash(id + "t");
+    var hh = String(9 + (h % 3)).padStart(2, "0");
+    var mm = String((h >>> 3) % 60).padStart(2, "0");
+    return "11-17 " + hh + ":" + mm;
   }
 
-  function mpp() {
-    return st.baseMpp / st.z;
+  /* ------------------------------------------------------- 브랜드 분류 */
+  var NAME_RULES = [
+    ["gs25", /gs\s*25|지에스\s*25/],
+    ["seven", /세븐일레븐|7\s*-?\s*eleven|seven\s*eleven/],
+    ["emart24", /emart\s*24|이마트\s*24/],
+    ["artbox", /artbox|아트박스/]
+  ];
+  function classify(tags) {
+    tags = tags || {};
+    var n = [tags.name, tags["name:ko"], tags.brand, tags["brand:ko"], tags.operator]
+      .filter(Boolean).join(" ").toLowerCase();
+    /* CU는 짧아서 부분 일치하면 오탐이 나므로 토큰 단위로 확인 */
+    var tokens = n.split(/[^a-z0-9가-힣]+/);
+    if (tokens.indexOf("cu") !== -1) return "cu";
+    for (var i = 0; i < NAME_RULES.length; i++) {
+      if (NAME_RULES[i][1].test(n)) return NAME_RULES[i][0];
+    }
+    var shop = tags.shop;
+    if (shop === "stationery" || shop === "toys" || shop === "gift") return "stationery";
+    if (shop === "convenience") return "other";
+    return null;
   }
 
-  function viewBox() {
-    var m = mpp();
+  function displayName(name, brand) {
+    var meta = D.brandMeta[brand] || { label: brand };
+    var nm = (name || "").trim();
+    if (!nm) return meta.label + " (명칭 미등록)";
+    var norm = nm.replace(/\s+/g, "").toLowerCase();
+    var base = meta.label.replace(/\s+/g, "").toLowerCase();
+    if (norm === base) return meta.label;
+    return nm;
+  }
+
+  /* --------------------------------------------------- Overpass → 매장 */
+  function toStore(o) {
+    var id = o.type + "-" + o.id;
     return {
-      x: st.cx - (st.w * m) / 2,
-      y: st.cy - (st.h * m) / 2,
-      w: st.w * m,
-      h: st.h * m
+      id: id,
+      name: displayName(o.name, o.brand),
+      brand: o.brand,
+      brandLabel: (D.brandMeta[o.brand] || {}).label || o.brand,
+      shop: o.shop,
+      lat: o.lat,
+      lng: o.lng,
+      street: o.street || "",
+      distance: 0,
+      status: sampleStatus(id),
+      observed: sampleObserved(id),
+      unit: "낱팩",
+      note: "",
+      source: o.source
     };
   }
 
-  function toScreen(wx, wy) {
-    var vb = viewBox();
-    var m = mpp();
-    return { x: (wx - vb.x) / m, y: (wy - vb.y) / m };
+  function prepare(list, center, source) {
+    var out = [];
+    for (var i = 0; i < list.length; i++) {
+      var s = toStore(list[i]);
+      s.source = source;
+      s.distance = meters(center, s);
+      s.lat = s.lat;
+      out.push(s);
+    }
+    return out;
   }
 
-  /* ------------------------------------------------------------ 기본 도면 */
-  function buildBase() {
-    var svg = el.svg;
-    while (svg.firstChild) svg.removeChild(svg.firstChild);
-    var region = st.region;
-    if (!region) return;
-    var rnd = mulberry32(region.seed);
-    var R = 2400;
-
-    /* --- 패턴(건물 텍스처) --- */
-    var defs = svgEl("defs", {});
-    function makePattern(id, base, cells) {
-      var p = svgEl("pattern", { id: id, width: 34, height: 28, patternUnits: "userSpaceOnUse" });
-      p.appendChild(svgEl("rect", { width: 34, height: 28, fill: base }));
-      cells.forEach(function (c) {
-        p.appendChild(svgEl("rect", { x: c[0], y: c[1], width: c[2], height: c[3], rx: 1.5, fill: c[4] }));
-      });
-      return p;
-    }
-    svg.appendChild(defs);
-
-    svg.appendChild(svgEl("rect", { x: -9000, y: -9000, width: 18000, height: 18000, fill: "#ffffff" }));
-
-    /* --- 공원 --- */
-    var parks = [
-      { x: -760 + rnd() * 500, y: -560 + rnd() * 320, rx: 330, ry: 220 },
-      { x: 620 + rnd() * 700, y: 480 + rnd() * 420, rx: 280, ry: 190 },
-      { x: -1500 + rnd() * 400, y: 1000 + rnd() * 320, rx: 250, ry: 260 }
-    ];
-    var gParks = svgEl("g", {});
-    parks.forEach(function (p) {
-      gParks.appendChild(svgEl("ellipse", { cx: p.x, cy: p.y, rx: p.rx, ry: p.ry, fill: "#dbedd9" }));
-      gParks.appendChild(svgEl("ellipse", { cx: p.x - p.rx * 0.18, cy: p.y + p.ry * 0.12, rx: p.rx * 0.62, ry: p.ry * 0.58, fill: "#d2e8d0" }));
-      for (var t = 0; t < 16; t++) {
-        var ang = rnd() * Math.PI * 2;
-        var rad = Math.sqrt(rnd()) * 0.82;
-        gParks.appendChild(svgEl("circle", {
-          cx: p.x + Math.cos(ang) * p.rx * rad,
-          cy: p.y + Math.sin(ang) * p.ry * rad,
-          r: 9 + rnd() * 10,
-          fill: "#c3e0c1"
-        }));
-      }
-    });
-    svg.appendChild(gParks);
-
-    /* --- 물 --- */
-    var gWater = svgEl("g", {});
-    var coastX = 1400;
-    if (region.water === "east") {
-      var pts = [];
-      for (var y = -7000; y <= 7000; y += 200) {
-        var edge = coastX + Math.sin(y / 700) * 120 + Math.cos(y / 230) * 26;
-        pts.push([edge, y]);
-      }
-      var d = "M " + pts.map(function (p) { return p[0] + "," + p[1]; }).join(" L ") + " L 9000,7000 L 9000,-7000 Z";
-      gWater.appendChild(svgEl("path", { d: d, fill: "#c9e2f8" }));
-      var beach = "M " + pts.map(function (p) { return p[0] + "," + p[1]; }).join(" L ");
-      gWater.appendChild(svgEl("path", { d: beach, fill: "none", stroke: "#e6e0d2", "stroke-width": 46, "stroke-linecap": "round" }));
-      gWater.appendChild(svgEl("path", { d: beach, fill: "none", stroke: "#c9e2f8", "stroke-width": 40, "stroke-linecap": "round" }));
-      for (var w = 0; w < 7; w++) {
-        var wy = -1200 + w * 420;
-        var wx = coastX + 240 + Math.sin(wy / 700) * 120 + w * 120;
-        gWater.appendChild(svgEl("path", {
-          d: "M " + wx + "," + (wy - 46) + " q 46,46 92,0",
-          fill: "none", stroke: "#b6d6f2", "stroke-width": 14, "stroke-linecap": "round"
-        }));
-      }
-    } else if (region.water === "north") {
-      gWater.appendChild(svgEl("path", {
-        d: "M -9000,-9000 L 9000,-9000 L 9000,-1560 C 5200,-1400 3200,-1660 1200,-1490 C -600,-1350 -2600,-1600 -4700,-1460 C -6500,-1340 -7800,-1560 -9000,-1480 Z",
-        fill: "#c9e2f8"
-      }));
-      gWater.appendChild(svgEl("path", {
-        d: "M -9000,-1480 C -7800,-1560 -6500,-1340 -4700,-1460 C -2600,-1600 -600,-1350 1200,-1490 C 3200,-1660 5200,-1400 9000,-1560",
-        fill: "none", stroke: "#e9dfc6", "stroke-width": 44, "stroke-linecap": "round"
-      }));
-    }
-    svg.appendChild(gWater);
-
-    /* --- 블록 --- */
-    var gBlocks = svgEl("g", {});
-    function inWater(x, y) {
-      if (region.water === "east") return x > coastX + Math.sin(y / 700) * 120 - 40;
-      if (region.water === "north") return y < -1500;
-      return false;
-    }
-    function inPark(x, y) {
-      return parks.some(function (p) {
-        var dx = (x - p.x) / (p.rx + 30);
-        var dy = (y - p.y) / (p.ry + 30);
-        return dx * dx + dy * dy < 1;
-      });
-    }
-    var stepX = 246;
-    var stepY = 196;
-    var row = 0;
-    for (var gy = -R; gy <= R; gy += stepY) {
-      var offset = (row % 2) * (stepX / 2);
-      for (var gx = -R - stepX; gx <= R + stepX; gx += stepX) {
-        var jx = gx + offset + (rnd() - 0.5) * 16;
-        var jy = gy + (rnd() - 0.5) * 14;
-        if (inWater(jx, jy) || inPark(jx, jy)) continue;
-        if (rnd() < 0.1) continue;
-        var bw = 176 + Math.floor(rnd() * 46);
-        var bh = 138 + Math.floor(rnd() * 38);
-        var tone = rnd();
-        var fill = tone > 0.88 ? "#d3deee" : tone > 0.64 ? "#dce5f1" : tone > 0.3 ? "#e4ebf5" : "#ebf0f7";
-        gBlocks.appendChild(svgEl("rect", {
-          x: jx - bw / 2,
-          y: jy - bh / 2,
-          width: bw,
-          height: bh,
-          rx: 7,
-          fill: fill
-        }));
-
-      }
-      row += 1;
-    }
-    /* 큰 시설 블록 */
-    [[-320, 240, 210, 150], [980, -320, 180, 130], [-980, -980, 170, 120]].forEach(function (b) {
-      if (inWater(b[0], b[1])) return;
-      gBlocks.appendChild(svgEl("rect", {
-        x: b[0], y: b[1], width: b[2], height: b[3], rx: 6,
-        fill: "#dfe7f3", stroke: "#d2dcec", "stroke-width": 3
-      }));
-    });
-    svg.appendChild(gBlocks);
-
-    /* --- 도로 --- */
-    var gRoads = svgEl("g", {});
-    function road(x1, y1, x2, y2, width, surface) {
-      gRoads.appendChild(svgEl("line", {
-        x1: x1, y1: y1, x2: x2, y2: y2,
-        stroke: "#ccd7e7", "stroke-width": width + 9, "stroke-linecap": "round"
-      }));
-      gRoads.appendChild(svgEl("line", {
-        x1: x1, y1: y1, x2: x2, y2: y2,
-        stroke: surface || "#ffffff", "stroke-width": width, "stroke-linecap": "round"
-      }));
-    }
-    var i;
-    for (i = -R; i <= R; i += stepX * 3) {
-      if (region.water === "east" && i > coastX - 140) continue;
-      if (region.water === "north" && i <= -1560) continue;
-      road(i + stepX / 2, -R - 200, i + stepX / 2, R + 200, 46);
-    }
-    for (i = -R; i <= R; i += stepY * 3) {
-      if (region.water === "east" && i < -1500) continue;
-      if (region.water === "north" && i < -1460) continue;
-      road(-R - 200, i + stepY / 2, R + 200, i + stepY / 2, 40);
-    }
-    /* 대각선 간선 */
-    road(-R - 200, -R + 620, R + 200, R - 480, 36, "#ffffff");
-    svg.appendChild(gRoads);
-
-    /* --- 라벨 --- */
-    if (region.label) {
-      var lbl = svgEl("text", {
-        x: 0, y: -700, "text-anchor": "middle",
-        "font-size": 110, "font-weight": 700,
-        fill: "#9fadc4", "letter-spacing": 6,
-        "paint-order": "stroke", stroke: "#ffffff", "stroke-width": 14
-      });
-      lbl.textContent = region.label;
-      svg.appendChild(lbl);
-    }
-    var lbl2 = svgEl("text", {
-      x: -1750, y: 1560, "text-anchor": "middle",
-      "font-size": 64, fill: "#aab4c6", "letter-spacing": 5
-    });
-    lbl2.textContent = "포케모아 스타일 지도";
-    svg.appendChild(lbl2);
-
-    /* --- 지형지물 라벨 --- */
-    var labels = [
-      { x: -520, y: 120, t: "중심 상가", size: 46 },
-      { x: 780, y: 640, t: "시장", size: 42 },
-      { x: -1250, y: -700, t: "주거 지구", size: 40 }
-    ];
-    labels.forEach(function (l) {
-      var t = svgEl("text", {
-        x: l.x, y: l.y, "text-anchor": "middle",
-        "font-size": l.size, fill: "#8d9ab2", "letter-spacing": 3,
-        "paint-order": "stroke", stroke: "#ffffff", "stroke-width": 8
-      });
-      t.textContent = l.t;
-      svg.appendChild(t);
-    });
-
-    /* --- 반경 링 --- */
-    var gRings = svgEl("g", { id: "map-rings" });
-    [1, 3, 5].forEach(function (km) {
-      var c = svgEl("circle", {
-        cx: 0, cy: 0, r: km * 1000,
-        fill: "none", stroke: "#2f6df6", "stroke-width": 7,
-        "stroke-dasharray": "46 34", opacity: 0.14,
-        "data-radius": km
-      });
-      gRings.appendChild(c);
-      var t = svgEl("text", {
-        x: 0, y: -km * 1000 - 26,
-        "text-anchor": "middle", "font-size": 60, fill: "#2f6df6", opacity: 0.35,
-        "data-radius": km
-      });
-      t.textContent = km + "km";
-      gRings.appendChild(t);
-    });
-    svg.appendChild(gRings);
-    updateRings();
+  /* ---------------------------------------------------------- 지도 생성 */
+  function ensureLeaflet(cb) {
+    if (window.L) { cb(true); return; }
+    var i = 0;
+    (function next() {
+      if (i >= LEAFLET_CDN.length) { cb(false); return; }
+      var s = document.createElement("script");
+      s.src = LEAFLET_CDN[i++];
+      s.onload = function () { cb(!!window.L); };
+      s.onerror = next;
+      document.head.appendChild(s);
+    })();
   }
 
-  function updateRings() {
-    var g = el.svg.querySelector("#map-rings");
-    if (!g) return;
-    Array.prototype.forEach.call(g.querySelectorAll("[data-radius]"), function (n) {
-      var km = Number(n.getAttribute("data-radius"));
-      var active = km === st.radius;
-      n.setAttribute("opacity", active ? (n.tagName === "text" ? 0.75 : 0.5) : 0.1);
-      n.setAttribute("stroke-dasharray", active ? "46 34" : "24 40");
+  function buildMap() {
+    if (st.map) return;
+    var r = region(st.regionId);
+    st.map = L.map(el.container, {
+      center: [r.lat, r.lng],
+      zoom: r.zoom || 15,
+      zoomControl: false,
+      attributionControl: true,
+      preferCanvas: false
+    });
+
+    st.tiles = L.tileLayer(TILE_URL, {
+      maxZoom: 19,
+      minZoom: 9,
+      attribution: TILE_ATTRIB,
+      crossOrigin: true
+    });
+    st.tiles.on("load", function () {
+      st.loading.tiles = false;
+      emit("pokemoa:loading", loadingState());
+    });
+    st.tiles.on("tileerror", function () {
+      st.loading.tiles = false;
+      emit("pokemoa:loading", loadingState());
+    });
+    st.tiles.addTo(st.map);
+
+    L.control.zoom({ position: "topright" }).addTo(st.map);
+    L.control.scale({ position: "bottomleft", imperial: false, maxWidth: 90 }).addTo(st.map);
+
+    st.layer = L.layerGroup().addTo(st.map);
+    st.ring = L.circle([r.lat, r.lng], {
+      radius: st.radius,
+      color: "#2f6df6",
+      weight: 1.5,
+      opacity: 0.55,
+      dashArray: "6 6",
+      fillColor: "#2f6df6",
+      fillOpacity: 0.05,
+      interactive: false
+    }).addTo(st.map);
+
+    st.map.on("moveend", positionCard);
+  }
+
+  /* ------------------------------------------------------------- 마커 */
+  function pinIcon(s) {
+    var b = D.brandMeta[s.brand] || { short: "?", color: "#1b2a4a" };
+    var html =
+      '<span class="pm-pin status-' + s.status + '" style="--brand:' + b.color + '">' +
+      '<span class="pm-pin-dot">' + b.short + "</span>" +
+      "</span>";
+    return L.divIcon({
+      className: "pm-marker status-" + s.status,
+      html: html,
+      iconSize: [30, 38],
+      iconAnchor: [15, 36],
+      popupAnchor: [0, -34]
     });
   }
 
-  /* ---------------------------------------------------------------- 마커 */
-  function buildMarkers() {
-    el.layer.innerHTML = "";
-    st.markerEls = {};
-    var meta = D.brandMeta;
+  function brandOrder(b) {
+    return ({ gs25: 0, cu: 1, seven: 2, emart24: 3, artbox: 4, stationery: 5, other: 6 })[b] || 9;
+  }
 
-    /* 기준점 */
-    var origin = document.createElement("div");
-    origin.className = "map-origin";
-    origin.innerHTML = '<span class="origin-dot"></span><span class="origin-label">지도 기준점</span>';
-    el.layer.appendChild(origin);
-    st.originEl = origin;
-
-    st.stores.forEach(function (s) {
-      var b = meta[s.brand] || { label: s.brand, short: "?", color: "#1b2a4a", soft: "#eee" };
-      var btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "map-marker status-" + s.status;
-      btn.setAttribute("data-id", s.id);
-      btn.setAttribute("aria-label", s.name + " · " + statusLabel(s.status));
-      btn.innerHTML =
-        '<span class="pin" style="--brand:' + b.color + '">' + b.short + "</span>" +
-        '<span class="pin-label">' + s.name + "</span>";
-      btn.addEventListener("click", function (e) {
-        e.stopPropagation();
-        select(s.id);
-      });
-      el.layer.appendChild(btn);
-      st.markerEls[s.id] = btn;
+  function renderMarkers() {
+    st.layer.clearLayers();
+    st.markers = {};
+    var list = st.all.filter(match).slice().sort(function (a, b) {
+      return a.distance - b.distance;
     });
-    updateMarkerPositions();
+    /* 카테고리 고르게 보이도록 브랜드 우선순위 → 거리 순으로 상한 적용 */
+    list.sort(function (a, b) {
+      var d = brandOrder(a.brand) - brandOrder(b.brand);
+      return d !== 0 ? d : a.distance - b.distance;
+    });
+    if (st.brand === "all") list = list.slice(0, MAX_MARKERS);
+    st.visible = list.map(function (s) { return s; });
+    st.visible.sort(function (a, b) { return a.distance - b.distance; });
+
+    st.visible.forEach(function (s) {
+      var m = L.marker([s.lat, s.lng], {
+        icon: pinIcon(s),
+        title: s.name,
+        keyboard: true,
+        riseOnHover: true
+      });
+      m.on("click", function () { select(s.id, true); });
+      m.addTo(st.layer);
+      st.markers[s.id] = m;
+    });
+    if (st.selectedId && !st.markers[st.selectedId]) closeCard();
+    emit("pokemoa:visible", { stores: st.visible });
+  }
+
+  function match(s) {
+    if (st.brand !== "all" && s.brand !== st.brand) return false;
+    if (s.distance > st.radius) return false;
+    return true;
+  }
+
+  /* --------------------------------------------------------- 정보 카드 */
+  function select(id, fromMap) {
+    var s = null;
+    for (var i = 0; i < st.visible.length; i++) if (st.visible[i].id === id) s = st.visible[i];
+    if (!s) return;
+    st.selectedId = id;
+    Object.keys(st.markers).forEach(function (k) {
+      var node = st.markers[k].getElement();
+      if (node) node.classList.toggle("is-selected", k === id);
+    });
+    renderCard(s);
+    emit("pokemoa:store-selected", { id: id });
+    if (fromMap && window.innerWidth < 980) {
+      /* 모바일: 카드가 지도 하단에 고정되므로 지도만 보이도록 스크롤 유지 */
+      el.container.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }
+
+  function closeCard() {
+    st.selectedId = null;
+    if (el.card) el.card.hidden = true;
+    emit("pokemoa:store-cleared");
   }
 
   function statusLabel(s) {
     return s === "in" ? "재고 있음" : s === "check" ? "매장 확인 필요" : "재고 없음";
   }
 
-  function isVisible(s) {
-    if (st.brand !== "all" && s.brand !== st.brand) return false;
-    if (s.distance > st.radius) return false;
-    return true;
-  }
-
-  function updateMarkerPositions() {
-    var meta = D.brandMeta;
-    st.stores.forEach(function (s) {
-      var btn = st.markerEls[s.id];
-      if (!btn) return;
-      var p = toScreen(s.dx, s.dy);
-      btn.style.transform = "translate(" + p.x.toFixed(1) + "px," + p.y.toFixed(1) + "px)";
-      btn.style.display = isVisible(s) ? "" : "none";
-      if (st.brand === "all" && !btn.querySelector(".pin-label").dataset.base) {
-        var b = meta[s.brand];
-        btn.querySelector(".pin").title = b ? b.label : s.brand;
-      }
-    });
-    if (st.originEl) {
-      var o = toScreen(0, 0);
-      st.originEl.style.transform = "translate(" + o.x.toFixed(1) + "px," + o.y.toFixed(1) + "px)";
-    }
-    if (st.selectedId) positionPopup();
-    updateScaleBar();
-  }
-
-  function updateScaleBar() {
-    if (!el.scale) return;
-    var m = mpp(); // 미터/픽셀
-    var targetPx = 78;
-    var meters = targetPx * m;
-    var nice = [100, 200, 500, 1000, 2000, 5000, 10000];
-    var pick = nice[0];
-    for (var i = 0; i < nice.length; i++) {
-      if (nice[i] <= meters) pick = nice[i];
-    }
-    var width = pick / m;
-    el.scaleBar.style.width = Math.max(24, Math.min(160, width)).toFixed(1) + "px";
-    el.scaleText.textContent = pick >= 1000 ? (pick / 1000) + " km" : pick + " m";
-  }
-
-  /* --------------------------------------------------------------- 팝업 */
-  function select(id) {
-    var s = st.stores.filter(function (x) { return x.id === id; })[0];
-    if (!s) return;
-    st.selectedId = id;
-    Object.keys(st.markerEls).forEach(function (k) {
-      st.markerEls[k].classList.toggle("is-selected", k === id);
-    });
-    renderPopup(s);
-    el.container.scrollLeft = 0;
-    el.container.scrollTop = 0;
-    document.dispatchEvent(new CustomEvent("pokemoa:store-selected", { detail: { id: id } }));
-  }
-
-  function clearSelection() {
-    st.selectedId = null;
-    Object.keys(st.markerEls).forEach(function (k) {
-      st.markerEls[k].classList.remove("is-selected");
-    });
-    if (el.popup) el.popup.hidden = true;
-    document.dispatchEvent(new CustomEvent("pokemoa:store-cleared"));
-  }
-
-  function renderPopup(s) {
-    var b = D.brandMeta[s.brand] || { label: s.brand, color: "#1b2a4a" };
-    var pop = el.popup;
-    pop.hidden = false;
-    pop.innerHTML =
-      '<div class="popup-head">' +
-      '<span class="popup-brand" style="background:' + b.color + '">' + b.short + "</span>" +
-      "<div class=\"popup-title\"><strong>" + s.name + "</strong>" +
-      "<span>" + s.area + " · " + s.distance.toFixed(1) + "km</span></div>" +
-      '<button type="button" class="popup-close" aria-label="닫기">×</button>' +
+  function renderCard(s) {
+    if (!el.card) return;
+    var meta = D.brandMeta[s.brand] || { label: s.brand, color: "#1b2a4a", short: "?" };
+    var dist = s.distance < 1000 ? Math.round(s.distance) + "m" : (s.distance / 1000).toFixed(1) + "km";
+    var navLink = "https://map.naver.com/p/search/" + encodeURIComponent(s.name);
+    el.card.hidden = false;
+    el.card.innerHTML =
+      '<div class="pm-card-head">' +
+      '<span class="pm-card-brand" style="background:' + meta.color + '">' + meta.short + "</span>" +
+      '<div class="pm-card-title"><strong>' + s.name + "</strong>" +
+      "<span>" + meta.label + (s.street ? " · " + s.street : "") + " · " + dist + "</span></div>" +
+      '<button type="button" class="pm-card-close" aria-label="닫기">×</button>' +
       "</div>" +
-      '<div class="popup-meta">' +
+      '<div class="pm-card-meta">' +
       '<span class="status-badge ' + s.status + '">' + statusLabel(s.status) + "</span>" +
-      '<span class="chip">' + s.unit + "</span>" +
-      '<span class="chip">' + s.observed + " 관측</span>" +
+      '<span class="chip chip-sample">샘플 재고</span>' +
+      '<span class="chip">' + s.observed + "</span>" +
       "</div>" +
-      '<p class="popup-note">' + s.note + "</p>" +
-      '<p class="popup-demo">샘플 관측값 · 실제 재고 아님</p>' +
-      '<a class="btn btn-sm btn-dark popup-link" target="_blank" rel="noopener" href="https://map.naver.com/p/search/' +
-      encodeURIComponent(s.name) + '">네이버 지도에서 보기</a>';
-
-    pop.querySelector(".popup-close").addEventListener("click", function (e) {
+      '<p class="pm-card-note">매장 위치는 OpenStreetMap 실제 데이터입니다. 재고 상태는 편의점 앱 API 미연동으로 <b>제보·샘플 기반</b> 표시이니, 방문 전 공식 앱이나 매장 전화로 확인하세요.</p>' +
+      '<a class="btn btn-sm btn-dark pm-card-link" target="_blank" rel="noopener" href="' + navLink + '">네이버 지도에서 보기</a>';
+    el.card.querySelector(".pm-card-close").addEventListener("click", function (e) {
       e.stopPropagation();
-      clearSelection();
+      closeCard();
     });
-    pop.addEventListener("pointerdown", function (e) { e.stopPropagation(); });
-    positionPopup();
+    positionCard();
   }
 
-  function positionPopup() {
-    if (!st.selectedId || !el.popup || el.popup.hidden) return;
-    var s = st.stores.filter(function (x) { return x.id === st.selectedId; })[0];
-    if (!s) return;
-    var p = toScreen(s.dx, s.dy);
-    var pw = el.popup.offsetWidth;
-    var ph = el.popup.offsetHeight;
-    if (st.w < 620) {
-      el.popup.style.left = "10px";
-      el.popup.style.right = "10px";
-      el.popup.style.top = "auto";
-      el.popup.style.bottom = "10px";
-      el.popup.style.width = "auto";
+  function positionCard() { /* 카드형 팝업은 CSS로 위치 고정 */ }
+
+  /* ------------------------------------------------------- 상태 표기 */
+  function loadingState() {
+    var msg, phase, progress;
+    if (st.loading.tiles) {
+      phase = "tiles";
+      msg = "실제 지도 타일을 불러오는 중...";
+      progress = 34;
+    } else if (st.loading.data) {
+      phase = "data";
+      msg = "주변 매장 위치를 조회하는 중... (Overpass API)";
+      progress = 72;
+    } else {
+      phase = "done";
+      msg = "불러오기 완료";
+      progress = 100;
+    }
+    return {
+      active: st.loading.tiles || st.loading.data,
+      phase: phase,
+      message: msg,
+      progress: progress
+    };
+  }
+
+  function pushLoading() {
+    emit("pokemoa:loading", loadingState());
+  }
+
+  function badge() {
+    if (st.geoBusy) {
+      return { kind: "busy", text: "내 위치 확인 중 · 브라우저 위치 권한을 허용해 주세요", action: false };
+    }
+    if (st.source === "live") {
+      return {
+        kind: "live",
+        text: "실시간 조회 · OpenStreetMap 주변 매장 " + st.all.length + "곳 (Overpass API)",
+        action: false
+      };
+    }
+    return {
+      kind: "snapshot",
+      text: "실시간 조회 지연/제한 → 내장 실제 좌표 스냅샷 사용 (" + st.snapshotLabel + ")",
+      action: true
+    };
+  }
+
+  function pushData() {
+    st.snapshotLabel = (D.osmSnapshot && D.osmSnapshot.fetchedAt) || "";
+    emit("pokemoa:data", {
+      stores: st.visible,
+      loading: st.loading.data || st.loading.tiles,
+      source: st.source,
+      badge: badge(),
+      regionId: st.regionId,
+      origin: st.origin,
+      center: st.center,
+      radius: st.radius,
+      total: st.all.length,
+      snapshotAt: (D.osmSnapshot || {}).fetchedAt || "",
+      error: st.lastError
+    });
+  }
+
+  /* --------------------------------------------------- 데이터 조회 */
+  function snapshotList() {
+    var snap = (D.osmSnapshot && D.osmSnapshot.items) || [];
+    if (st.origin === "geo") return snap.slice();
+    return snap.filter(function (s) { return s.regionId === st.regionId; });
+  }
+
+  function overpassQuery(center, radius) {
+    var lat = center.lat.toFixed(5);
+    var lng = center.lng.toFixed(5);
+    var r = Math.round(radius);
+    return "[out:json][timeout:8];(" +
+      'nwr(around:' + r + "," + lat + "," + lng + ')[shop=convenience];' +
+      'nwr(around:' + r + "," + lat + "," + lng + ')[shop=stationery];' +
+      'nwr(around:' + r + "," + lat + "," + lng + ')[shop=toys];' +
+      'nwr(around:' + r + "," + lat + "," + lng + ')[shop=gift];' +
+      ");out center;";
+  }
+
+  function fetchOverpass(center, radius) {
+    var q = overpassQuery(center, radius);
+    var controllers = [];
+    var timer = null;
+
+    function attempt(url) {
+      var ctrl = new AbortController();
+      controllers.push(ctrl);
+      var url2 = url + "?data=" + encodeURIComponent(q);
+      return fetch(url2, { signal: ctrl.signal, mode: "cors", cache: "no-store" }).then(function (res) {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      });
+    }
+
+    var all = OVERPASS_ENDPOINTS.map(attempt);
+
+    return new Promise(function (resolve, reject) {
+      var settled = false;
+      timer = setTimeout(function () {
+        if (settled) return;
+        settled = true;
+        controllers.forEach(function (c) { try { c.abort(); } catch (e) {} });
+        reject(new Error("timeout"));
+      }, OVERPASS_TIMEOUT);
+
+      function done(payload) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        controllers.forEach(function (c) { try { c.abort(); } catch (e) {} });
+        resolve(payload);
+      }
+      function fail(err) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        controllers.forEach(function (c) { try { c.abort(); } catch (e) {} });
+        reject(err);
+      }
+      all.forEach(function (p) { p.then(done, function () {}); });
+      Promise.all(all.map(function (p) { return p.catch(function (e) { return { __err: e }; }); }))
+        .then(function (rs) {
+          if (rs.every(function (r) { return r && r.__err; })) fail(rs[0].__err);
+        });
+    });
+  }
+
+  function parseOverpass(payload) {
+    var els = (payload && payload.elements) || [];
+    var out = [];
+    var seen = {};
+    els.forEach(function (e) {
+      var t = e.tags || {};
+      var lat = e.lat != null ? e.lat : (e.center && e.center.lat);
+      var lng = e.lon != null ? e.lon : (e.center && e.center.lon);
+      if (lat == null || lng == null) return;
+      var b = classify(t);
+      if (!b) return;
+      var id = e.type + "-" + e.id;
+      if (seen[id]) return;
+      seen[id] = 1;
+      out.push({
+        id: id,
+        type: e.type,
+        osmId: e.id,
+        name: t.name || t["name:ko"] || "",
+        brand: b,
+        shop: t.shop,
+        lat: lat,
+        lng: lng,
+        street: t["addr:street"] || ""
+      });
+    });
+    return out;
+  }
+
+  function load() {
+    var seq = ++st.seq;
+    st.loading.data = true;
+    st.lastError = null;
+    pushLoading();
+    pushData();
+
+    var center = st.center;
+    var radius = st.radius;
+
+    fetchOverpass(center, radius).then(function (payload) {
+      if (seq !== st.seq) return;
+      var rows = parseOverpass(payload);
+      st.all = prepare(rows, center, "live");
+      st.source = "live";
+      st.loading.data = false;
+      finishLoad(seq);
+    }).catch(function (err) {
+      if (seq !== st.seq) return;
+      var rows = snapshotList();
+      st.all = prepare(rows, center, "snapshot");
+      st.source = "snapshot";
+      st.lastError = String((err && err.message) || err);
+      st.loading.data = false;
+      finishLoad(seq);
+    });
+  }
+
+  function finishLoad(seq) {
+    if (seq !== st.seq) return;
+    renderMarkers();
+    pushLoading();
+    pushData();
+    emit("pokemoa:loaded", { source: st.source, total: st.all.length, error: st.lastError });
+  }
+
+  /* ---------------------------------------------------------- 공개 API */
+  function setView(center, zoom) {
+    if (!st.map) return;
+    st.map.setView([center.lat, center.lng], zoom || st.map.getZoom(), { animate: true });
+    if (st.ring) {
+      st.ring.setLatLng([center.lat, center.lng]);
+      st.ring.setRadius(st.radius);
+    }
+  }
+
+  function setRadius(radius) {
+    st.radius = radius;
+    if (st.ring) st.ring.setRadius(radius);
+    renderMarkers();
+    pushData();
+    /* 반경이 넓어졌는데 조회 범위가 좁으면 다시 조회 */
+    var need = st.source === "live" && radius > st.fetchedRadius;
+    if (need) load();
+  }
+
+  function setBrand(brand) {
+    st.brand = brand;
+    renderMarkers();
+    pushData();
+  }
+
+  function setRegion(id) {
+    var r = region(id);
+    st.regionId = r.id;
+    st.origin = "region";
+    st.center = { lat: r.lat, lng: r.lng };
+    st.fetchedRadius = st.radius;
+    st.source = "snapshot";
+    st.all = [];
+    st.visible = [];
+    closeCard();
+    if (st.map) {
+      st.loading.tiles = false;
+      setView(st.center, r.zoom || 15);
+      if (st.ring) st.ring.setRadius(st.radius);
+    }
+    renderMarkers();
+    load();
+  }
+
+  function locate() {
+    if (!navigator.geolocation) {
+      emit("pokemoa:geo-error", { message: "이 브라우저는 위치 정보를 지원하지 않습니다. 지역을 선택해 주세요." });
       return;
     }
-    el.popup.style.width = "300px";
-    el.popup.style.right = "auto";
-    el.popup.style.bottom = "auto";
-    var left = p.x - pw / 2;
-    left = Math.max(10, Math.min(st.w - pw - 10, left));
-    var top = p.y - ph - 20;
-    if (top < 10) top = p.y + 24;
-    top = Math.max(10, Math.min(st.h - ph - 10, top));
-    el.popup.style.left = left.toFixed(0) + "px";
-    el.popup.style.top = top.toFixed(0) + "px";
+    st.geoBusy = true;
+    pushData();
+    emit("pokemoa:geo-start", {});
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      st.geoBusy = false;
+      st.origin = "geo";
+      st.center = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      st.fetchedRadius = st.radius;
+      st.regionId = "";
+      if (st.map) {
+        st.loading.tiles = false;
+        setView(st.center, 15);
+        if (st.meMarker) st.map.removeLayer(st.meMarker);
+        st.meMarker = L.circleMarker([st.center.lat, st.center.lng], {
+          radius: 7, color: "#ffffff", weight: 3, fillColor: "#2f6df6", fillOpacity: 1
+        }).addTo(st.map).bindTooltip("내 위치");
+      }
+      emit("pokemoa:geo-done", { lat: st.center.lat, lng: st.center.lng });
+      load();
+    }, function (err) {
+      st.geoBusy = false;
+      var msg = "위치를 가져오지 못했습니다.";
+      if (err && err.code === 1) msg = "브라우저 위치 권한이 차단되어 있습니다. 주소창의 위치 권한을 허용하거나 아래 지역을 선택해 주세요.";
+      else if (err && err.code === 2) msg = "현재 위치를 확인할 수 없습니다. 잠시 후 다시 시도하거나 지역을 선택해 주세요.";
+      else if (err && err.code === 3) msg = "위치 확인 시간이 초과되었습니다. 다시 시도하거나 지역을 선택해 주세요.";
+      pushData();
+      emit("pokemoa:geo-error", { message: msg });
+    }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 });
   }
 
-  /* --------------------------------------------------------------- 뷰 조작 */
-  function applyView() {
-    var vb = viewBox();
-    el.svg.setAttribute("viewBox", vb.x + " " + vb.y + " " + vb.w + " " + vb.h);
-    el.svg.setAttribute("preserveAspectRatio", "none");
-    updateMarkerPositions();
-  }
-
-  function clampCenter() {
-    var lim = (st.region ? st.region.span : 3000) * 1.1;
-    st.cx = Math.max(-lim, Math.min(lim, st.cx));
-    st.cy = Math.max(-lim, Math.min(lim, st.cy));
-  }
-
-  function zoomAt(factor, px, py) {
-    var before = { x: st.cx, y: st.cy };
-    var m0 = mpp();
-    var vb = viewBox();
-    var anchorX = 0;
-    var anchorY = 0;
-    if (typeof px === "number") {
-      anchorX = vb.x + px * m0;
-      anchorY = vb.y + py * m0;
-    } else {
-      anchorX = before.x;
-      anchorY = before.y;
-    }
-    var z = Math.max(0.85, Math.min(6, st.z * factor));
-    if (z === st.z) return;
-    st.z = z;
-    var m1 = mpp();
-    if (typeof px === "number") {
-      var nvx = anchorX - px * m1;
-      var nvy = anchorY - py * m1;
-      st.cx = nvx + (st.w * m1) / 2;
-      st.cy = nvy + (st.h * m1) / 2;
-    }
-    clampCenter();
-    applyView();
-    document.dispatchEvent(new CustomEvent("pokemoa:map-view", { detail: { z: st.z } }));
-  }
-
-  function reset() {
-    st.z = 1;
-    st.cx = 0;
-    st.cy = 0;
-    applyView();
-    document.dispatchEvent(new CustomEvent("pokemoa:map-view", { detail: { z: st.z } }));
-  }
-
-  /* ---------------------------------------------------------------- 초기화 */
-  function measure() {
-    var r = el.container.getBoundingClientRect();
-    st.w = Math.max(240, r.width);
-    st.h = Math.max(220, r.height);
-    if (st.region) {
-      st.baseMpp = st.region.span / Math.min(st.w, st.h);
-    }
-  }
-
-  function setRegion(regionId) {
-    var region = D.regions.filter(function (g) { return g.id === regionId; })[0];
-    if (!region) return;
-    st.region = region;
-    st.stores = D.stores.filter(function (s) { return s.regionId === regionId; });
-    st.selectedId = null;
-    if (el.popup) el.popup.hidden = true;
-    measure();
-    st.z = 1;
-    st.cx = 0;
-    st.cy = 0;
-    buildBase();
-    buildMarkers();
-    applyView();
-  }
-
-  function setFilter(brand, radius) {
-    if (brand) st.brand = brand;
-    if (radius) st.radius = radius;
-    updateRings();
-    updateMarkerPositions();
-    if (st.selectedId) {
-      var s = st.stores.filter(function (x) { return x.id === st.selectedId; })[0];
-      if (s && !isVisible(s)) clearSelection();
-    }
+  function retry() {
+    load();
   }
 
   function focusStore(id) {
-    var s = st.stores.filter(function (x) { return x.id === id; })[0];
-    if (!s) return;
-    st.cx = s.dx;
-    st.cy = s.dy;
-    if (st.z < 2.2) st.z = 2.2;
-    clampCenter();
-    applyView();
-    select(id);
+    var s = null;
+    for (var i = 0; i < st.visible.length; i++) if (st.visible[i].id === id) s = st.visible[i];
+    if (!s || !st.map) return;
+    st.map.flyTo([s.lat, s.lng], Math.max(st.map.getZoom(), 16), { duration: 0.5 });
+    select(id, false);
   }
 
   function init(opts) {
     el.container = opts.container;
-    el.svg = opts.svg;
-    el.layer = opts.layer;
-    el.popup = opts.popup;
-    el.scaleBar = opts.scaleBar;
-    el.scaleText = opts.scaleText;
+    el.card = opts.card;
 
-    var drag = null;
-    el.container.addEventListener("pointerdown", function (e) {
-      if (e.target.closest(".map-marker, .map-popup, .map-controls, .map-legend")) return;
-      if (e.button !== undefined && e.button !== 0) return;
-      drag = { x: e.clientX, y: e.clientY, cx: st.cx, cy: st.cy, moved: false };
-      el.container.classList.add("is-dragging");
-      if (el.container.setPointerCapture) {
-        try { el.container.setPointerCapture(e.pointerId); } catch (err) {}
+    ensureLeaflet(function (ok) {
+      if (!ok) {
+        emit("pokemoa:error", { message: "지도 라이브러리(Leaflet)를 불러오지 못했습니다. 네트워크 확인 후 '다시 조회'를 눌러 주세요." });
+        emit("pokemoa:loading", { active: false, phase: "error", message: "지도 라이브러리 로드 실패", progress: 0 });
+        return;
       }
-    });
-    el.container.addEventListener("pointermove", function (e) {
-      if (!drag) return;
-      var dx = e.clientX - drag.x;
-      var dy = e.clientY - drag.y;
-      if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true;
-      var m = mpp();
-      st.cx = drag.cx - dx * m;
-      st.cy = drag.cy - dy * m;
-      clampCenter();
-      applyView();
-    });
-    function endDrag(e) {
-      if (!drag) return;
-      el.container.classList.remove("is-dragging");
-      if (!drag.moved) clearSelection();
-      drag = null;
-    }
-    el.container.addEventListener("pointerup", endDrag);
-    el.container.addEventListener("pointercancel", endDrag);
-    el.container.addEventListener("pointerleave", function (e) {
-      if (drag && e.buttons === 0) endDrag(e);
-    });
-
-    el.container.addEventListener("wheel", function (e) {
-      if (e.target.closest(".map-popup")) return;
-      e.preventDefault();
-      var rect = el.container.getBoundingClientRect();
-      var factor = e.deltaY < 0 ? 1.16 : 1 / 1.16;
-      zoomAt(factor, e.clientX - rect.left, e.clientY - rect.top);
-    }, { passive: false });
-
-    /* 마커 포커스로 컨테이너가 스크롤되는 현상 방지 */
-    el.container.addEventListener("scroll", function () {
-      if (el.container.scrollLeft !== 0) el.container.scrollLeft = 0;
-      if (el.container.scrollTop !== 0) el.container.scrollTop = 0;
-    });
-
-    el.container.addEventListener("dblclick", function (e) {
-      if (e.target.closest(".map-marker, .map-popup, .map-controls")) return;
-      var rect = el.container.getBoundingClientRect();
-      zoomAt(1.4, e.clientX - rect.left, e.clientY - rect.top);
+      buildMap();
+      setRegion(st.regionId);
     });
 
     document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape" && st.selectedId) clearSelection();
+      if (e.key === "Escape" && st.selectedId) closeCard();
     });
-
-    if (window.ResizeObserver) {
-      var ro = new ResizeObserver(function () {
-        var prevW = st.w;
-        var prevH = st.h;
-        measure();
-        if (prevW !== st.w || prevH !== st.h) applyView();
-      });
-      ro.observe(el.container);
-    }
 
     return API;
   }
@@ -624,14 +643,15 @@ window.PokeMoaMap = (function () {
   var API = {
     init: init,
     setRegion: setRegion,
-    setFilter: setFilter,
+    setBrand: setBrand,
+    setRadius: setRadius,
+    locate: locate,
+    retry: retry,
     focusStore: focusStore,
-    select: select,
-    clearSelection: clearSelection,
-    zoomAt: zoomAt,
-    reset: reset,
+    closeCard: closeCard,
     getState: function () { return st; },
-    isVisible: isVisible
+    getVisible: function () { return st.visible.slice(); },
+    invalidate: function () { if (st.map) st.map.invalidateSize(); }
   };
   return API;
 })();

@@ -1,7 +1,7 @@
 /* =========================================================================
  * 포케모아(PokeMoa) — 데이터 계층
  * 모든 가격·일정은 2026-11-17 기준 공개 자료를 정리한 값입니다.
- * 지도 매장·재고는 UI 데모용 샘플 관측값이며 실제 재고가 아닙니다.
+ * 지도 매장 위치는 OpenStreetMap 실제 좌표, 재고 상태는 제보·샘플 기반 표시입니다.
  * ========================================================================= */
 window.POKEMOA_DATA = (function () {
   "use strict";
@@ -12,7 +12,7 @@ window.POKEMOA_DATA = (function () {
     tagline: "포켓몬 카드의 정가·입고·재고를 한 곳에 모아",
     dataDate: "2026-11-17",
     dataTime: "11:00",
-    siteUrl: "https://bokjinabi.github.io/pokemoa"
+    siteUrl: "https://pokemoa.example"
   };
 
   /* ---------------------------------------------------------------- 세트 */
@@ -362,85 +362,166 @@ window.POKEMOA_DATA = (function () {
   };
 
   /* ----------------------------------------------------------- 지도 지역 */
+  /* center: 실제 위도/경도 (OpenStreetMap 기준) */
   var regions = [
-    { id: "pohang-north", name: "포항 · 북구 (환호동)", short: "포항 북구", lat: 36.0736, lng: 129.3864, span: 5400, seed: 11, water: "east", angle: 0, label: "환호동" },
-    { id: "pohang-south", name: "포항 · 남구 (이동)", short: "포항 남구", lat: 36.0120, lng: 129.3400, span: 5400, seed: 23, water: "east", angle: 0, label: "이동" },
-    { id: "seoul-gangnam", name: "서울 · 강남 (역삼·선릉)", short: "서울 강남", lat: 37.4979, lng: 127.0276, span: 5400, seed: 37, water: "north", angle: 0, label: "역삼동" },
-    { id: "seoul-hongdae", name: "서울 · 마포 (홍대·합정)", short: "서울 홍대", lat: 37.5572, lng: 126.9245, span: 5400, seed: 41, water: "north", angle: 0, label: "서교동" },
-    { id: "seoul-nowon", name: "서울 · 노원 (노원·상계)", short: "서울 노원", lat: 37.6554, lng: 127.0613, span: 5400, seed: 53, water: "none", angle: 0, label: "노원동" },
-    { id: "busan-seomyeon", name: "부산 · 부산진 (서면)", short: "부산 서면", lat: 35.1577, lng: 129.0594, span: 5400, seed: 67, water: "none", angle: 0, label: "부전동" }
+    { id: "pohang-north", name: "포항 · 북구 (환호동)", short: "포항 북구", label: "환호동", lat: 36.0736, lng: 129.3864, zoom: 15 },
+    { id: "pohang-south", name: "포항 · 남구 (이동)", short: "포항 남구", label: "이동", lat: 36.0120, lng: 129.3400, zoom: 15 },
+    { id: "seoul-gangnam", name: "서울 · 강남 (역삼·선릉)", short: "서울 강남", label: "역삼동", lat: 37.4979, lng: 127.0276, zoom: 15 },
+    { id: "seoul-hongdae", name: "서울 · 마포 (홍대·합정)", short: "서울 홍대", label: "서교동", lat: 37.5572, lng: 126.9245, zoom: 15 },
+    { id: "seoul-nowon", name: "서울 · 노원 (노원·상계)", short: "서울 노원", label: "노원동", lat: 37.6554, lng: 127.0613, zoom: 15 },
+    { id: "busan-seomyeon", name: "부산 · 부산진 (서면)", short: "부산 서면", label: "부전동", lat: 35.1577, lng: 129.0594, zoom: 15 }
   ];
 
-  /* -------------------------------------------------------------- 매장 */
-  /* dx: 동쪽(+)/서쪽(-) 미터, dy: 남쪽(+)/북쪽(-) 미터 (지역 중심 기준) */
-  var storeRows = [
-    ["pn01", "pohang-north", "gs25", "GS25 환호공원점", -180, -240, "in", "낱팩", "11-17 09:40", "환호공원 인근", "낱팩만 판매. 오전 보충 후 오후에 빠지는 편."],
-    ["pn02", "pohang-north", "cu", "CU 포항환호점", 260, -140, "check", "낱팩", "11-17 10:05", "환호동 주택가", "전산 수량 미표시. 방문 전 전화 확인 권장."],
-    ["pn03", "pohang-north", "seven", "세븐일레븐 포항해맞이점", 640, 180, "none", "낱팩", "11-17 09:15", "해맞이로변", "이번 주 입고 없음. 다음 발주일 문의."],
-    ["pn04", "pohang-north", "emart24", "이마트24 포항장성점", -720, 410, "in", "낱팩", "11-17 10:20", "장성동", "낱팩 재고 있음. 박스는 미취급."],
-    ["pn05", "pohang-north", "artbox", "아트박스 포항점", 980, -520, "check", "낱팩·박스", "11-17 09:50", "상가 밀집 구역", "자판기 품절, 매장 카운터 재고는 확인 필요."],
-    ["pn06", "pohang-north", "gs25", "GS25 포항이동점", 1450, 880, "none", "낱팩", "11-17 08:55", "이동", "30th 품절. 다른 세트만 남아 있음."],
-    ["pn07", "pohang-north", "cu", "CU 포항양덕점", -1250, -980, "in", "낱팩", "11-17 10:31", "양덕동", "30th 낱팩 소량 입고."],
-    ["pn08", "pohang-north", "shop", "포켓몬 카드 자판기 · 롯데마트 포항점", 1720, 1240, "check", "낱팩", "11-17 10:10", "롯데마트 완구코너", "공식 자판기 위치. 재고는 현장 화면 확인."],
-    ["pn09", "pohang-north", "shop", "카드샵 포항TCG", 420, 760, "in", "박스", "11-17 09:30", "중심 상권", "박스 판매. 1인 1박스 제한 운영."],
-    ["pn10", "pohang-north", "seven", "세븐일레븐 포항우창점", -380, 1180, "none", "낱팩", "11-17 09:05", "우창동", "낱팩 품절."],
-    ["pn11", "pohang-north", "emart24", "이마트24 포항효자점", 2100, -1600, "none", "낱팩", "11-17 08:40", "효자동", "재고 0개 확인."],
+  /* ------------------------------------------------ 내장 실제 좌표 스냅샷 */
+  /* 출처: OpenStreetMap (Overpass API shop=convenience|stationery|toys|gift)
+     조회 시점: 2026-11-17 / 반경 1.5km / 지역 중심에서 가까운 순으로 브랜드별 상한 적용.
+     실시간 Overpass 조회가 실패(타임아웃·응답 제한)할 때 지도에 그대로 표시된다. */
+  var osmSnapshot = {
+    fetchedAt: "2026-11-17",
+    radius: 1500,
+    source: "OpenStreetMap · Overpass API",
+    items: [
+    { id: "pohangnorth-00", regionId: "pohang-north", brand: "seven", shop: "convenience", name: "세븐일레븐", street: "장량로32번길", lat: 36.077388, lng: 129.383873 },
+    { id: "pohangnorth-01", regionId: "pohang-north", brand: "gs25", shop: "convenience", name: "GS25", street: "법원로", lat: 36.078379, lng: 129.385501 },
+    { id: "pohangnorth-02", regionId: "pohang-north", brand: "cu", shop: "convenience", name: "CU", street: "", lat: 36.067696, lng: 129.389866 },
+    { id: "pohangnorth-03", regionId: "pohang-north", brand: "cu", shop: "convenience", name: "CU", street: "", lat: 36.067695, lng: 129.382866 },
+    { id: "pohangnorth-04", regionId: "pohang-north", brand: "cu", shop: "convenience", name: "CU", street: "", lat: 36.069389, lng: 129.393216 },
+    { id: "pohangnorth-05", regionId: "pohang-north", brand: "gs25", shop: "convenience", name: "GS25", street: "", lat: 36.066848, lng: 129.381088 },
+    { id: "pohangnorth-06", regionId: "pohang-north", brand: "gs25", shop: "convenience", name: "GS25", street: "", lat: 36.066241, lng: 129.381418 },
+    { id: "pohangnorth-07", regionId: "pohang-north", brand: "gs25", shop: "convenience", name: "GS25", street: "", lat: 36.065344, lng: 129.384005 },
+    { id: "pohangnorth-08", regionId: "pohang-north", brand: "seven", shop: "convenience", name: "세븐일레븐", street: "", lat: 36.064842, lng: 129.38584 },
+    { id: "pohangnorth-09", regionId: "pohang-north", brand: "cu", shop: "convenience", name: "CU", street: "", lat: 36.079756, lng: 129.394249 },
+    { id: "pohangnorth-10", regionId: "pohang-north", brand: "cu", shop: "convenience", name: "CU", street: "", lat: 36.064563, lng: 129.38704 },
+    { id: "pohangnorth-11", regionId: "pohang-north", brand: "gs25", shop: "convenience", name: "GS25", street: "", lat: 36.080481, lng: 129.394483 },
+    { id: "pohangnorth-12", regionId: "pohang-north", brand: "cu", shop: "convenience", name: "CU 환호희망점", street: "", lat: 36.069871, lng: 129.397759 },
+    { id: "pohangnorth-13", regionId: "pohang-north", brand: "gs25", shop: "convenience", name: "GS25", street: "", lat: 36.070061, lng: 129.401536 },
+    { id: "pohangnorth-14", regionId: "pohang-north", brand: "seven", shop: "convenience", name: "세븐일레븐", street: "", lat: 36.083137, lng: 129.397455 },
+    { id: "pohangsouth-15", regionId: "pohang-south", brand: "other", shop: "convenience", name: "그린24시편의점", street: "", lat: 36.014538, lng: 129.340795 },
+    { id: "pohangsouth-16", regionId: "pohang-south", brand: "cu", shop: "convenience", name: "CU", street: "효자동길2번길", lat: 36.009059, lng: 129.334377 },
+    { id: "pohangsouth-17", regionId: "pohang-south", brand: "gs25", shop: "convenience", name: "GS25", street: "효성로27번길", lat: 36.006447, lng: 129.336857 },
+    { id: "pohangsouth-18", regionId: "pohang-south", brand: "emart24", shop: "convenience", name: "이마트24", street: "효자동길10번길", lat: 36.009091, lng: 129.333308 },
+    { id: "pohangsouth-19", regionId: "pohang-south", brand: "other", shop: "convenience", name: "", street: "효자로", lat: 36.011593, lng: 129.332314 },
+    { id: "pohangsouth-20", regionId: "pohang-south", brand: "seven", shop: "convenience", name: "세븐일레븐", street: "효성로", lat: 36.006252, lng: 129.335032 },
+    { id: "pohangsouth-21", regionId: "pohang-south", brand: "emart24", shop: "convenience", name: "", street: "효성로82번길", lat: 36.005105, lng: 129.342373 },
+    { id: "pohangsouth-22", regionId: "pohang-south", brand: "gs25", shop: "convenience", name: "GS25", street: "효자동길10번길", lat: 36.00637, lng: 129.334513 },
+    { id: "pohangsouth-23", regionId: "pohang-south", brand: "seven", shop: "convenience", name: "세븐일레븐", street: "대이로46번길", lat: 36.020381, lng: 129.343423 },
+    { id: "pohangsouth-24", regionId: "pohang-south", brand: "cu", shop: "convenience", name: "CU", street: "", lat: 36.010414, lng: 129.351039 },
+    { id: "pohangsouth-25", regionId: "pohang-south", brand: "cu", shop: "convenience", name: "CU", street: "", lat: 36.007756, lng: 129.328854 },
+    { id: "pohangsouth-26", regionId: "pohang-south", brand: "seven", shop: "convenience", name: "세븐일레븐", street: "", lat: 36.007806, lng: 129.328682 },
+    { id: "pohangsouth-27", regionId: "pohang-south", brand: "cu", shop: "convenience", name: "CU포항이동점", street: "", lat: 36.025047, lng: 129.341128 },
+    { id: "seoulgangnam-28", regionId: "seoul-gangnam", brand: "gs25", shop: "convenience", name: "GS25 강남역3호점", street: "강남대로", lat: 37.49784, lng: 127.028579 },
+    { id: "seoulgangnam-29", regionId: "seoul-gangnam", brand: "gs25", shop: "convenience", name: "GS25 강남본점", street: "테헤란로2길", lat: 37.497629, lng: 127.028729 },
+    { id: "seoulgangnam-30", regionId: "seoul-gangnam", brand: "seven", shop: "convenience", name: "세븐일레븐 강남스퀘어점", street: "테헤란로1길", lat: 37.498962, lng: 127.028228 },
+    { id: "seoulgangnam-31", regionId: "seoul-gangnam", brand: "other", shop: "convenience", name: "위드미", street: "", lat: 37.499073, lng: 127.027483 },
+    { id: "seoulgangnam-32", regionId: "seoul-gangnam", brand: "seven", shop: "convenience", name: "세븐일레븐 강남광장점", street: "서초대로77길", lat: 37.498589, lng: 127.026213 },
+    { id: "seoulgangnam-33", regionId: "seoul-gangnam", brand: "gs25", shop: "convenience", name: "GS25 강남프리미엄점", street: "서초대로77길", lat: 37.498849, lng: 127.026144 },
+    { id: "seoulgangnam-34", regionId: "seoul-gangnam", brand: "gs25", shop: "convenience", name: "GS25", street: "", lat: 37.499426, lng: 127.02812 },
+    { id: "seoulgangnam-35", regionId: "seoul-gangnam", brand: "seven", shop: "convenience", name: "세븐일레븐", street: "", lat: 37.497662, lng: 127.025413 },
+    { id: "seoulgangnam-36", regionId: "seoul-gangnam", brand: "gs25", shop: "convenience", name: "GS25 서초삼성타운점", street: "서초대로74길", lat: 37.496744, lng: 127.025704 },
+    { id: "seoulgangnam-37", regionId: "seoul-gangnam", brand: "cu", shop: "convenience", name: "CU 강남해커스점", street: "강남대로61길", lat: 37.498891, lng: 127.025556 },
+    { id: "seoulgangnam-38", regionId: "seoul-gangnam", brand: "gs25", shop: "convenience", name: "GS25", street: "", lat: 37.498935, lng: 127.02988 },
+    { id: "seoulgangnam-39", regionId: "seoul-gangnam", brand: "cu", shop: "convenience", name: "CU 역삼강남점", street: "강남대로94길", lat: 37.499748, lng: 127.029196 },
+    { id: "seoulgangnam-40", regionId: "seoul-gangnam", brand: "seven", shop: "convenience", name: "세븐일레븐", street: "", lat: 37.49572, lng: 127.026894 },
+    { id: "seoulgangnam-41", regionId: "seoul-gangnam", brand: "seven", shop: "convenience", name: "세븐일레븐 역삼타워점", street: "강남대로84길", lat: 37.49669, lng: 127.030026 },
+    { id: "seoulgangnam-42", regionId: "seoul-gangnam", brand: "artbox", shop: "convenience", name: "Artbox", street: "", lat: 37.500374, lng: 127.026868 },
+    { id: "seoulgangnam-43", regionId: "seoul-gangnam", brand: "cu", shop: "convenience", name: "CU 오벨리스크점", street: "서초대로74길", lat: 37.495288, lng: 127.027261 },
+    { id: "seoulgangnam-44", regionId: "seoul-gangnam", brand: "cu", shop: "convenience", name: "CU 서초동아타워점", street: "서운로", lat: 37.495994, lng: 127.025267 },
+    { id: "seoulgangnam-45", regionId: "seoul-gangnam", brand: "cu", shop: "convenience", name: "CU 서초삼성타운점", street: "강남대로55길", lat: 37.495672, lng: 127.025554 },
+    { id: "seoulgangnam-46", regionId: "seoul-gangnam", brand: "cu", shop: "convenience", name: "CU 역삼디오빌", street: "강남대로84길", lat: 37.497546, lng: 127.031093 },
+    { id: "seoulgangnam-47", regionId: "seoul-gangnam", brand: "stationery", shop: "gift", name: "라인프렌즈 플래그십 스토어", street: "", lat: 37.501326, lng: 127.025568 },
+    { id: "seoulgangnam-48", regionId: "seoul-gangnam", brand: "other", shop: "convenience", name: "미니스톱 역삼청솔점", street: "강남대로78길", lat: 37.495232, lng: 127.031343 },
+    { id: "seoulgangnam-49", regionId: "seoul-gangnam", brand: "emart24", shop: "convenience", name: "이마트24", street: "", lat: 37.501322, lng: 127.024849 },
+    { id: "seoulgangnam-50", regionId: "seoul-gangnam", brand: "stationery", shop: "gift", name: "", street: "", lat: 37.503149, lng: 127.028118 },
+    { id: "seoulgangnam-51", regionId: "seoul-gangnam", brand: "emart24", shop: "convenience", name: "이마트24 강남더인피닛스퀘어점", street: "사평대로58길", lat: 37.503449, lng: 127.023492 },
+    { id: "seoulgangnam-52", regionId: "seoul-gangnam", brand: "emart24", shop: "convenience", name: "이마트24 역삼초교점", street: "역삼로8길", lat: 37.492767, lng: 127.034247 },
+    { id: "seoulgangnam-53", regionId: "seoul-gangnam", brand: "emart24", shop: "convenience", name: "이마트24", street: "", lat: 37.499738, lng: 127.017767 },
+    { id: "seoulgangnam-54", regionId: "seoul-gangnam", brand: "stationery", shop: "stationery", name: "어린왕자", street: "", lat: 37.499688, lng: 127.017731 },
+    { id: "seoulgangnam-55", regionId: "seoul-gangnam", brand: "stationery", shop: "stationery", name: "래미안 문구", street: "", lat: 37.499589, lng: 127.017634 },
+    { id: "seoulgangnam-56", regionId: "seoul-gangnam", brand: "stationery", shop: "toys", name: "캐잼", street: "", lat: 37.50919, lng: 127.018613 },
+    { id: "seoulhongdae-57", regionId: "seoul-hongdae", brand: "stationery", shop: "toys", name: "미니돌", street: "양화로", lat: 37.557209, lng: 126.923778 },
+    { id: "seoulhongdae-58", regionId: "seoul-hongdae", brand: "cu", shop: "convenience", name: "CU 홍대와이즈점", street: "홍익로6길", lat: 37.557091, lng: 126.925462 },
+    { id: "seoulhongdae-59", regionId: "seoul-hongdae", brand: "other", shop: "convenience", name: "", street: "", lat: 37.556342, lng: 126.924343 },
+    { id: "seoulhongdae-60", regionId: "seoul-hongdae", brand: "cu", shop: "convenience", name: "CU", street: "어울마당로", lat: 37.556313, lng: 126.924891 },
+    { id: "seoulhongdae-61", regionId: "seoul-hongdae", brand: "stationery", shop: "gift", name: "카카오프렌즈", street: "", lat: 37.556473, lng: 126.923748 },
+    { id: "seoulhongdae-62", regionId: "seoul-hongdae", brand: "gs25", shop: "convenience", name: "GS25", street: "", lat: 37.557561, lng: 126.923363 },
+    { id: "seoulhongdae-63", regionId: "seoul-hongdae", brand: "cu", shop: "convenience", name: "CU", street: "", lat: 37.558287, lng: 126.925183 },
+    { id: "seoulhongdae-64", regionId: "seoul-hongdae", brand: "gs25", shop: "convenience", name: "GS25", street: "", lat: 37.556959, lng: 126.926151 },
+    { id: "seoulhongdae-65", regionId: "seoul-hongdae", brand: "seven", shop: "convenience", name: "세븐일레븐", street: "", lat: 37.555861, lng: 126.924398 },
+    { id: "seoulhongdae-66", regionId: "seoul-hongdae", brand: "cu", shop: "convenience", name: "CU", street: "", lat: 37.557097, lng: 126.922533 },
+    { id: "seoulhongdae-67", regionId: "seoul-hongdae", brand: "stationery", shop: "gift", name: "Butter", street: "", lat: 37.556444, lng: 126.922748 },
+    { id: "seoulhongdae-68", regionId: "seoul-hongdae", brand: "stationery", shop: "toys", name: "리펀샵", street: "", lat: 37.557921, lng: 126.926308 },
+    { id: "seoulhongdae-69", regionId: "seoul-hongdae", brand: "artbox", shop: "stationery", name: "아트박스", street: "", lat: 37.557753, lng: 126.926403 },
+    { id: "seoulhongdae-70", regionId: "seoul-hongdae", brand: "gs25", shop: "convenience", name: "GS25", street: "", lat: 37.555876, lng: 126.923218 },
+    { id: "seoulhongdae-71", regionId: "seoul-hongdae", brand: "stationery", shop: "toys", name: "제일복권", street: "", lat: 37.557847, lng: 126.926473 },
+    { id: "seoulhongdae-72", regionId: "seoul-hongdae", brand: "cu", shop: "convenience", name: "CU", street: "", lat: 37.55742, lng: 126.926788 },
+    { id: "seoulhongdae-73", regionId: "seoul-hongdae", brand: "cu", shop: "convenience", name: "CU", street: "", lat: 37.556686, lng: 126.922215 },
+    { id: "seoulhongdae-74", regionId: "seoul-hongdae", brand: "gs25", shop: "convenience", name: "GS25", street: "", lat: 37.559079, lng: 126.924872 },
+    { id: "seoulhongdae-75", regionId: "seoul-hongdae", brand: "seven", shop: "convenience", name: "세븐일레븐", street: "", lat: 37.557573, lng: 126.927247 },
+    { id: "seoulhongdae-76", regionId: "seoul-hongdae", brand: "other", shop: "convenience", name: "", street: "", lat: 37.558928, lng: 126.922698 },
+    { id: "seoulhongdae-77", regionId: "seoul-hongdae", brand: "gs25", shop: "convenience", name: "GS25", street: "", lat: 37.557799, lng: 126.921466 },
+    { id: "seoulhongdae-78", regionId: "seoul-hongdae", brand: "emart24", shop: "convenience", name: "Emart24", street: "", lat: 37.554978, lng: 126.925959 },
+    { id: "seoulhongdae-79", regionId: "seoul-hongdae", brand: "emart24", shop: "convenience", name: "이마트24 홍대역점", street: "월드컵북로2길", lat: 37.555997, lng: 126.921442 },
+    { id: "seoulhongdae-80", regionId: "seoul-hongdae", brand: "seven", shop: "convenience", name: "세븐일레븐 마포동교로점", street: "동교로25길", lat: 37.55833, lng: 126.921164 },
+    { id: "seoulhongdae-81", regionId: "seoul-hongdae", brand: "gs25", shop: "convenience", name: "GS25", street: "", lat: 37.557138, lng: 126.92817 },
+    { id: "seoulhongdae-82", regionId: "seoul-hongdae", brand: "seven", shop: "convenience", name: "세븐일레븐", street: "", lat: 37.554203, lng: 126.923675 },
+    { id: "seoulhongdae-83", regionId: "seoul-hongdae", brand: "seven", shop: "convenience", name: "세븐일레븐", street: "", lat: 37.554545, lng: 126.926479 },
+    { id: "seoulhongdae-84", regionId: "seoul-hongdae", brand: "emart24", shop: "convenience", name: "이마트24 에너비스동교점", street: "연희로", lat: 37.55987, lng: 126.92685 },
+    { id: "seoulhongdae-85", regionId: "seoul-hongdae", brand: "emart24", shop: "convenience", name: "이마트24", street: "", lat: 37.553571, lng: 126.92041 },
+    { id: "seoulhongdae-86", regionId: "seoul-hongdae", brand: "artbox", shop: "gift", name: "ARTBOX", street: "", lat: 37.552367, lng: 126.922145 },
+    { id: "seoulnowon-87", regionId: "seoul-nowon", brand: "seven", shop: "convenience", name: "세븐일레븐 노원2점", street: "상계로", lat: 37.65616, lng: 127.061515 },
+    { id: "seoulnowon-88", regionId: "seoul-nowon", brand: "seven", shop: "convenience", name: "세븐일레븐 노원제일점", street: "동일로", lat: 37.655069, lng: 127.05998 },
+    { id: "seoulnowon-89", regionId: "seoul-nowon", brand: "seven", shop: "convenience", name: "세븐일레븐", street: "", lat: 37.654287, lng: 127.062122 },
+    { id: "seoulnowon-90", regionId: "seoul-nowon", brand: "gs25", shop: "convenience", name: "GS25 노원웰빙", street: "상계로1길", lat: 37.65691, lng: 127.061817 },
+    { id: "seoulnowon-91", regionId: "seoul-nowon", brand: "gs25", shop: "convenience", name: "GS25", street: "", lat: 37.654672, lng: 127.059052 },
+    { id: "seoulnowon-92", regionId: "seoul-nowon", brand: "seven", shop: "convenience", name: "세븐일레븐 kt노원점", street: "노해로", lat: 37.65445, lng: 127.063692 },
+    { id: "seoulnowon-93", regionId: "seoul-nowon", brand: "cu", shop: "convenience", name: "CU", street: "", lat: 37.654986, lng: 127.058609 },
+    { id: "seoulnowon-94", regionId: "seoul-nowon", brand: "seven", shop: "convenience", name: "세븐일레븐 노원역점", street: "동일로217가길", lat: 37.653439, lng: 127.059885 },
+    { id: "seoulnowon-95", regionId: "seoul-nowon", brand: "gs25", shop: "convenience", name: "GS25 노원 청산점", street: "노해로", lat: 37.654105, lng: 127.058226 },
+    { id: "seoulnowon-96", regionId: "seoul-nowon", brand: "gs25", shop: "convenience", name: "GS25 상계주공점", street: "동일로217가길", lat: 37.653065, lng: 127.05821 },
+    { id: "seoulnowon-97", regionId: "seoul-nowon", brand: "gs25", shop: "convenience", name: "GS25", street: "", lat: 37.658693, lng: 127.05987 },
+    { id: "seoulnowon-98", regionId: "seoul-nowon", brand: "cu", shop: "convenience", name: "CU 상계3단지점", street: "동일로", lat: 37.651804, lng: 127.060894 },
+    { id: "seoulnowon-99", regionId: "seoul-nowon", brand: "cu", shop: "convenience", name: "CU 노원나래점", street: "상계로7길", lat: 37.658516, lng: 127.064461 },
+    { id: "seoulnowon-00", regionId: "seoul-nowon", brand: "gs25", shop: "convenience", name: "GS25 상계6단지점", street: "노원로", lat: 37.654224, lng: 127.066978 },
+    { id: "seoulnowon-01", regionId: "seoul-nowon", brand: "cu", shop: "convenience", name: "CU 상계주공4단지점", street: "동일로", lat: 37.649881, lng: 127.062237 },
+    { id: "seoulnowon-02", regionId: "seoul-nowon", brand: "other", shop: "convenience", name: "", street: "", lat: 37.661106, lng: 127.06087 },
+    { id: "seoulnowon-03", regionId: "seoul-nowon", brand: "other", shop: "convenience", name: "미니스톱", street: "", lat: 37.651655, lng: 127.066924 },
+    { id: "seoulnowon-04", regionId: "seoul-nowon", brand: "cu", shop: "convenience", name: "CU 상계하이츠점", street: "노원로28길", lat: 37.653028, lng: 127.068469 },
+    { id: "seoulnowon-05", regionId: "seoul-nowon", brand: "cu", shop: "convenience", name: "CU 상계성원점", street: "한글비석로47길", lat: 37.660641, lng: 127.066646 },
+    { id: "seoulnowon-06", regionId: "seoul-nowon", brand: "emart24", shop: "convenience", name: "이마트24 창동동아점", street: "노해로", lat: 37.651943, lng: 127.051003 },
+    { id: "seoulnowon-07", regionId: "seoul-nowon", brand: "emart24", shop: "convenience", name: "이마트24 상계벽산점", street: "한글비석로", lat: 37.662303, lng: 127.073582 },
+    { id: "busanseomyeon-08", regionId: "busan-seomyeon", brand: "other", shop: "convenience", name: "", street: "", lat: 35.158257, lng: 129.058652 },
+    { id: "busanseomyeon-09", regionId: "busan-seomyeon", brand: "seven", shop: "convenience", name: "세븐일레븐", street: "서전로", lat: 35.157574, lng: 129.060778 },
+    { id: "busanseomyeon-10", regionId: "busan-seomyeon", brand: "cu", shop: "convenience", name: "Nice 2 CU", street: "", lat: 35.156895, lng: 129.057334 },
+    { id: "busanseomyeon-11", regionId: "busan-seomyeon", brand: "cu", shop: "convenience", name: "CU", street: "", lat: 35.159266, lng: 129.058064 },
+    { id: "busanseomyeon-12", regionId: "busan-seomyeon", brand: "other", shop: "convenience", name: "미니스톱", street: "", lat: 35.157872, lng: 129.06217 },
+    { id: "busanseomyeon-13", regionId: "busan-seomyeon", brand: "seven", shop: "convenience", name: "세븐일레븐", street: "", lat: 35.157887, lng: 129.062444 },
+    { id: "busanseomyeon-14", regionId: "busan-seomyeon", brand: "seven", shop: "convenience", name: "7-Eleven", street: "", lat: 35.155806, lng: 129.056551 },
+    { id: "busanseomyeon-15", regionId: "busan-seomyeon", brand: "seven", shop: "convenience", name: "세븐일레븐", street: "", lat: 35.154744, lng: 129.057965 },
+    { id: "busanseomyeon-16", regionId: "busan-seomyeon", brand: "gs25", shop: "convenience", name: "GS25", street: "", lat: 35.160415, lng: 129.057275 },
+    { id: "busanseomyeon-17", regionId: "busan-seomyeon", brand: "cu", shop: "convenience", name: "CU", street: "", lat: 35.160909, lng: 129.058041 },
+    { id: "busanseomyeon-18", regionId: "busan-seomyeon", brand: "seven", shop: "convenience", name: "7-eleven", street: "", lat: 35.156828, lng: 129.054644 },
+    { id: "busanseomyeon-19", regionId: "busan-seomyeon", brand: "gs25", shop: "convenience", name: "GS25", street: "", lat: 35.157916, lng: 129.053457 },
+    { id: "busanseomyeon-20", regionId: "busan-seomyeon", brand: "emart24", shop: "convenience", name: "eMart24", street: "", lat: 35.160615, lng: 129.054575 },
+    { id: "busanseomyeon-21", regionId: "busan-seomyeon", brand: "cu", shop: "convenience", name: "Nice to CU", street: "", lat: 35.15281, lng: 129.056687 },
+    { id: "busanseomyeon-22", regionId: "busan-seomyeon", brand: "cu", shop: "convenience", name: "CU", street: "신천대로50번길", lat: 35.152298, lng: 129.060034 },
+    { id: "busanseomyeon-23", regionId: "busan-seomyeon", brand: "gs25", shop: "convenience", name: "GS25", street: "", lat: 35.152241, lng: 129.058542 },
+    { id: "busanseomyeon-24", regionId: "busan-seomyeon", brand: "cu", shop: "convenience", name: "CU", street: "", lat: 35.151796, lng: 129.064673 },
+    { id: "busanseomyeon-25", regionId: "busan-seomyeon", brand: "gs25", shop: "convenience", name: "GS25", street: "", lat: 35.158156, lng: 129.048288 },
+    { id: "busanseomyeon-26", regionId: "busan-seomyeon", brand: "emart24", shop: "convenience", name: "이마트24", street: "", lat: 35.15705, lng: 129.047284 },
+    { id: "busanseomyeon-27", regionId: "busan-seomyeon", brand: "gs25", shop: "convenience", name: "GS25", street: "", lat: 35.147785, lng: 129.06049 },
+    { id: "busanseomyeon-28", regionId: "busan-seomyeon", brand: "gs25", shop: "convenience", name: "GS25", street: "", lat: 35.156252, lng: 129.04369 }
+    ]
+  };
 
-    ["ps01", "pohang-south", "gs25", "GS25 이동점", -160, 220, "in", "낱팩", "11-17 10:02", "이동 시가지", "낱팩 재고 있음."],
-    ["ps02", "pohang-south", "cu", "CU 포항남구점", 280, -180, "check", "낱팩", "11-17 09:47", "남구청 인근", "수량 미표시 매장."],
-    ["ps03", "pohang-south", "seven", "세븐일레븐 문덕점", 640, 560, "none", "낱팩", "11-17 09:12", "문덕동", "품절."],
-    ["ps04", "pohang-south", "emart24", "이마트24 효자점", -820, -640, "in", "낱팩", "11-17 10:24", "효자동", "낱팩 소량."],
-    ["ps05", "pohang-south", "artbox", "아트박스 포항남구점", 420, 240, "check", "낱팩", "11-17 09:58", "상권 중심", "자판기 재고 확인 필요."],
-    ["ps06", "pohang-south", "shop", "이마트 포항 자판기", 1500, 900, "check", "낱팩", "11-17 10:15", "이마트 완구코너", "공식 자판기 위치."],
-    ["ps07", "pohang-south", "shop", "카드샵 포항남부", -420, -220, "in", "박스", "11-17 09:35", "오거리 인근", "박스 재고 있음."],
-    ["ps08", "pohang-south", "cu", "CU 오천점", 2100, -1500, "none", "낱팩", "11-17 08:44", "오천읍", "품절."],
-
-    ["gn01", "seoul-gangnam", "gs25", "GS25 강남역점", 120, -80, "in", "낱팩", "11-17 10:22", "강남역 11번 출구", "낱팩 재고 있음."],
-    ["gn02", "seoul-gangnam", "cu", "CU 역삼센터점", -260, 180, "check", "낱팩·박스", "11-17 09:58", "역삼동", "박스 판매 여부 확인 필요."],
-    ["gn03", "seoul-gangnam", "seven", "세븐일레븐 선릉점", 950, 620, "none", "낱팩", "11-17 09:12", "선릉역 인근", "품절."],
-    ["gn04", "seoul-gangnam", "emart24", "이마트24 강남대로점", -420, -540, "in", "낱팩", "11-17 10:40", "강남대로변", "낱팩 소량 입고."],
-    ["gn05", "seoul-gangnam", "artbox", "아트박스 강남점", 380, -760, "check", "낱팩", "11-17 09:45", "강남 상권", "매장 재고 확인 필요."],
-    ["gn06", "seoul-gangnam", "shop", "메가박스 코엑스 자판기", 2100, 900, "check", "낱팩", "11-17 10:05", "코엑스몰", "공식 자판기. 현장 확인."],
-    ["gn07", "seoul-gangnam", "shop", "공식카드샵 역삼점", 520, 380, "in", "박스", "11-17 09:50", "역삼동", "박스 판매."],
-    ["gn08", "seoul-gangnam", "gs25", "GS25 삼성점", 1600, -900, "none", "낱팩", "11-17 08:50", "삼성동", "품절."],
-    ["gn09", "seoul-gangnam", "cu", "CU 강남논현점", -900, 260, "none", "낱팩", "11-17 09:30", "논현동", "품절."],
-
-    ["hd01", "seoul-hongdae", "gs25", "GS25 홍대입구점", 150, -120, "in", "낱팩", "11-17 10:11", "홍대입구역", "낱팩 재고 있음."],
-    ["hd02", "seoul-hongdae", "cu", "CU 서교점", -280, 240, "in", "낱팩", "11-17 10:03", "서교동", "낱팩 소량."],
-    ["hd03", "seoul-hongdae", "seven", "세븐일레븐 홍대점", 420, -380, "check", "낱팩", "11-17 09:36", "홍익로변", "수량 미표시."],
-    ["hd04", "seoul-hongdae", "emart24", "이마트24 합정점", -1250, 900, "none", "낱팩", "11-17 09:02", "합정동", "품절."],
-    ["hd05", "seoul-hongdae", "artbox", "아트박스 서교동", 260, 320, "check", "낱팩", "11-17 09:48", "홍대 상권", "자판기 재고 확인 필요."],
-    ["hd06", "seoul-hongdae", "shop", "포켓픽 홍대 (무인 카드샵)", -520, -60, "in", "박스", "11-17 10:25", "홍익로", "박스 재고 있음."],
-    ["hd07", "seoul-hongdae", "shop", "티씨지 서울 홍대2호점", 700, 180, "in", "박스", "11-17 10:15", "와우산로", "박스 재고 있음."],
-    ["hd08", "seoul-hongdae", "shop", "롯데시네마 홍대 자판기", -150, 620, "check", "낱팩", "11-17 09:20", "영화관 로비", "공식 자판기."],
-    ["hd09", "seoul-hongdae", "gs25", "GS25 망원점", -1850, 640, "none", "낱팩", "11-17 08:45", "망원동", "품절."],
-
-    ["nw01", "seoul-nowon", "gs25", "GS25 노원역점", 90, 60, "in", "낱팩", "11-17 10:18", "노원역 인근", "낱팩 재고 있음."],
-    ["nw02", "seoul-nowon", "cu", "CU 노원점", -320, -220, "check", "낱팩", "11-17 09:52", "노원 상권", "수량 미표시."],
-    ["nw03", "seoul-nowon", "seven", "세븐일레븐 상계점", 600, 780, "none", "낱팩", "11-17 09:10", "상계동", "품절."],
-    ["nw04", "seoul-nowon", "emart24", "이마트24 노원점", 240, -640, "in", "낱팩", "11-17 10:30", "노원구청 인근", "낱팩 소량."],
-    ["nw05", "seoul-nowon", "artbox", "아트박스 노원점", -180, 340, "check", "낱팩", "11-17 09:44", "노원역 상권", "자판기 확인 필요."],
-    ["nw06", "seoul-nowon", "shop", "롯데시네마 노원 자판기", -60, -180, "none", "낱팩", "11-17 08:58", "영화관 로비", "30th 품절."],
-    ["nw07", "seoul-nowon", "shop", "이마트 월계 자판기", -1500, 1200, "check", "낱팩", "11-17 10:00", "이마트 완구코너", "공식 자판기."],
-    ["nw08", "seoul-nowon", "gs25", "GS25 하계점", 1150, 260, "none", "낱팩", "11-17 09:25", "하계동", "품절."],
-
-    ["sm01", "busan-seomyeon", "gs25", "GS25 서면중앙점", 120, 90, "in", "낱팩", "11-17 10:26", "서면 중앙", "낱팩 재고 있음."],
-    ["sm02", "busan-seomyeon", "cu", "CU 서면역점", -180, -140, "check", "낱팩·박스", "11-17 10:04", "서면역", "박스 판매 여부 확인 필요."],
-    ["sm03", "busan-seomyeon", "seven", "세븐일레븐 부산전포점", 480, 520, "none", "낱팩", "11-17 09:18", "전포동", "품절."],
-    ["sm04", "busan-seomyeon", "emart24", "이마트24 서면점", -620, 340, "none", "낱팩", "11-17 09:07", "부전동", "품절."],
-    ["sm05", "busan-seomyeon", "artbox", "아트박스 서면역사점", 260, -60, "check", "낱팩", "11-17 09:55", "서면역 지하", "매장 재고 확인 필요."],
-    ["sm06", "busan-seomyeon", "shop", "롯데시네마 부산본점 자판기", -420, 860, "check", "낱팩", "11-17 10:12", "영화관 로비", "공식 자판기."],
-    ["sm07", "busan-seomyeon", "shop", "공식카드샵 부산점", 900, -420, "in", "박스", "11-17 09:40", "서면 상권", "박스 재고 있음."],
-    ["sm08", "busan-seomyeon", "gs25", "GS25 부전점", -1050, -680, "none", "낱팩", "11-17 08:52", "부전동", "품절."]
-  ];
-
+  /* 브랜드 분류 (OSM 태그 → 서비스 카테고리) */
   var brandMeta = {
     gs25: { label: "GS25", short: "GS", color: "#0f7ad4", soft: "#e3f1fd" },
     cu: { label: "CU", short: "CU", color: "#5aa72c", soft: "#ecf7e6" },
     seven: { label: "세븐일레븐", short: "7", color: "#d33a2c", soft: "#fdeceb" },
     emart24: { label: "이마트24", short: "24", color: "#f0a500", soft: "#fff5dd" },
     artbox: { label: "아트박스", short: "A", color: "#8a5cf6", soft: "#f1ebff" },
-    shop: { label: "카드샵·자판기", short: "★", color: "#1b2a4a", soft: "#e8ecf4" }
+    stationery: { label: "문구·완구·선물", short: "T", color: "#0e9f8a", soft: "#e2f7f3" },
+    other: { label: "기타 편의점", short: "·", color: "#64748b", soft: "#eef1f6" }
   };
 
   var brands = [
@@ -450,33 +531,9 @@ window.POKEMOA_DATA = (function () {
     { id: "seven", label: "세븐일레븐" },
     { id: "emart24", label: "이마트24" },
     { id: "artbox", label: "아트박스" },
-    { id: "shop", label: "공식카드샵·자판기" }
+    { id: "stationery", label: "문구·완구·선물" },
+    { id: "other", label: "기타 편의점" }
   ];
-
-  /* 매장 좌표 계산 */
-  var stores = storeRows.map(function (r) {
-    var region = regions.filter(function (g) { return g.id === r[1]; })[0];
-    var dx = r[4];
-    var dy = r[5];
-    var lat = region.lat + dy / 111320;
-    var lng = region.lng + dx / (111320 * Math.cos(region.lat * Math.PI / 180));
-    return {
-      id: r[0],
-      regionId: r[1],
-      brand: r[2],
-      name: r[3],
-      dx: dx,
-      dy: dy,
-      lat: lat,
-      lng: lng,
-      distance: Math.round(Math.sqrt(dx * dx + dy * dy) / 10) / 100,
-      status: r[6],
-      unit: r[7],
-      observed: r[8],
-      area: r[9],
-      note: r[10]
-    };
-  });
 
   /* --------------------------------------------------------- 외부 바로가기 */
   var shortcuts = [
@@ -502,7 +559,7 @@ window.POKEMOA_DATA = (function () {
     },
     {
       q: "포케모아에 보이는 재고는 실제인가요?",
-      a: "아닙니다. 지금 지도의 매장·재고는 UI를 확인하기 위한 샘플 관측 데이터입니다. 실서비스에서는 편의점 앱 재고 연동이나 이용자 제보 DB를 연결해 실제 값으로 바꿉니다. 방문 전에는 각 편의점 공식 앱과 매장 전화로 확인하세요."
+      a: "반은 실제, 반은 아직 샘플입니다. 지도의 매장 위치·이름은 OpenStreetMap 실제 데이터를 조회해 표시하고, 실시간 조회가 지연되면 내장된 실제 좌표로 대체합니다. 다만 각 매장의 포켓몬카드 재고(재고 있음/확인 필요/없음)는 편의점 앱 API가 아직 연결되지 않아 제보·샘플 기반 표시입니다. 방문 전에는 각 편의점 공식 앱과 매장 전화로 확인하세요."
     },
     {
       q: "포켓몬스토어 추첨에 당첨되면 자동 결제되나요?",
@@ -546,7 +603,7 @@ window.POKEMOA_DATA = (function () {
     recentStock: recentStock,
     calendar: calendar,
     regions: regions,
-    stores: stores,
+    osmSnapshot: osmSnapshot,
     brands: brands,
     brandMeta: brandMeta,
     shortcuts: shortcuts,

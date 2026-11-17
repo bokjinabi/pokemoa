@@ -20,7 +20,9 @@
 <meta name="twitter:description" content="정가 구매처, 입고 기록, 주변 매장 재고 지도, 수록 카드 도감을 한 곳에서.">
 <meta name="theme-color" content="#101f3c">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23101f3c'/%3E%3Crect x='8' y='7' width='13' height='18' rx='2.5' fill='%23ffcb05'/%3E%3Crect x='12' y='8' width='13' height='18' rx='2.5' fill='%23ffffff'/%3E%3Ccircle cx='18.5' cy='17' r='3.4' fill='%23101f3c'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <!-- =====================================================================
      AdSense 연동 위치 (1/2) — 아래 주석을 해제하고 ca-pub- 값만 넣으면 됩니다.
@@ -51,7 +53,7 @@
         {
           "@type": "Question",
           "name": "포케모아에 보이는 재고는 실제인가요?",
-          "acceptedAnswer": { "@type": "Answer", "text": "지도에 보이는 매장과 재고는 UI 데모용 샘플 데이터이며 실제 재고가 아닙니다. 방문 전 각 편의점 공식 앱과 매장 전화로 확인해야 합니다." }
+          "acceptedAnswer": { "@type": "Answer", "text": "지도의 매장 위치와 이름은 OpenStreetMap 실제 데이터이고, 실시간 조회가 지연되면 내장된 실제 좌표로 대체합니다. 다만 매장별 포켓몬카드 재고 상태는 편의점 앱 API 미연동으로 제보·샘플 기반 표시이므로, 방문 전 각 편의점 공식 앱과 매장 전화로 확인해야 합니다." }
         },
         {
           "@type": "Question",
@@ -76,7 +78,7 @@
 <!-- ============================================================ 헤더 -->
 <header class="site-header">
   <div class="wrap header-inner">
-    <a class="brand" href="#home" data-tab="home" aria-label="포케모아 홈">
+    <a class="brand" href="#map" data-tab="map" aria-label="포케모아 동네 찾기">
       <span class="brand-mark" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none">
           <rect x="8.4" y="4.2" width="8.6" height="12.4" rx="1.8" fill="#ffcb05" opacity=".55" transform="rotate(14 12.7 10.4)"/>
@@ -93,13 +95,13 @@
     </a>
 
     <nav class="main-nav" aria-label="주요 섹션">
-      <button type="button" class="nav-btn is-active" data-tab="home">
-        <span class="nav-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span>
-        홈
-      </button>
-      <button type="button" class="nav-btn" data-tab="map">
+      <button type="button" class="nav-btn is-active" data-tab="map">
         <span class="nav-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3-6-3z"/><path d="M9 3v15M15 6v15"/></svg></span>
-        지도
+        동네 찾기
+      </button>
+      <button type="button" class="nav-btn" data-tab="home">
+        <span class="nav-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M20 7h-3V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1z"/><path d="M9 7h6"/></svg></span>
+        정가 구매처
       </button>
       <button type="button" class="nav-btn" data-tab="schedule">
         <span class="nav-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/></svg></span>
@@ -121,7 +123,7 @@
 <main id="main">
 
 <!-- ============================================================ 홈 탭 -->
-<section class="tab-panel" id="panel-home" aria-labelledby="home-title">
+<section class="tab-panel" id="panel-home" aria-labelledby="home-title" hidden>
 
   <div class="wrap">
     <div class="hero">
@@ -477,17 +479,18 @@
 </section>
 
 <!-- ============================================================ 지도 탭 -->
-<section class="tab-panel" id="panel-map" aria-labelledby="map-title" hidden>
+<section class="tab-panel" id="panel-map" aria-labelledby="map-title">
   <div class="wrap">
     <div class="map-page-head">
-      <span class="eyebrow">지도 탐색</span>
-      <h1 id="map-title">주변 편의점·아트박스·카드샵 재고를 한눈에</h1>
-      <p>브랜드와 반경을 고르면 지도와 매장 목록이 함께 바뀝니다. 마커를 누르면 판매 단위·관측 시각·확인 팁이 열립니다.</p>
+      <span class="eyebrow">동네 찾기 · 첫 화면</span>
+      <h1 id="map-title">내 주변 편의점·아트박스, 실제 지도에서 찾기</h1>
+      <p>OpenStreetMap 실제 지도 위에 주변 편의점 4사(GS25·CU·세븐일레븐·이마트24)와 문구·완구·선물 매장을 표시합니다. 지역을 고르거나 <b>'내 위치로 찾기'</b>를 누르면 그 반경의 매장을 새로 조회합니다.</p>
     </div>
 
     <div class="demo-notice">
       <span class="demo-icon" aria-hidden="true">i</span>
-      <div><b>현재 지도는 UI 데모용 샘플 관측 데이터입니다.</b> 실제 매장 재고가 아닙니다. 실서비스에서는 편의점 앱 연동 또는 이용자 제보 DB를 연결해 실제 값으로 대체합니다. 방문 전에는 아래 바로가기의 공식 앱과 매장 전화로 확인하세요.</div>
+      <div class="notice-long"><b>매장 위치·이름은 실제 지도 데이터(OpenStreetMap)입니다.</b> 다만 각 매장의 포켓몬카드 <b>재고 상태(재고 있음 / 확인 필요 / 없음)</b>는 편의점 앱 API가 아직 연결되지 않아 <b>제보·샘플 기반 표시</b>입니다. 방문 전에는 아래 공식 앱과 매장 전화로 확인하세요.</div>
+      <div class="notice-short"><b>매장 위치·이름은 실제 OSM 데이터</b>이고, <b>재고 상태는 제보·샘플</b>입니다. 방문 전 공식 앱·매장 전화로 확인하세요.</div>
     </div>
 
     <div class="map-toolbar">
@@ -503,10 +506,13 @@
             <option value="busan-seomyeon">부산 · 부산진 (서면)</option>
           </select>
         </span>
+        <button type="button" class="btn btn-dark btn-sm geo-btn" id="geoBtn">
+          <span aria-hidden="true">◎</span> 내 위치로 찾기
+        </button>
         <div class="radius-group" role="group" aria-label="반경 필터">
-          <button type="button" class="radius-btn" data-radius="1">1km</button>
-          <button type="button" class="radius-btn is-active" data-radius="3">3km</button>
-          <button type="button" class="radius-btn" data-radius="5">5km</button>
+          <button type="button" class="radius-btn" data-radius="1000">1km</button>
+          <button type="button" class="radius-btn is-active" data-radius="3000">3km</button>
+          <button type="button" class="radius-btn" data-radius="5000">5km</button>
         </div>
         <button type="button" class="btn btn-ghost btn-sm toolbar-spacer" id="filterReset">필터 초기화</button>
         <span class="toolbar-count" id="mapCount">표시 중 <b>0</b>곳</span>
@@ -520,36 +526,36 @@
           <button type="button" class="brand-chip" data-brand="seven">세븐일레븐</button>
           <button type="button" class="brand-chip" data-brand="emart24">이마트24</button>
           <button type="button" class="brand-chip" data-brand="artbox">아트박스</button>
-          <button type="button" class="brand-chip" data-brand="shop">공식카드샵·자판기</button>
+          <button type="button" class="brand-chip" data-brand="stationery">문구·완구·선물</button>
+          <button type="button" class="brand-chip" data-brand="other">기타 편의점</button>
         </div>
       </div>
     </div>
 
+    <div class="map-statusbar" id="mapStatusBar">
+      <span class="ms-dot" id="mapStatusDot" aria-hidden="true"></span>
+      <span class="ms-text" id="mapStatusText">지도와 주변 매장 데이터 상태를 확인하는 중입니다...</span>
+      <button type="button" class="ms-retry" id="mapRetry" hidden>실시간 다시 조회</button>
+    </div>
+
     <div class="map-body">
       <div class="map-shell" id="mapShell">
-        <svg class="map-canvas" id="mapSvg" role="img" aria-label="편의점·아트박스·카드샵 위치를 표시한 스타일화 지도"></svg>
-        <div class="map-layer" id="mapLayer"></div>
-
-        <div class="map-hint">드래그 이동 · 휠/더블클릭 확대</div>
-
-        <div class="map-controls">
-          <button type="button" class="map-btn" id="zoomIn" aria-label="확대" title="확대">+</button>
-          <button type="button" class="map-btn" id="zoomOut" aria-label="축소" title="축소">−</button>
-          <button type="button" class="map-btn is-small" id="zoomReset" aria-label="초기화" title="보기 초기화">⤾</button>
+        <div class="map-loading" id="mapLoading" role="status" aria-live="polite">
+          <div class="ml-box">
+            <span class="ml-spinner" aria-hidden="true"></span>
+            <strong id="mapLoadingText">실제 지도와 주변 매장 위치를 불러오는 중...</strong>
+            <span class="ml-bar"><i id="mapLoadingBar"></i></span>
+            <small id="mapLoadingStep">지도 타일 → 실시간 매장 조회 순서로 불러옵니다.</small>
+          </div>
         </div>
+
+        <div class="map-popup pm-card" id="mapCard" hidden></div>
 
         <div class="map-legend" aria-hidden="true">
           <span><i class="l-in"></i>재고 있음</span>
           <span><i class="l-check"></i>확인 필요</span>
           <span><i class="l-none"></i>재고 없음</span>
         </div>
-
-        <div class="map-scale" aria-hidden="true">
-          <div class="bar" id="scaleBar"></div>
-          <div class="txt" id="scaleText">500 m</div>
-        </div>
-
-        <div class="map-popup" id="mapPopup" hidden></div>
       </div>
 
       <aside class="map-side" aria-label="매장 목록">
@@ -557,12 +563,19 @@
           <strong>매장 목록</strong>
           <span id="sideSummary">가까운 순</span>
         </div>
-        <ul class="store-list" id="storeList"></ul>
+        <div class="store-skeleton" id="storeSkeleton" aria-hidden="true">
+          <div class="sk-row"><span class="sk-dot"></span><span class="sk-lines"><i></i><i></i></span></div>
+          <div class="sk-row"><span class="sk-dot"></span><span class="sk-lines"><i></i><i></i></span></div>
+          <div class="sk-row"><span class="sk-dot"></span><span class="sk-lines"><i></i><i></i></span></div>
+          <div class="sk-row"><span class="sk-dot"></span><span class="sk-lines"><i></i><i></i></span></div>
+          <p class="sk-note">주변 매장을 불러오는 중...</p>
+        </div>
+        <ul class="store-list" id="storeList" hidden></ul>
       </aside>
     </div>
 
     <div class="status-guide">
-      <div><b>재고 있음</b>조회 시점에 1개 이상 확인된 상태입니다. 관측 시각을 함께 보세요.</div>
+      <div><b>재고 있음</b>조회 시점에 1개 이상 확인된 상태입니다. 지금은 제보·샘플 값이므로 참고만 하세요.</div>
       <div><b>매장 확인 필요</b>수량을 받지 못했거나 전산 확인이 안 된 상태입니다. '재고 없음'과 다릅니다.</div>
       <div><b>재고 없음</b>조회 결과 0으로 확인된 상태입니다. 아직 입고 전일 수도 있습니다.</div>
     </div>
@@ -579,14 +592,13 @@
       <a class="shortcut" href="https://pokemonkorea.co.kr/card_vending_machine" target="_blank" rel="noopener"><span class="sc-dot"></span><span><strong>공식 자판기 지도</strong><small>포켓몬코리아 안내</small></span><span class="sc-go">↗</span></a>
     </div>
 
-    <!-- AdSense Slot: map-bottom -->
     <div class="ad-slot is-banner" data-ad-slot="map-bottom" aria-hidden="true">
       <span class="ad-label">AD</span>
       <span class="ad-title">Google AdSense 광고 영역</span>
       <span class="ad-desc">map-bottom · 반응형</span>
     </div>
 
-    <p class="src-note">지도는 외부 지도 API 없이 SVG로 그린 스타일화 약도입니다. 실제 도로·건물 위치와 다르며, 매장명·좌표·재고는 모두 데모용 샘플입니다. 공식 자판기 위치는 <a href="https://pokemonkorea.co.kr/card_vending_machine" target="_blank" rel="noopener">포켓몬코리아 자판기 안내</a>에서 확인하세요.</p>
+    <p class="src-note">지도: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> 기여자 · 타일 Leaflet 1.9.4 · 주변 매장 조회 Overpass API(8초 제한, 지연 시 내장 실제 좌표 스냅샷 2026-11-17). 매장 위치·이름은 OSM 실제 데이터이고, <b>재고 상태만 제보·샘플</b>입니다. 공식 자판기 위치는 <a href="https://pokemonkorea.co.kr/card_vending_machine" target="_blank" rel="noopener">포켓몬코리아 자판기 안내</a>에서 확인하세요.</p>
   </div>
 </section>
 
@@ -847,7 +859,7 @@
         </details>
         <details class="faq-item">
           <summary><span class="q-mark">Q</span>포케모아에 보이는 재고는 실제인가요?<span class="plus">+</span></summary>
-          <div class="faq-answer"><p>아닙니다. 지금 지도의 매장·재고는 UI를 확인하기 위한 샘플 관측 데이터입니다. 실서비스에서는 편의점 앱 재고 연동이나 이용자 제보 DB를 연결해 실제 값으로 바꿉니다. 방문 전에는 각 편의점 공식 앱과 매장 전화로 확인하세요.</p></div>
+          <div class="faq-answer"><p>나뉩니다. 지도의 매장 위치·이름은 OpenStreetMap 실제 데이터를 조회해 표시하고, 실시간 조회가 지연되면 내장된 실제 좌표로 대체합니다. 다만 매장별 포켓몬카드 재고 상태는 편의점 앱 API가 아직 연결되지 않아 제보·샘플 기반 표시입니다. 방문 전에는 각 편의점 공식 앱과 매장 전화로 확인하세요.</p></div>
         </details>
         <details class="faq-item">
           <summary><span class="q-mark">Q</span>포켓몬스토어 추첨에 당첨되면 자동 결제되나요?<span class="plus">+</span></summary>
@@ -902,7 +914,7 @@
   <div class="wrap">
     <div class="footer-grid">
       <div class="footer-brand">
-        <a class="brand" href="#home" data-tab="home">
+        <a class="brand" href="#map" data-tab="map">
           <span class="brand-mark" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none">
               <rect x="8.4" y="4.2" width="8.6" height="12.4" rx="1.8" fill="#ffcb05" opacity=".55" transform="rotate(14 12.7 10.4)"/>
@@ -919,8 +931,8 @@
       <div class="footer-col">
         <h5>바로가기</h5>
         <ul>
-          <li><button type="button" data-tab="home">홈</button></li>
-          <li><button type="button" data-tab="map">지도 탐색</button></li>
+          <li><button type="button" data-tab="map">동네 찾기</button></li>
+          <li><button type="button" data-tab="home">정가 구매처</button></li>
           <li><button type="button" data-tab="schedule">일정·입고</button></li>
           <li><button type="button" data-tab="guide">도감·가이드</button></li>
           <li><a href="#cards" data-tab="guide">수록 카드 검색</a></li>
@@ -953,7 +965,7 @@
 
     <div class="footer-note">
       <p>포케모아는 포켓몬·포켓몬코리아와 무관한 비공식 정보 사이트입니다. ‘포켓몬’, ‘포켓몬 카드 게임’ 및 관련 명칭·이미지의 권리는 각 권리자에게 있습니다. 본 사이트는 공식 로고와 카드 이미지를 사용하지 않으며, 카드 정보는 공개된 상품 정보를 정리한 것입니다.</p>
-      <p>지도에 표시된 매장·재고는 UI 데모용 샘플이며 실제 재고가 아닙니다. 구매 판단과 그 결과는 이용자 본인에게 있습니다.</p>
+      <p>지도에 표시된 매장 위치·이름은 OpenStreetMap 실제 데이터이며, 매장별 재고 상태는 제보·샘플 기반 표시입니다. 구매 판단과 그 결과는 이용자 본인에게 있습니다.</p>
       <p>광고·제휴 고지: 본 사이트는 Google AdSense 광고와 쿠팡 파트너스 활동을 통해 수수료를 받을 수 있습니다. 제휴 링크를 통한 구매 시 사이트에 일정액의 수수료가 지급될 수 있으며, 이용자 가격에는 영향이 없습니다.</p>
     </div>
 
@@ -1001,7 +1013,7 @@
     </ul>
 
     <h4>데이터에 대해</h4>
-    <p>가격과 일정은 공개된 공식 상품 정보와 보도를 2026-11-17 기준으로 정리했습니다. 지도에 보이는 매장·재고·관측 시각은 <strong>UI 데모용 샘플</strong>이며 실제 재고가 아닙니다. 실서비스에서는 편의점 앱 재고 연동 또는 이용자 제보 DB로 대체할 계획입니다.</p>
+    <p>가격과 일정은 공개된 공식 상품 정보와 보도를 2026-11-17 기준으로 정리했습니다. 지도의 매장 위치·이름은 OpenStreetMap 실제 데이터이고, <strong>매장별 재고 상태와 관측 시각은 제보·샘플</strong>입니다. 실서비스에서는 편의점 앱 재고 연동 또는 이용자 제보 DB로 대체할 계획입니다.</p>
 
     <h4>운영 원칙</h4>
     <p>정가보다 비싼 구매를 부추기지 않습니다. 리셀 시세를 단정하지 않고, 정가라는 기준선과 계산 방법을 제공하는 데 집중합니다. 광고와 제휴 링크가 있는 경우 본문과 구분해 표시합니다.</p>
@@ -1033,16 +1045,19 @@
       <li>브라우저 설정에서 쿠키 저장을 거부할 수 있으며, 이 경우 일부 기능이 제한될 수 있습니다.</li>
     </ul>
 
-    <h4>4. 보유 기간</h4>
+    <h4>4. 지도·외부 데이터 요청</h4>
+    <p>지도 화면을 열면 지도 타일(OpenStreetMap)과 주변 매장 조회(Overpass API)를 위해 브라우저가 해당 서버에 직접 접속하며, 이 과정에서 접속 IP·브라우저 정보가 각 서비스 제공자에게 전달될 수 있습니다. 사이트는 이 정보를 저장하지 않습니다. '내 위치로 찾기'의 위치 정보는 화면 표시와 주변 매장 조회에만 사용합니다.</p>
+
+    <h4>5. 보유 기간</h4>
     <p>문의·제보로 전달된 내용은 처리 완료 후 1년 이내 파기합니다. 법령에 따라 보존이 필요한 경우 해당 기간 동안 보관합니다.</p>
 
-    <h4>5. 제3자 제공</h4>
+    <h4>6. 제3자 제공</h4>
     <p>사이트는 이용자의 개인정보를 판매하거나 제3자에게 제공하지 않습니다. 다만 광고·제휴 서비스 사업자는 자체 정책에 따라 쿠키 기반 정보를 처리할 수 있습니다.</p>
 
-    <h4>6. 이용자의 권리</h4>
+    <h4>7. 이용자의 권리</h4>
     <p>이용자는 언제든지 자신이 제공한 정보의 열람·정정·삭제를 요청할 수 있습니다. 아래 문의처로 연락하면 지체 없이 처리합니다.</p>
 
-    <h4>7. 문의처</h4>
+    <h4>8. 문의처</h4>
     <p>운영 문의: 사이트 내 <strong>운영 문의</strong> 양식 (배포 시 운영 이메일로 연결)</p>
 
     <div class="note-box">본 방침은 사이트 개편이나 관련 법령 변경에 따라 수정될 수 있으며, 변경 시 본 페이지에 게시합니다.</div>
@@ -1057,12 +1072,12 @@
     <p>본 약관은 포케모아(이하 "사이트")가 제공하는 정보 서비스의 이용 조건과 절차, 이용자와 사이트의 책임을 정합니다.</p>
 
     <h4>2. 서비스 내용</h4>
-    <p>사이트는 포켓몬 카드의 정가 구매처, 추첨·입고 일정, 매장 재고 지도(데모), 수록 카드 정보와 구매 가이드를 제공합니다. 사이트는 판매자가 아니며, 상품을 직접 판매·배송하지 않습니다.</p>
+    <p>사이트는 포켓몬 카드의 정가 구매처, 추첨·입고 일정, 매장 위치 지도, 수록 카드 정보와 구매 가이드를 제공합니다. 사이트는 판매자가 아니며, 상품을 직접 판매·배송하지 않습니다.</p>
 
     <h4>3. 정보의 정확성과 한계</h4>
     <ul>
       <li>가격·일정·재고는 공개 자료를 정리한 것으로, 판매처 사정에 따라 달라질 수 있습니다.</li>
-      <li>지도에 표시된 매장·재고·관측 시각은 데모용 샘플이며 실제 재고가 아닙니다.</li>
+      <li>지도의 매장 위치·이름은 OpenStreetMap 실제 데이터이고, 매장별 재고 상태·관측 시각은 제보·샘플 기반 표시입니다.</li>
       <li>리셀 시세와 거래 사례는 보도·공개 자료를 인용한 참고 값이며, 특정 가격을 보장하지 않습니다.</li>
       <li>구매·응모·투자 등 모든 판단과 결과의 책임은 이용자에게 있습니다.</li>
     </ul>
