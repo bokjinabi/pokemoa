@@ -1038,7 +1038,35 @@
   }
 
   /* --------------------------------------------------------------- FAQ */
+  /* 처음 3개만 보이고 '더보기 (N개 더 보기)' / '접기'로 펼침 (도감 더보기와 같은 방식) */
+  var FAQ_PAGE = 3;
+  var faqList = $("#faqList");
   var faqItems = $$(".faq-item");
+  var faqMoreWrap = $("#faqMoreWrap");
+  var faqMore = $("#faqMore");
+  var faqExpanded = false;
+
+  function syncFaqMore() {
+    var total = faqItems.length;
+    if (!faqMoreWrap || !faqMore) return;
+    if (total <= FAQ_PAGE) {
+      faqExpanded = false;
+      faqMoreWrap.hidden = true;
+      faqItems.forEach(function (item) { item.classList.remove("is-faq-hidden"); });
+      return;
+    }
+    faqMoreWrap.hidden = false;
+    faqMore.setAttribute("aria-expanded", faqExpanded ? "true" : "false");
+    faqMore.textContent = faqExpanded
+      ? "접기"
+      : "더보기 (" + (total - FAQ_PAGE) + "개 더 보기)";
+    faqItems.forEach(function (item, i) {
+      var hide = !faqExpanded && i >= FAQ_PAGE;
+      item.classList.toggle("is-faq-hidden", hide);
+      if (hide) item.open = false;
+    });
+  }
+
   faqItems.forEach(function (item) {
     item.addEventListener("toggle", function () {
       if (!item.open) return;
@@ -1047,6 +1075,18 @@
       });
     });
   });
+
+  if (faqMore) {
+    faqMore.addEventListener("click", function () {
+      faqExpanded = !faqExpanded;
+      syncFaqMore();
+      if (!faqExpanded && faqList) {
+        var top = faqList.getBoundingClientRect().top + window.scrollY - 90;
+        window.scrollTo({ top: top > 0 ? top : 0, behavior: "smooth" });
+      }
+    });
+  }
+  syncFaqMore();
 
   /* ------------------------------------------------------------ 계산기 */
   var calcInput = $("#calcInput");

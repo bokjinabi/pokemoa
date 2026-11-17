@@ -648,14 +648,27 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .affiliate .affiliate-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .affiliate small { font-size: 11px; color: var(--muted-2); }
 
-/* 실제 제휴 배너 (쿠팡 파트너스 위젯 iframe 120×240, 가운데 정렬) */
+/* 실제 제휴 배너 (쿠팡 파트너스 위젯 iframe 120×240 × 2열, 가운데 정렬) */
 .affiliate .affiliate-widget {
   display: flex;
+  flex-wrap: nowrap;
   justify-content: center;
   align-items: center;
+  gap: 12px;
   padding: 6px 0 2px;
+  min-width: 0;
+  max-width: 100%;
 }
-.affiliate .affiliate-widget iframe {
+.affiliate .affiliate-slot {
+  flex: 0 0 120px;
+  width: 120px;
+  height: 240px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 27, 61, 0.06);
+}
+.affiliate .affiliate-slot iframe {
   display: block;
   width: 120px;
   height: 240px;
@@ -663,7 +676,12 @@ button { font: inherit; color: inherit; cursor: pointer; }
   border: 0;
   border-radius: 12px;
   background: #fff;
-  box-shadow: 0 1px 2px rgba(15, 27, 61, 0.06);
+}
+/* 좁은 화면(≈320px)에서도 가로 넘침 없이 두 위젯 유지 */
+@media (max-width: 359px) {
+  .affiliate { padding: 14px; }
+  .affiliate .affiliate-widget { gap: 8px; }
+  .affiliate .affiliate-slot { flex-basis: 118px; width: 118px; }
 }
 .affiliate .affiliate-disclosure {
   display: block;
@@ -1668,6 +1686,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .faq-item[open] summary { background: #fbfcfe; }
 .faq-answer { padding: 0 16px 16px 48px; font-size: 13px; color: var(--ink-2); line-height: 1.65; }
 .faq-answer p { margin: 0; }
+/* FAQ 더보기/접기 (처음 3개만 표시, 도감 더보기 버튼과 같은 톤) */
+.faq-item.is-faq-hidden { display: none; }
+.faq-more-wrap { display: flex; justify-content: center; margin-top: 12px; }
+.faq-more-wrap[hidden] { display: none; }
+.faq-more { min-width: 196px; }
 
 /* ---------------------------------------------------------------- 푸터 */
 .site-footer {
