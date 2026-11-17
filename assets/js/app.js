@@ -121,6 +121,8 @@
     mapLoading.classList.remove("is-done");
     if (mapCountEl) mapCountEl.textContent = "주변 매장 조회 중...";
     if (sideSummary) sideSummary.textContent = "불러오는 중...";
+    var moreWrapEl = $("#storeMoreWrap");
+    if (moreWrapEl) moreWrapEl.hidden = true;
     mapLoadingText.textContent = d.message || "실제 지도와 주변 매장 위치를 불러오는 중...";
     mapLoadingBar.style.width = (d.progress || 20) + "%";
     mapLoadingStep.textContent = d.phase === "tiles"
