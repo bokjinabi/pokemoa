@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>포켓몬카드모아 화면 확인용 프레임</title>
+<!-- 검증용: 실제 페이지를 지정한 크기 iframe에 띄워 레이아웃을 확인합니다.
+     예) frame.html?w=390&h=844&hash=trends  /  frame.html?w=1440&h=900&hash=trends -->
+<style>
+  html, body { margin: 0; background: #0d1524; font-family: -apple-system, system-ui, "Malgun Gothic", sans-serif; }
+  .wrap { display: inline-flex; flex-direction: column; gap: 8px; padding: 14px; }
+  .cap { color: #93a2bd; font-size: 12px; letter-spacing: 0.02em; }
+  .frame { border-radius: 18px; overflow: hidden; background: #fff; box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45); }
+  iframe { display: block; border: 0; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <span class="cap" id="cap"></span>
+    <div class="frame" id="frame"><iframe id="f" title="포켓몬카드모아 화면"></iframe></div>
+  </div>
+<script>
+  (function () {
+    var p = new URLSearchParams(location.search);
+    var w = Math.min(1920, Math.max(320, parseInt(p.get("w") || "390", 10)));
+    var h = Math.min(6000, Math.max(320, parseInt(p.get("h") || "844", 10)));
+    var hash = (p.get("hash") || "").replace(/[^a-z0-9-]/gi, "");
+    var src = "../index.html" + (hash ? "#" + hash : "");
+    var f = document.getElementById("f");
+    f.style.width = w + "px";
+    f.style.height = h + "px";
+    f.src = src;
+    document.getElementById("cap").textContent = "실제 페이지 " + w + "×" + h + (hash ? " · #" + hash : "");
+  })();
+</script>
+</body>
+</html>
