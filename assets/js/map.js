@@ -457,15 +457,43 @@ window.PokeMoaMap = (function () {
       try { pt = proj.containerPointFromCoords(latlng(s.lat, s.lng)); } catch (e) { pt = null; }
       if (!pt) { pt = { x: s.lng * 1000, y: s.lat * 1000 }; }
       var key = Math.floor(pt.x / cell) + ":" + Math.floor(pt.y / cell);
-      var g = groups[key] || (groups[key] = { lat: 0, lng: 0, n: 0, in: 0, names: [], items: [] });
+      var g = groups[key] || (groups[key] = { lat: 0, lng: 0, px: 0, py: 0, n: 0, in: 0, names: [], items: [] });
       g.lat += s.lat;
       g.lng += s.lng;
+      g.px += pt.x;
+      g.py += pt.y;
       g.n += 1;
       if (s.status === "in") g.in += 1;
       if (g.names.length < 3) g.names.push(s.name);
       g.items.push(s);
     });
     return groups;
+  }
+
+  /* 배지·점이 겹치지 않도록 가까이 붙은 묶음을 하나로 합친다(큰 묶음부터 자리 잡기) */
+  function mergeNearby(list, gap) {
+    list.sort(function (a, b) { return b.n - a.n; });
+    var out = [];
+    list.forEach(function (g) {
+      var cx = g.px / g.n;
+      var cy = g.py / g.n;
+      for (var i = 0; i < out.length; i++) {
+        var q = out[i];
+        if (Math.abs(cx - q.px / q.n) < gap && Math.abs(cy - q.py / q.n) < gap) {
+          q.lat += g.lat;
+          q.lng += g.lng;
+          q.px += g.px;
+          q.py += g.py;
+          q.n += g.n;
+          q.in += g.in;
+          q.items = q.items.concat(g.items);
+          if (q.names.length < 3 && g.names.length) q.names.push(g.names[0]);
+          return;
+        }
+      }
+      out.push(g);
+    });
+    return out;
   }
 
   /* 구역 묶음 배지 — 누르면 그 자리로 확대한다(step 단계).
@@ -500,7 +528,8 @@ window.PokeMoaMap = (function () {
        반경 전역이 지역별 여러 묶음으로 나뉘어 보이게 한다 */
     var cell = level >= 11 ? 85 : level >= 10 ? 58 : 40;
     var groups = groupStores(list, cell);
-    Object.keys(groups).forEach(function (k) { drawClusterBadge(groups[k], 3); });
+    var arranged = mergeNearby(Object.keys(groups).map(function (k) { return groups[k]; }), 66);
+    arranged.forEach(function (g) { drawClusterBadge(g, 3); });
   }
 
   /* 5km 보기(브랜드 칩 모드): 칩이 겹치는 자리는 숫자만 담은 작은 원,
