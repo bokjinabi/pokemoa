@@ -285,6 +285,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   font-weight: 700;
   font-size: 14px;
   color: var(--muted);
+  white-space: nowrap;
   transition: background 0.15s, color 0.15s;
 }
 .nav-btn:hover { background: var(--paper); color: var(--ink); }
@@ -3515,6 +3516,17 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
   .kream-m-only { display: block; margin-top: 3px; font-size: 10.5px; font-weight: 600; color: var(--muted); line-height: 1.45; }
   .kream-name { font-size: 13px; }
   .kream-sub { font-size: 10px; }
+}
+
+/* 상단 내비게이션 5탭 — 1600px 미만에서는 날짜 표기를 접고 간격을 줄여 한 줄 유지 */
+@media (max-width: 1599px) {
+  .nav-btn { padding: 9px 11px; font-size: 13.5px; }
+  .header-date { display: none; }
+}
+@media (min-width: 680px) and (max-width: 1023px) {
+  .nav-btn { padding: 8px 7px; font-size: 12px; letter-spacing: -0.02em; }
+  .header-actions { gap: 4px; margin-left: 2px; }
+  .header-actions .btn-sm { padding: 8px 8px; font-size: 11.5px; }
 }
 
 </style>
