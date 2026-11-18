@@ -2400,11 +2400,13 @@
     if (!popLinks) return;
     var info = popCompanyInfo();
     var q = popQueryEl ? popQueryEl.value.trim() : "";
-    var certHref = isCertNumber(q) ? popTargetUrl(q) : (info.cert ? info.cert : info.report);
+    var certHref = popTargetUrl(q);
     popLinks.innerHTML =
-      (info.cert
+      (info.cert && isCertNumber(q)
         ? '<a class="pop-link" href="' + certHref + '" target="_blank" rel="noopener" data-pop-tool="cert"><b>' + info.label + ' 인증서 조회</b><small>인증서 번호로 등급카드 확인</small></a>'
-        : '') +
+        : info.cert
+          ? '<a class="pop-link" href="' + info.cert.replace(/[?].*$/, '') + '" target="_blank" rel="noopener" data-pop-tool="cert"><b>' + info.label + ' 인증서 조회</b><small>인증서 번호를 넣으면 바로 열립니다</small></a>'
+          : '') +
       '<a class="pop-link" href="' + info.report + '" target="_blank" rel="noopener" data-pop-tool="report"><b>' + info.reportLabel + '</b><small>공식 사이트에서 팝수 확인</small></a>';
     $$("[data-pop-tool]", popLinks).forEach(function (el) {
       el.addEventListener("click", function () {

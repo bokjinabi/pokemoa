@@ -4436,14 +4436,6 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
     </div>
 
     <div class="subtab-body" id="subtabNews" role="tabpanel" aria-labelledby="subtabBtnNews" hidden>
-      <div class="section-head mt-8">
-        <div>
-          <span class="eyebrow">카드 뉴스 · 신규팩</span>
-          <h2>공식 공지와 신규팩 발매 소식</h2>
-          <p>공식 공지·보도로 확인한 카드 게임 소식과, 공식 제품 정보에서 확인한 발매·발매 예정 상품입니다.</p>
-        </div>
-        <a class="head-link" href="https://www.pokemonkorea.co.kr/" target="_blank" rel="noopener">포켓몬코리아 소식 ↗</a>
-      </div>
 <section class="section" id="issueSection" aria-labelledby="issues-title">
       <div class="section-head">
         <div>
@@ -4729,8 +4721,8 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
 
     <div class="inquiry-cta">
       <div class="inquiry-cta-copy">
-        <b>시세나 이슈가 실제와 다른가요?</b>
-        <span>가격 오류, 빠진 발매 소식, 팝수 조회에서 찾지 못한 카드를 <a href="mailto:acewoni3717@gmail.com">acewoni3717@gmail.com</a>으로 보내 주세요.</span>
+        <b>팝수 조회가 잘 안 되나요?</b>
+        <span>회사·번호 안내 오류, 빠진 카드, 공식 조회 페이지 변경을 <a href="mailto:acewoni3717@gmail.com">acewoni3717@gmail.com</a>으로 보내 주세요.</span>
       </div>
       <button type="button" class="btn btn-dark btn-sm" data-modal="inquiry">관리자 문의</button>
     </div>
@@ -11469,11 +11461,13 @@ window.PokeMoaMap = (function () {
     if (!popLinks) return;
     var info = popCompanyInfo();
     var q = popQueryEl ? popQueryEl.value.trim() : "";
-    var certHref = isCertNumber(q) ? popTargetUrl(q) : (info.cert ? info.cert : info.report);
+    var certHref = popTargetUrl(q);
     popLinks.innerHTML =
-      (info.cert
+      (info.cert && isCertNumber(q)
         ? '<a class="pop-link" href="' + certHref + '" target="_blank" rel="noopener" data-pop-tool="cert"><b>' + info.label + ' 인증서 조회</b><small>인증서 번호로 등급카드 확인</small></a>'
-        : '') +
+        : info.cert
+          ? '<a class="pop-link" href="' + info.cert.replace(/[?].*$/, '') + '" target="_blank" rel="noopener" data-pop-tool="cert"><b>' + info.label + ' 인증서 조회</b><small>인증서 번호를 넣으면 바로 열립니다</small></a>'
+          : '') +
       '<a class="pop-link" href="' + info.report + '" target="_blank" rel="noopener" data-pop-tool="report"><b>' + info.reportLabel + '</b><small>공식 사이트에서 팝수 확인</small></a>';
     $$("[data-pop-tool]", popLinks).forEach(function (el) {
       el.addEventListener("click", function () {
