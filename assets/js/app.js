@@ -390,8 +390,9 @@
       if (!BP_RELAY[id]) return;
       bpSet(id, 40, "재고 조회 중", "run");
     });
-    /* 완료되어 접혀 있던 패널도 새로고침에서는 다시 펼쳐 보여 준다 */
+    /* 완료되어 접혀 있던 패널도 새 진행이 시작되면 다시 펼쳐 보여 준다 */
     if (manual) { bp.quiet = false; bpShow(true); }
+    else if (bpEl && !bpEl.hidden) bpCollapse(false);
     bpStartTicker();
   }
 
