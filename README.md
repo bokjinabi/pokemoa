@@ -23,6 +23,7 @@
 - **v3.8 변경(집 태블릿 실재고 중계)**: 「동네에서 찾기」 상단에 **`실시간 중계` 상태 바**(연결 안 됨 / 확인 중 / 연결됨 / 응답 없음)와 `중계 연결` 버튼을 넣었습니다. 모달에서 태블릿 중계 서버 주소를 넣으면 `/health`로 확인해 localStorage에 저장하고, `?relay=https://…` 쿼리로도 자동 연결됩니다. 연결된 동안에는 조회 지역이 바뀔 때마다 `{relay}/api/nearby?lat&lng&keyword`를 호출해 **실제 매장명·실제 카드명·실제 수량(N개)**을 지도 말풍선(`CU · 3개`)·매장 카드·목록에 `실시간 재고` 배지로 표시하고, 끊기면 기존 OSM + 제보·샘플 모드로 조용히 돌아갑니다. 서버는 `relay/server.js` 단일 파일(외부 패키지 0, 포트 3100, CORS `*`, OPTIONS 204, 체인별 8초 제한 + `Promise.allSettled` 격리 + 60초 캐시)로, 이마트24·CU·세븐일레븐 앱/웹 재고 API를 조회 전용으로 호출합니다.
 - **v4.0 변경(서비스명 `포케모아` → `포켓몬카드모아`)**: 검색에서 「포켓몬 카드」로 바로 걸리도록 서비스 이름을 `포켓몬카드모아`로 바꿨습니다. 화면에 보이는 이름(헤더·푸터 로고, `<title>`, `og:site_name`·`og:title`·`og:description`, `meta[name="description"]`·`keywords`·`author`, JSON-LD `WebSite.name`(+`alternateName` `카드모아`), FAQ 문항, 개인정보처리방침·이용약관, 중계 서버 안내 페이지)과 코드 주석·README를 모두 새 이름으로 통일했고, 영문 표기는 `POKEMON CARD MOA`(보조 표기 `PokemonCardMoa`)로 바꿨습니다. 배포 주소 `https://moa-kr.github.io/pokemoa/`, GA4 `G-LWRMBRD0X9`, 쿠팡 파트너스 위젯 `iframe` 2종(`coupa.ng/cq5BV0`, `coupa.ng/cq5DGN`), 중계 서버 동작, JS 전역 이름(`window.PokeMoaMap`·`window.POKEMOA_DATA`)은 그대로 두었습니다. 자산 버전은 `v=42`로 올렸습니다.
 - **v4.1 변경(관리자 문의 메뉴)**: 헤더 우측 `재고 제보` 옆, 푸터 `운영·정책`, 그리고 「정가 구매처」·「도감·가이드」 탭 하단 안내 카드에 **`관리자 문의`** 진입점을 넣었습니다. 모달에서 **문의 유형**(재고·매장 정보 오류 / 정가·출시 일정 제보 / 광고·제휴 문의 / 기타) · **제목** · **내용**을 적고 **`메일 앱으로 보내기`**(`mailto:acewoni3717@gmail.com`, 제목·본문에 유형·제목·내용·보낸 페이지·시각을 담아 전송) 또는 **`운영자 이메일 복사`**(`acewoni3717@gmail.com`, `navigator.clipboard` 실패 시 `execCommand` 대체), **`문의 내용 복사`**를 쓸 수 있어 **정적 사이트 단독으로 100% 동작**합니다. 회사복지모아 서버(`https://bokjimoa.onrender.com/api/inquiries`)는 CORS가 열려 있어도 호출하지 않으며, 나중에 연동해도 위 두 경로는 그대로 둡니다. 기존 `재고 제보`는 같은 모달을 유형 `재고·매장 정보 오류`로 미리 골라 엽니다(데모 전송 안내 문구 삭제). 모바일 390px 헤더는 56px 한 줄 유지(버튼 패딩·글자 축소), 320px급에서는 헤더 버튼을 숨기고 푸터·탭 하단 카드로 진입합니다. 지도 pane의 z-index(400~999)가 페이지 스택으로 새어 나와 모달·토스트 위에 그려지던 문제를 `.map-shell { isolation: isolate }`로 정리했습니다(지도 내부 레이어링은 그대로). 자산 버전은 `v=45`로 올렸습니다.
+- **v4.2 변경(AdSense 게시자 ID·ads.txt)**: 2026-11-18 발급받은 게시자 ID `ca-pub-2702295880931505`로 `adsbygoogle.js` 스크립트를 `index.html`(기존 주석 플레이스홀더 교체)·`privacy.html`·`terms.html` `<head>`에 넣고, 루트에 `ads.txt`(`google.com, pub-2702295880931505, DIRECT, f08c47fec0942fa0`)를 추가했습니다. 광고 슬롯 6곳(`data-ad-slot`)은 아직 점선 플레이스홀더이고, 승인 후 `<ins class="adsbygoogle">`로 교체하면 됩니다.
 
 > 타일 참고: 브리프의 CARTO Positron(`basemaps.cartocdn.com/light_all`)은 2026-11 확인 시 **API 키가 없으면 `API KEY REQUIRED` 워터마크 타일**이 내려와 쓸 수 없었습니다. 그래서 OSM 표준 타일에 저채도·밝기 필터를 걸어 Positron과 같은 라이트 느낌을 냈고(한국어 지명 그대로), 타일 서버가 막히면 OSM 독일 미러로 자동 대체합니다.
 
@@ -48,6 +49,7 @@ pokemoa/
 ├─ privacy.html              # 개인정보처리방침 (단독 URL — AdSense 심사용)
 ├─ terms.html                # 이용약관 (단독 URL)
 ├─ robots.txt
+├─ ads.txt                   # AdSense 게시자 인증(google.com, pub-2702295880931505)
 ├─ sitemap.xml
 ├─ assets/
 │  ├─ css/style.css          # 전체 스타일 (모바일 우선)
@@ -58,7 +60,7 @@ pokemoa/
 ├─ relay/
 │  └─ server.js              # 집 태블릿(Termux)용 무의존 실재고 중계 서버 (Node 20+, 포트 3100)
 ├─ screenshots/              # 검증 스크린샷
-└─ pokemoa-web.zip           # 배포용 압축본 (index/privacy/terms/assets/relay/robots/sitemap/README)
+└─ pokemoa-web.zip           # 배포용 압축본 (index/privacy/terms/assets/relay/robots/sitemap/ads.txt/README)
 ```
 
 ## 3. 주요 기능
@@ -180,8 +182,8 @@ cloudflared tunnel --url http://127.0.0.1:3100   # 출력된 https://….tryclou
 
 1. **도메인**: 소스에는 `pokemoa.example` 플레이스홀더(`https://` + 도메인 형태)가 남아 있고, 배포본을 만드는 `tmp/pokemoa-build/deploy.sh`가 그 부분을 `https://moa-kr.github.io/pokemoa`로 일괄 치환합니다
    (`index.html`, `privacy.html`, `terms.html`, `sitemap.xml`, `robots.txt` 대상). 도메인을 또 바꾸려면 `deploy.sh`의 `LIVE` 한 줄만 고쳐 다시 실행하면 됩니다
-2. **AdSense**: `index.html` 상단의 주석 처리된 `adsbygoogle.js` 스크립트를 풀고 `ca-pub-…` 입력,
-   각 슬롯 자리에 `<ins class="adsbygoogle" data-ad-client="ca-pub-…" data-ad-slot="…">` 삽입
+2. **AdSense**: 게시자 ID `ca-pub-2702295880931505`(2026-11-18 발급)로 `adsbygoogle.js` 스크립트가 `index.html`·`privacy.html`·`terms.html` `<head>`에 이미 들어가 있고, 루트 `ads.txt`(`google.com, pub-2702295880931505, DIRECT, f08c47fec0942fa0`)도 배포되어 있습니다.
+   남은 작업은 각 광고 슬롯 자리의 플레이스홀더를 `<ins class="adsbygoogle" data-ad-client="ca-pub-2702295880931505" data-ad-slot="…">`로 바꾸고 승인된 광고 단위 ID를 넣는 것입니다.
 3. **쿠팡 파트너스**: 도감·가이드(`data-affiliate-card="coupang-supplies"`)와 정가 구매처(`data-affiliate-card="coupang-30th"`) 모두 **쿠팡 파트너스가 발급한 위젯 iframe 2개**로 구성되어 있습니다(`https://coupa.ng/cq5BV0` · `https://coupa.ng/cq5DGN`, 각 120×240, `data-affiliate-slot="…-widget-1/2"`) — 배너 상품을 바꾸려면 파트너스에서 새 위젯 코드를 받아
    `index.html`의 해당 `.affiliate-slot` 안 iframe `src`만 바꾸면 됩니다(이미지·상품명·링크는 쿠팡이 내려줍니다). 카드 본문에는 **가격을 표기하지 않습니다**(v3.5) — 배너 안의 가격은 쿠팡 위젯이 실시간으로 표시합니다.
 4. **관리자 문의**: `tpl-inquiry`의 폼은 서버 없이 `mailto:acewoni3717@gmail.com` + 이메일·내용 복사로 동작합니다(v4.1).
