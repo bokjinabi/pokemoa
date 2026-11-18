@@ -7741,7 +7741,10 @@ window.PokeMoaMap = (function () {
     /* 아트박스: 키워드 1페이지 + 이름 필터 */
     var artReq = keywordPage("아트박스", center, radius, 1).then(function (pg) {
       return collectOffline([pg], "artbox", function (p) {
-        return /아트박스|artbox/i.test(String(p.place_name || ""));
+        var n = String(p.place_name || "");
+        if (!/아트박스|artbox/i.test(n)) return false;
+        /* 본사·물류센터는 매장이 아니다 */
+        return !/본사|물류|사무소/.test(n);
       });
     }).catch(function () { return []; });
 
