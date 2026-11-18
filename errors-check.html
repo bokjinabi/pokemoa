@@ -11,6 +11,7 @@ window.addEventListener('unhandledrejection', function (e) {
   window.__errs.push('rejection: ' + ((e.reason && e.reason.message) || e.reason));
 });
 setInterval(function () {
+  if (!document.body) return;
   var d = document.getElementById('errbox');
   if (!d) {
     d = document.createElement('div');
