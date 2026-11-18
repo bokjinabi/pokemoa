@@ -11,7 +11,7 @@
     "siteTitle": "포켓몬카드모아",
     "subtitle": "POKEMON CARD MOA",
     "heroTitle": "30th CELEBRATION,<br><em>정가</em>로 만나는 방법",
-    "heroDescription": "포켓몬 카드 정가 구매처와 추첨 일정, 입고 기록, 편의점 4사 재고와 취급 카드까지 한 화면에 모았습니다. 리셀가에 흔들리지 않도록 기준 가격부터 확인하세요.",
+    "heroDescription": "포켓몬 카드 구매처와 입고 기록, 편의점 재고와 취급 카드까지 한 화면에 모았습니다. 리셀가에 흔들리지 않도록 기준 가격부터 확인하세요.",
     "ctaLabel": "정가 구매처 보기",
     "footerText": "포켓몬 카드의 정가 구매처, 추첨·입고 일정, 주변 매장 재고, 수록 카드 정보를 한 곳에 모은 비공식 정보 사이트입니다. 데이터 기준일 2026-11-17."
   },
@@ -129,7 +129,7 @@
     {
       "id": "stock",
       "title": "실시간 재고",
-      "description": "내 주변 편의점 4사 재고를 지도에서 확인",
+      "description": "내 주변 편의점 재고를 지도에서 확인",
       "visible": true,
       "order": 1
     },
@@ -149,8 +149,8 @@
     }
   ],
   "meta": {
-    "updatedBy": "moa-admin",
-    "updatedAt": null,
+    "updatedBy": "moa-admin (@moa-kr)",
+    "updatedAt": "2026-11-18T13:07:36.775Z",
     "note": "모아 어드민이 관리하는 공통 설정 파일입니다. 형식: https://moa-kr.github.io/moa-admin/SCHEMA.md"
   }
 }
