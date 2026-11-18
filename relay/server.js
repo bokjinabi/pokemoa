@@ -53,6 +53,13 @@
  *     막히면 예전 `multi/01/stocks`(점포×상품)로 돌아갑니다.
  *   · `/api/seven` 으로 세븐일레븐만 따로 확인할 수 있게 했습니다.
  *
+ * 2026-11-18 개정(v1.3) — 세븐일레븐 재고 경로
+ *   · 점포 검색은 v1.2에서 정상 동작(태블릿 실측: 포항 84건·반경 3km 17곳)하지만
+ *     재고 경로가 403 `Access Denied: Invalid Access Token or Agent Information` 로 막힙니다.
+ *     앱 웹뷰가 UA에 `app:k7app` 표식을 달고 요청하는 점(앱 코드도 이 값으로 앱 안을 판별)을 근거로
+ *     재고 호출만 UA 후보 3종을 차례로 시도하고, 통한 UA를 기억합니다.
+ *   · UA가 모두 막히면 점포마다 같은 요청을 되풀이하지 않고 한 번에 멈추고 사유를 note 에 남깁니다.
+ *
  * 주의: 이 서버는 조회만 합니다. 주문·결제·선점 같은 쓰기 요청은 없습니다.
  */
 
@@ -61,7 +68,7 @@
 const http = require('node:http');
 const crypto = require('node:crypto');
 
-const VERSION = '1.2';
+const VERSION = '1.3';
 const SERVICE = 'pokemoa-relay';
 
 const PORT = Number(process.env.PORT || 3100);

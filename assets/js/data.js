@@ -2361,7 +2361,7 @@ window.POKEMOA_DATA = (function () {
      주소가 바뀌므로, 그때는 이 값만 고치면 사이트 전체(중계 모달 기본값)에 반영됩니다.
      주의: 이 페이지는 공개 사이트라 주소도 함께 공개됩니다. 중계 서버는 조회 전용입니다. */
   var relayPreset = {
-    label: "home-tablet v1.2",
+    label: "home-tablet v1.3",
     url: "https://nyc-rocks-epic-journalists.trycloudflare.com",
     updated: "2026-11-18"
   };
