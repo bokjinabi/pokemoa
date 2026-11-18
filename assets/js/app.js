@@ -827,6 +827,18 @@
     if (storeSkeleton) storeSkeleton.hidden = false;
     if (storeListEl) storeListEl.hidden = true;
     if (regionSearch) regionSearch.value = p.name;
+    /* 시·군·구 드롭다운에는 '검색한 장소'를 임시 항목으로 보여 준다(지역 목록을 골라 다시 이동 가능) */
+    if (districtSelect) {
+      var tmp = districtSelect.querySelector('option[data-place-temp]');
+      if (tmp) tmp.parentNode.removeChild(tmp);
+      var opt = document.createElement("option");
+      opt.value = "";
+      opt.setAttribute("data-place-temp", "1");
+      opt.textContent = "검색: " + p.name;
+      opt.selected = true;
+      districtSelect.insertBefore(opt, districtSelect.firstChild);
+      districtSelect.value = "";
+    }
     closeSuggest();
     if (mapReady) window.PokeMoaMap.setPoint({ lat: p.lat, lng: p.lng, name: p.name });
     toast("‘" + p.name + "’ 주변 편의점 4사를 찾습니다.");
@@ -850,6 +862,8 @@
   if (districtSelect) {
     districtSelect.addEventListener("change", function () {
       if (!districtSelect.value) return;
+      var tmp = districtSelect.querySelector('option[data-place-temp]');
+      if (tmp) tmp.parentNode.removeChild(tmp);
       if (regionSearch) regionSearch.value = "";
       closeSuggest();
       applyRegion(districtSelect.value);

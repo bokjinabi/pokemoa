@@ -3083,3 +3083,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
 #mapShell .pm-sdk-note p { font-size: 12.5px; line-height: 1.6; color: var(--ink); margin: 0 0 6px; }
 #mapShell .pm-sdk-note p:last-child { margin-bottom: 0; color: var(--muted); }
 #mapShell .pm-sdk-note a { color: #2f6df6; font-weight: 700; }
+
+/* 카카오맵 저작권·로고(지도 하단 왼쪽)가 범례에 가리지 않도록 범례를 조금 올린다 */
+#mapShell .map-legend { bottom: 30px; }
+@media (max-width: 679px) {
+  #mapShell .map-legend { bottom: 28px; left: 8px; }
+}
+/* 카카오 로고·저작권 표기가 항상 보이도록 지도 카드가 열려도 그대로 둔다 */
+#mapShell .kakaomap_logo, #mapShell .map_copyright { z-index: 450; }
