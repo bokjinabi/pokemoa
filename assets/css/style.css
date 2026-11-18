@@ -3462,3 +3462,18 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
   .rm-preset-actions .btn { flex: 1; }
   .rm-preset-actions { width: 100%; }
 }
+
+/* KREAM 체결표 — 모바일에서는 카드 칼럼 안에 요약해 가로 스크롤을 없앰 */
+.kream-m-only { display: none; }
+@media (max-width: 679px) {
+  .kream-table { table-layout: auto; font-size: 12px; }
+  .kream-table th, .kream-table td { padding: 9px 8px; }
+  .kream-table th:nth-child(2), .kream-table td:nth-child(2),
+  .kream-table th:nth-child(4), .kream-table td:nth-child(4),
+  .kream-table th:nth-child(5), .kream-table td:nth-child(5),
+  .kream-table th:nth-child(6), .kream-table td:nth-child(6) { display: none; }
+  .kream-table td { vertical-align: top; }
+  .kream-m-only { display: block; margin-top: 3px; font-size: 10.5px; font-weight: 600; color: var(--muted); line-height: 1.45; }
+  .kream-name { font-size: 13px; }
+  .kream-sub { font-size: 10px; }
+}

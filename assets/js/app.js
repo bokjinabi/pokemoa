@@ -2081,7 +2081,10 @@
         : '<span class="kream-na">표시 없음</span>';
       return '<tr>' +
         '<td><a class="kream-name" href="' + m.url + '" target="_blank" rel="noopener" data-kream-out="' + m.kreamId + '">' + escapeHtml(m.name) + '</a>' +
-          '<small class="kream-sub">' + escapeHtml(m.num || "") + ' · ' + escapeHtml(m.model || "") + '</small></td>' +
+          '<small class="kream-sub">' + escapeHtml(m.num || "") + ' · ' + escapeHtml(m.model || "") + '</small>' +
+          '<small class="kream-m-only">직전 ' + won(m.prevPrice) + ' (' + escapeHtml(m.prevWhen || "") + ') · 누적 ' + (m.trades || 0) + '건</small>' +
+          (m.pageDelta ? '<small class="kream-m-only">KREAM 표시 ' + escapeHtml(m.pageDelta.text) + ' · ' + escapeHtml(m.pageDelta.note || "") + '</small>' : "") +
+        '</td>' +
         '<td class="num">' + won(m.lastPrice) + '<small>' + escapeHtml(m.lastWhen || "") + '</small></td>' +
         '<td class="num">' + won(m.prevPrice) + '<small>' + escapeHtml(m.prevWhen || "") + '</small></td>' +
         '<td class="num">' + pctCell + '</td>' +
