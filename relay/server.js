@@ -503,10 +503,10 @@ async function collectEmart24(lat, lng, keyword, diag, ctx) {
 async function emart24StoresApi1(lat, lng, area, diag) {
   const query = String(area || '').trim();
   const rows = [];
-  for (const page of [1, 2, 3]) {
+  for (const page of [1, 2]) {
     const url =
       BASE.emart24Open + '/api1/store?page=' + page + (query ? '&search=' + encodeURIComponent(query) : '');
-    const body = await request(url, { method: 'GET', headers: { 'user-agent': UA_ANDROID, accept: 'application/json' }, tms: 4000 }, '이마트24 공개 매장', null, diag);
+    const body = await request(url, { method: 'GET', headers: { 'user-agent': UA_ANDROID, accept: 'application/json' }, tms: 2500 }, '이마트24 공개 매장', null, diag);
     const pageRows = (body && body.data) || [];
     rows.push(...(Array.isArray(pageRows) ? pageRows : []));
     if (!Array.isArray(pageRows) || pageRows.length < 30) break;
@@ -682,7 +682,10 @@ async function collectCu(lat, lng, keyword, diag) {
   const products = await cuSearch(keyword, diag);
   if (!products.length) return { stores: [], products: [], note: '카드 상품 검색 0건' };
 
-  const lists = await mapLimit(products, 5, async (item) => {
+  /* 비로그인 응답에는 수량이 없으므로, 세션 쿠키가 없을 때는 점포 목록을 한 번만 받아
+     지역명·점포 힌트로만 쓴다(체인 요청 예산 절약). CU_COOKIE가 있으면 상품별로 모두 묻는다. */
+  const targets = process.env.CU_COOKIE ? products : products.slice(0, 1);
+  const lists = await mapLimit(targets, 5, async (item) => {
     try {
       return await cuStoresForItem(lat, lng, item, diag);
     } catch (err) {
@@ -1159,10 +1162,12 @@ const server = http.createServer(async (req, res) => {
 
     if (path === '/api/pop') {
       const q = (url.searchParams.get('q') || '').trim().slice(0, 60);
+      const company = (url.searchParams.get('company') || '').trim().slice(0, 12);
       sendJson(res, 501, {
         ok: false,
         error: 'pop_lookup_not_configured',
         query: q,
+        company,
         hint: 'PSA·BRG 팝수 조회기를 연결하면 이 경로가 카드별 팝수를 돌려줍니다.'
       });
       return;
