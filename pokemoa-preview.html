@@ -3529,6 +3529,15 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
   .header-actions .btn-sm { padding: 8px 8px; font-size: 11.5px; }
 }
 
+/* 태블릿 폭(680~959px) — 상단 5탭과 우측 버튼이 한 줄에 들어가도록 더 좁게 */
+@media (min-width: 680px) and (max-width: 959px) {
+  .header-inner { gap: 10px; }
+  .nav-btn { padding: 8px 4px; font-size: 11px; letter-spacing: -0.03em; }
+  .header-actions { gap: 4px; margin-left: 0; }
+  .header-actions .btn-sm { padding: 7px 7px; font-size: 11px; }
+  .brand-text strong { font-size: 16px; }
+}
+
 </style>
 <!-- 단일 파일 미리보기: index.html + assets/css/style.css + data.js/map.js/app.js 를 인라인으로 합친 파일입니다. 지도는 카카오맵 SDK+카카오 장소 검색(CDN·공개 API)을 그대로 사용합니다. -->
 <!-- 카카오맵 JavaScript SDK — autoload=false로 불러 두고 map.js가 kakao.maps.load()로 초기화합니다.
