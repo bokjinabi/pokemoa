@@ -6682,8 +6682,10 @@ window.PokeMoaMap = (function () {
     return groups;
   }
 
-  /* 배지·점이 겹치지 않도록 가까이 붙은 묶음을 하나로 합친다(큰 묶음부터 자리 잡기) */
-  function mergeNearby(list, gap) {
+  /* 배지·점이 거의 같은 자리에 겹칠 때만 두 묶음을 하나로 합친다(큰 묶음부터 자리 잡기).
+     간격을 너무 크게 잡으면 밀집 지역 묶음이 한 덩어리로 다시 뭉치므로
+     가로·세로 기준을 따로 두고 작게 잡는다. */
+  function mergeNearby(list, gapX, gapY) {
     list.sort(function (a, b) { return b.n - a.n; });
     var out = [];
     list.forEach(function (g) {
@@ -6691,7 +6693,7 @@ window.PokeMoaMap = (function () {
       var cy = g.py / g.n;
       for (var i = 0; i < out.length; i++) {
         var q = out[i];
-        if (Math.abs(cx - q.px / q.n) < gap && Math.abs(cy - q.py / q.n) < gap) {
+        if (Math.abs(cx - q.px / q.n) < gapX && Math.abs(cy - q.py / q.n) < gapY) {
           q.lat += g.lat;
           q.lng += g.lng;
           q.px += g.px;
@@ -6740,7 +6742,7 @@ window.PokeMoaMap = (function () {
        반경 전역이 지역별 여러 묶음으로 나뉘어 보이게 한다 */
     var cell = level >= 11 ? 85 : level >= 10 ? 58 : 40;
     var groups = groupStores(list, cell);
-    var arranged = mergeNearby(Object.keys(groups).map(function (k) { return groups[k]; }), 66);
+    var arranged = mergeNearby(Object.keys(groups).map(function (k) { return groups[k]; }), 42, 20);
     arranged.forEach(function (g) { drawClusterBadge(g, 3); });
   }
 
