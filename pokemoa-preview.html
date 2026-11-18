@@ -6556,6 +6556,7 @@ window.PokeMoaMap = (function () {
      · 20km 보기(level >= 10): 구역별 `N곳` 묶음 */
   var CHIP_LEVEL = 7;
   var CLUSTER_LEVEL = 10;
+  var CHIP_CELL = 34;          /* 5km 보기에서 칩이 겹치는지 판단하는 칸 크기(px) */
   function applyZoomMode() {
     var lv = st.map ? st.map.getLevel() : 0;
     var compact = lv >= CHIP_LEVEL;
@@ -6643,48 +6644,87 @@ window.PokeMoaMap = (function () {
     return ({ gs25: 0, cu: 1, seven: 2, emart24: 3 })[b] || 9;
   }
 
-  /* 넓게 보는 저줌에서는 같은 구역의 매장을 묶어 `N곳` 한 덩이로 표시한다 */
-  function renderClusters(list) {
+  /* 같은 화면 칸(px)에 들어온 매장을 한 묶음으로 모은다 — proj가 없으면 좌표 스케일로 대신한다 */
+  function groupStores(list, cell) {
     var groups = {};
     var proj = null;
     try { proj = st.map.getProjection(); } catch (e) {}
-    var level = st.map.getLevel();
-    /* 줌이 낮을수록 넓은 칸으로 묶되, 20km(level 10)에서는 칸을 줄여
-       반경 전역이 지역별 여러 묶음으로 나뉘어 보이게 한다 */
-    var cell = level >= 11 ? 85 : level >= 10 ? 58 : 40;
     list.forEach(function (s) {
       var pt;
       try { pt = proj.containerPointFromCoords(latlng(s.lat, s.lng)); } catch (e) { pt = null; }
       if (!pt) { pt = { x: s.lng * 1000, y: s.lat * 1000 }; }
       var key = Math.floor(pt.x / cell) + ":" + Math.floor(pt.y / cell);
-      var g = groups[key] || (groups[key] = { lat: 0, lng: 0, n: 0, in: 0, names: [] });
+      var g = groups[key] || (groups[key] = { lat: 0, lng: 0, n: 0, in: 0, names: [], items: [] });
       g.lat += s.lat;
       g.lng += s.lng;
       g.n += 1;
       if (s.status === "in") g.in += 1;
       if (g.names.length < 3) g.names.push(s.name);
+      g.items.push(s);
     });
+    return groups;
+  }
+
+  /* 구역 묶음 `N곳` 배지 — 누르면 그 자리로 확대한다(step 단계) */
+  function drawClusterBadge(g, step) {
+    var ll = { lat: g.lat / g.n, lng: g.lng / g.n };
+    var node = document.createElement("div");
+    node.className = "pm-marker-cluster";
+    node.innerHTML = '<span class="pm-cluster' + (g.in ? " has-stock" : "") + '">' +
+      g.n + "곳" + (g.in ? "<small>재고 " + g.in + "</small>" : "") + "</span>";
+    node.title = g.names.join(", ") + (g.n > 3 ? " 외" : "");
+    node.setAttribute("role", "button");
+    node.setAttribute("tabindex", "0");
+    node.setAttribute("aria-label", g.n + "곳 (" + node.title + ")");
+    function zoomIn() {
+      st.map.setLevel(Math.max(1, st.map.getLevel() - (step || 3)));
+      st.map.setCenter(latlng(ll.lat, ll.lng));
+    }
+    node.addEventListener("click", zoomIn);
+    node.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); zoomIn(); }
+    });
+    addOverlay(node, ll.lat, ll.lng, { xAnchor: 0.5, yAnchor: 0.5, zIndex: 60, clickable: true });
+  }
+
+  /* 넓게 보는 저줌(20km)에서는 같은 구역의 매장을 `N곳` 한 덩이로 표시한다 */
+  function renderClusters(list) {
+    var level = st.map.getLevel();
+    /* 줌이 낮을수록 넓은 칸으로 묶되, 20km(level 10)에서는 칸을 줄여
+       반경 전역이 지역별 여러 묶음으로 나뉘어 보이게 한다 */
+    var cell = level >= 11 ? 85 : level >= 10 ? 58 : 40;
+    var groups = groupStores(list, cell);
+    Object.keys(groups).forEach(function (k) { drawClusterBadge(groups[k], 3); });
+  }
+
+  /* 5km 보기(브랜드 칩 모드): 한 칸에 여럿이면 `N곳`, 하나뿐이면 칩·점 그대로 */
+  function renderChipGroups(list) {
+    var groups = groupStores(list, CHIP_CELL);
     Object.keys(groups).forEach(function (k) {
       var g = groups[k];
-      var ll = { lat: g.lat / g.n, lng: g.lng / g.n };
-      var node = document.createElement("div");
-      node.className = "pm-marker-cluster";
-      node.innerHTML = '<span class="pm-cluster' + (g.in ? " has-stock" : "") + '">' +
-        g.n + "곳" + (g.in ? "<small>재고 " + g.in + "</small>" : "") + "</span>";
-      node.title = g.names.join(", ") + (g.n > 3 ? " 외" : "");
-      node.setAttribute("role", "button");
-      node.setAttribute("tabindex", "0");
-      node.setAttribute("aria-label", g.n + "곳 (" + node.title + ")");
-      function zoomIn() {
-        st.map.setLevel(Math.max(1, st.map.getLevel() - 3));
-        st.map.setCenter(latlng(ll.lat, ll.lng));
-      }
-      node.addEventListener("click", zoomIn);
-      node.addEventListener("keydown", function (e) {
-        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); zoomIn(); }
-      });
-      addOverlay(node, ll.lat, ll.lng, { xAnchor: 0.5, yAnchor: 0.5, zIndex: 60, clickable: true });
+      if (g.n === 1) drawPill(g.items[0]);
+      else drawClusterBadge(g, 2);
     });
+  }
+
+  /* 매장 하나 = 말풍선(알약) 또는 저줌에서는 브랜드 칩·점 */
+  function drawPill(s) {
+    var label = s.name + " · " + statusLabel(s.status) +
+      (s.products && s.products.length
+        ? " · " + s.products.map(function (p) { return p.short + " " + p.stateLabel; }).join(", ")
+        : "");
+    var node = pillNode(s, label);
+    var ov = addOverlay(node, s.lat, s.lng, {
+      xAnchor: 0.5,
+      yAnchor: 1,
+      zIndex: s.status === "in" ? 300 : 100,
+      clickable: true
+    });
+    st.markers[s.id] = { ov: ov, node: node };
+    if (st.selectedId === s.id) {
+      node.classList.add("is-selected");
+      try { ov.setZIndex(900); } catch (e) {}
+    }
   }
 
   function renderMarkers() {
@@ -6713,29 +6753,13 @@ window.PokeMoaMap = (function () {
     if (st.cluster) {
       renderClusters(st.visible);
       if (st.selectedId) closeCard();
-      emit("pokemoa:visible", { stores: st.visible });
-      return;
+    } else if (st.compact) {
+      renderChipGroups(st.visible);
+      if (st.selectedId && !st.markers[st.selectedId]) closeCard();
+    } else {
+      st.visible.forEach(drawPill);
+      if (st.selectedId && !st.markers[st.selectedId]) closeCard();
     }
-
-    st.visible.forEach(function (s) {
-      var label = s.name + " · " + statusLabel(s.status) +
-        (s.products && s.products.length
-          ? " · " + s.products.map(function (p) { return p.short + " " + p.stateLabel; }).join(", ")
-          : "");
-      var node = pillNode(s, label);
-      var ov = addOverlay(node, s.lat, s.lng, {
-        xAnchor: 0.5,
-        yAnchor: 1,
-        zIndex: s.status === "in" ? 300 : 100,
-        clickable: true
-      });
-      st.markers[s.id] = { ov: ov, node: node };
-      if (st.selectedId === s.id) {
-        node.classList.add("is-selected");
-        try { ov.setZIndex(900); } catch (e) {}
-      }
-    });
-    if (st.selectedId && !st.markers[st.selectedId]) closeCard();
     emit("pokemoa:visible", { stores: st.visible });
   }
 
