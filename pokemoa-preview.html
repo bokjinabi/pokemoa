@@ -3125,6 +3125,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
 /* 카카오 로고·저작권 표기가 항상 보이도록 지도 카드가 열려도 그대로 둔다 */
 #mapShell .kakaomap_logo, #mapShell .map_copyright { z-index: 450; }
 
+/* 상태 안내 카드: 칸이 좁아져도 읽히도록 이름표를 본문 위에 두고 칸 수를 자동 조정 */
+.status-guide { grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); }
+.status-guide div { flex-direction: column; gap: 3px; }
+.status-guide b { white-space: normal; }
+
 </style>
 <!-- 단일 파일 미리보기: index.html + assets/css/style.css + data.js/map.js/app.js 를 인라인으로 합친 파일입니다. 지도는 카카오맵 SDK+카카오 장소 검색(CDN·공개 API)을 그대로 사용합니다. -->
 <!-- 카카오맵 JavaScript SDK — autoload=false로 불러 두고 map.js가 kakao.maps.load()로 초기화합니다.
