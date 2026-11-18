@@ -10898,10 +10898,13 @@ window.PokeMoaMap = (function () {
     if (n == null || isNaN(n)) return "-";
     return (n > 0 ? "+" : n < 0 ? "-" : "") + Math.abs(Number(n)).toLocaleString("ko-KR");
   }
+  function pctAbs(n) {
+    if (n == null || isNaN(n)) return "";
+    return Math.abs(Number(n)).toFixed(1).replace(/\.0$/, "") + "%";
+  }
   function pctOf(n) {
     if (n == null || isNaN(n)) return "";
-    var v = Math.abs(Number(n)).toFixed(1).replace(/\.0$/, "");
-    return (n > 0 ? "+" : n < 0 ? "-" : "") + v + "%";
+    return (n > 0 ? "+" : n < 0 ? "-" : "") + pctAbs(n);
   }
   function relDirection(m) {
     if (m.dir === "up") return "up";
@@ -10961,7 +10964,7 @@ window.PokeMoaMap = (function () {
             (m.kreamId ? '<a class="mover-kream" href="' + m.url + '" target="_blank" rel="noopener" data-kream-out="' + m.kreamId + '">KREAM ↗</a>' : '') +
           '</div>' +
           '<div class="mover-price"><b>' + won(m.lastPrice) + '</b>' +
-            '<span class="mover-delta is-up">▲ ' + pctOf(m.pct) + '</span></div>' +
+            '<span class="mover-delta is-up">▲ ' + pctAbs(m.pct) + '</span></div>' +
           '<p class="mover-meta">최근 체결 <b>' + escapeHtml(m.lastWhen || "") + '</b> · 직전 ' + won(m.prevPrice) + '(' + escapeHtml(m.prevWhen || "") + ') · 누적 ' + (m.trades || 0) + '건</p>' +
           '<p class="mover-note">' + escapeHtml(m.set || "") + ' · ' + escapeHtml(m.model || "") + '</p>' +
           '<button type="button" class="mover-pop" data-pop-num="' + escapeHtml(m.num || "") + '">' + escapeHtml(m.num || "") + ' 팝수 조회 →</button>' +
@@ -10986,7 +10989,11 @@ window.PokeMoaMap = (function () {
     if (!kreamTableBody) return;
     var order = list.slice().sort(function (a, b) {
       var rank = { up: 0, flat: 1, down: 2, na: 3 };
-      var d = (rank[relDirection(a)] || 3) - (rank[relDirection(b)] || 3);
+      function r(m) {
+        var v = rank[relDirection(m)];
+        return v == null ? 3 : v;
+      }
+      var d = r(a) - r(b);
       if (d) return d;
       return Math.abs(b.pct || 0) - Math.abs(a.pct || 0);
     });
@@ -10994,7 +11001,7 @@ window.PokeMoaMap = (function () {
       var dir = relDirection(m);
       var pctCell = dir === "na"
         ? '<span class="kream-na">비교 불가</span>'
-        : '<span class="kream-pct is-' + dir + '">' + (dir === "up" ? "▲ " : dir === "down" ? "▼ " : "") + pctOf(m.pct) + '</span>' +
+        : '<span class="kream-pct is-' + dir + '">' + (dir === "up" ? "▲ " : dir === "down" ? "▼ " : "") + pctAbs(m.pct) + '</span>' +
           (m.diff ? '<small>(' + signed(m.diff) + '원)</small>' : "");
       var pageCell = m.pageDelta
         ? '<span class="kream-page is-' + m.pageDelta.kind + '">' + escapeHtml(m.pageDelta.text) + '</span><small>' + escapeHtml(m.pageDelta.note || "") + '</small>'
