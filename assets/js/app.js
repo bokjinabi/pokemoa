@@ -495,7 +495,14 @@
   }
 
   function relayRender() {
-    if (relayBar) relayBar.setAttribute("data-state", relay.state);
+    if (relayBar) {
+      /* 프리셋(최근 태블릿 터널)이 있으면 자동 연결을 시도하므로 상태 바를 보여 준다 —
+         방문자는 '연결됨 · 실재고 N곳' 또는 '응답 없음(매장 확인 필요)'을 바로 본다. */
+      var showBar = relay.state !== "off" || !!(RELAY_PRESET && RELAY_PRESET.url);
+      relayBar.hidden = !showBar;
+      relayBar.setAttribute("aria-hidden", showBar ? "false" : "true");
+      relayBar.setAttribute("data-state", relay.state);
+    }
     if (relayStateText) {
       if (relay.state === "online") {
         relayStateText.textContent = "연결됨 · " + relayHost() +
