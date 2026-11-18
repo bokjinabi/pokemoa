@@ -15,7 +15,8 @@
  *   스냅샷으로 부드럽게 대체하고 배지에 상태를 표기한다. 카카오 SDK는 등록된
  *   도메인(https://moa-kr.github.io)에서만 지도를 그리므로, 그 밖의 주소
  *   (file://·미등록 프리뷰)에서는 안내 문구와 함께 스냅샷 목록으로 동작한다.
- * · 재고 상태는 편의점 앱 API 미연동 → 제보·샘플 기반임을 화면에서 밝힌다.
+ * · 재고 수량은 집 태블릿 중계(relay)가 편의점 앱에서 조회한 실제 값만 쓰고,
+ *   받지 못한 매장은 「매장 확인 필요」로 표시한다(샘플·추정 수량 없음).
  * ========================================================================= */
 window.PokeMoaMap = (function () {
   "use strict";
@@ -144,62 +145,11 @@ window.PokeMoaMap = (function () {
     return (h >>> 0);
   }
 
-  /* 매장 재고 상태: 편의점 앱 API 미연동 → 결정적(항상 같은) 샘플 제보값 */
-  var STATUS = ["in", "check", "check", "none", "in", "check"];
-  function sampleStatus(id) {
-    return STATUS[hash(id) % STATUS.length];
-  }
-  function sampleObserved(id) {
-    var h = hash(id + "t");
-    var hh = String(9 + (h % 3)).padStart(2, "0");
-    var mm = String((h >>> 3) % 60).padStart(2, "0");
-    return "11-17 " + hh + ":" + mm;
-  }
-
-  /* ------------------------------------ 매장별 취급·재고 카드 상품 (샘플) */
-  var PRODUCTS = (D.cardProducts || []);
-  var PRODUCT_STATE_LABEL = {
-    in: "입고",
-    low: "소량",
-    check: "확인 필요",
-    soldout: "품절",
-    none: "미입고"
-  };
-  function productById(id) {
-    for (var i = 0; i < PRODUCTS.length; i++) if (PRODUCTS[i].id === id) return PRODUCTS[i];
-    return null;
-  }
-  /* 같은 매장은 항상 같은 상품 구성이 나오도록 id 해시로만 고른다. */
-  function storeProducts(id, status) {
-    if (!PRODUCTS.length) return [];
-    var pool = PRODUCTS.slice().sort(function (a, b) {
-      return (hash(id + "#" + a.id) % 997) - (hash(id + "#" + b.id) % 997);
-    });
-    /* 30th CELEBRATION은 10곳 중 7곳에 우선 포함 */
-    if (hash(id + "#30th") % 10 < 7) {
-      pool = pool.filter(function (p) { return p.id !== "celebration30"; });
-      var thirty = productById("celebration30");
-      if (thirty) pool.unshift(thirty);
-    }
-    var n = status === "in" ? 2 + (hash(id + "#n") % 2) : 1 + (hash(id + "#n") % 2);
-    var out = [];
-    for (var i = 0; i < pool.length && out.length < n; i++) {
-      var p = pool[i];
-      var h = hash(id + "|" + p.id);
-      var stt;
-      if (status === "in") stt = h % 4 === 0 ? "low" : "in";
-      else if (status === "check") stt = "check";
-      else stt = h % 3 === 0 ? "none" : "soldout";
-      out.push({
-        id: p.id,
-        name: p.name,
-        short: p.short,
-        unit: p.unit,
-        state: stt,
-        stateLabel: PRODUCT_STATE_LABEL[stt]
-      });
-    }
-    return out;
+  /* 매장 재고 상태: 편의점 앱 API 를 대신 조회해 주는 집 태블릿 중계(relay)에서
+     실제 수량을 받은 매장만 「재고 있음/없음」으로 표시하고, 받지 못한 매장은
+     수량을 지어내지 않고 「매장 확인 필요」로 둔다. (샘플 재고는 쓰지 않는다) */
+  function unknownStatus() {
+    return "check";
   }
 
   /* ------------------------------------------------------- 브랜드 분류 */
@@ -247,9 +197,9 @@ window.PokeMoaMap = (function () {
       lng: o.lng,
       street: o.street || "",
       distance: 0,
-      status: offline ? "check" : sampleStatus(id),
-      observed: offline ? "" : sampleObserved(id),
-      unit: offline ? "" : "낱팩",
+      status: unknownStatus(), /* 중계 실재고를 받기 전에는 수량 미확인 */
+      observed: "",
+      unit: "",
       note: o.note || "",
       products: [],
       phone: o.phone || "",
@@ -267,8 +217,9 @@ window.PokeMoaMap = (function () {
       var s = toStore(list[i]);
       s.source = source;
       s.distance = meters(center, s);
-      /* 오프라인 판매처는 취급 카드·재고 샘플을 붙이지 않는다(없는 재고를 만들지 않기 위해) */
-      s.products = s.offline ? [] : storeProducts(s.id, s.status);
+      /* 매장 위치만 받은 상태 — 취급 상품·수량은 지어내지 않는다.
+         집 태블릿 중계가 그 매장의 실재고를 주면 그때 실제 상품만 붙는다. */
+      s.products = [];
       out.push(s);
     }
     return out;
@@ -726,7 +677,7 @@ window.PokeMoaMap = (function () {
         ? '<span class="chip chip-offline">재고 미확인</span>'
         : (s.relay
           ? '<span class="chip chip-relay">실시간 재고</span>'
-          : '<span class="chip chip-sample">샘플 재고</span>')) +
+          : '<span class="chip chip-check">수량 미확인</span>')) +
       (s.observed ? '<span class="chip">' + s.observed + "</span>" : "") +
       (s.phone ? '<span class="chip">' + escapeHtml(s.phone) + "</span>" : "") +
       "</div>" +
@@ -735,7 +686,7 @@ window.PokeMoaMap = (function () {
         ? '<p class="pm-card-note">' + offlineNote(s) + "</p>"
         : (s.relay
           ? '<p class="pm-card-note">집 태블릿 중계 서버가 편의점 앱에서 <b>조회한 실제 재고</b>입니다(조회 ' + escapeHtml(s.observed) + '). 수량은 조회 시점 기준이므로 방문 전 매장 전화로 한 번 더 확인하세요.</p>'
-          : '<p class="pm-card-note">매장 위치·상호는 카카오맵 실제 장소 데이터입니다. 재고 상태와 <b>취급 카드 상품명</b>은 편의점 앱 API 미연동으로 <b>제보·샘플 기반</b> 표시이니, 방문 전 공식 앱이나 매장 전화로 확인하세요.</p>')) +
+          : '<p class="pm-card-note">매장 위치·상호는 카카오맵 실제 장소 데이터입니다. 이 매장은 <b>재고 수량을 받지 못해</b> 「매장 확인 필요」로 표시합니다(수량·취급 상품을 지어내지 않습니다). 집 태블릿 중계가 연결되면 실제 재고가 자동으로 채워지고, 그 전에는 방문 전 공식 앱·매장 전화로 확인하세요.</p>')) +
       '<a class="btn btn-sm btn-dark pm-card-link" target="_blank" rel="noopener" href="' + navLink + '">네이버 지도에서 보기</a>';
     el.card.querySelector(".pm-card-close").addEventListener("click", function (e) {
       e.stopPropagation();
@@ -1233,7 +1184,7 @@ window.PokeMoaMap = (function () {
   /* 중계 서버는 편의점 앱 재고를 대신 조회해 { stores: [{ brand, name, address,
      lat, lng, distanceM, status, items:[{name,qty,code}], updatedAt }] } 로 준다.
      이 값은 실제 재고이므로 같은 자리의 지도 매장이 있으면 그 매장 카드에 얹고,
-     없으면 중계 매장을 새로 그린다. 해제하면 원래 샘플 상태로 되돌린다. */
+     없으면 중계 매장을 새로 그린다. 중계가 끊기면 「매장 확인 필요」로 되돌린다. */
   var RELAY_ORDER = ["emart24", "cu", "seven"];
   var RELAY_LABEL = { emart24: "이마트24", cu: "CU", seven: "세븐일레븐" };
 

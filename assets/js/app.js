@@ -278,7 +278,7 @@
           ? '<span class="chip chip-offline">재고 미확인</span>'
           : (s.relay
             ? '<span class="chip chip-relay">실시간 ' + (s.relayQty || 0) + '개</span>'
-            : '<span class="chip chip-sample">샘플</span>')) +
+            : '<span class="chip chip-check">수량 미확인</span>')) +
         (s.street ? "<small>" + escapeHtml(s.street) + "</small>" : "") +
         "</span>" +
         productTagsHtml(s);
@@ -443,8 +443,9 @@
   /* ------------------------------------------- 집 태블릿 실시간 중계 연결 */
   /* 태블릿(Termux)에서 켜 둔 relay/server.js 주소를 저장하고, 연결된 동안에는
      주변 매장 조회마다 중계 서버의 실제 재고를 받아 지도·매장 카드에 반영한다.
-     연결이 없거나 응답이 없으면 기존 카카오맵·스냅샷 + 샘플·제보 모드로 자연스럽게 돌아간다. */
+     연결이 없거나 응답이 없으면 카카오맵 실제 위치만 보여 주고 수량은 「매장 확인 필요」로 둔다. */
   var RELAY_KEY = "pokemoa.relayUrl";
+  var RELAY_PRESET_KEY = "pokemoa.relayPresetUrl"; /* 프리셋으로 자동 저장된 주소 표시 */
   var relayBar = $("#relayBar");
   var relayStateText = $("#relayStateText");
   var relayOpenBtn = $("#relayOpenBtn");
@@ -502,9 +503,9 @@
       } else if (relay.state === "checking") {
         relayStateText.textContent = "연결 확인 중… (" + relayHost() + ")";
       } else if (relay.state === "error") {
-        relayStateText.textContent = "중계 응답 없음 · " + relayHost() + " · 제보·샘플 재고로 표시";
+        relayStateText.textContent = "중계 응답 없음 · " + relayHost() + " · 매장 위치만 표시(수량 미확인)";
       } else {
-        relayStateText.textContent = "연결 안 됨 · 지금은 제보·샘플 재고로 표시합니다";
+        relayStateText.textContent = "연결 안 됨 · 지금은 매장 위치만 표시합니다(수량 미확인)";
       }
     }
     if (relayOpenBtn) relayOpenBtn.textContent = relay.state === "online" ? "설정" : relay.state === "error" ? "다시 연결" : "중계 연결";
@@ -573,25 +574,33 @@
     relay.state = "checking";
     relay.lastCount = 0;
     relayRender();
-    relayMsg("연결을 확인하는 중입니다…");
+    if (!opts.silent) relayMsg("연결을 확인하는 중입니다…");
     relayCheck(target).then(function () {
       relaySave(target);
+      /* 프리셋(사이트에 실린 최근 태블릿 터널)으로 붙은 경우를 기억해 두었다가,
+         터널 주소가 새로 바뀌면 저장된 옛 주소 대신 새 프리셋으로 갈아탄다. */
+      try {
+        if (opts.fromPreset) localStorage.setItem(RELAY_PRESET_KEY, target);
+        else localStorage.removeItem(RELAY_PRESET_KEY);
+      } catch (e) {}
       relay.state = "online";
       relayRender();
-      relayMsg("연결됐습니다. 실재고를 불러오는 중…", "ok");
-      toast("실시간 중계에 연결했습니다. 실제 재고를 불러옵니다.");
-      trackEvent("relay_connect", { status: "online" });
+      if (!opts.silent) {
+        relayMsg("연결됐습니다. 실재고를 불러오는 중…", "ok");
+        toast("실시간 중계에 연결했습니다. 실제 재고를 불러옵니다.");
+      }
+      trackEvent("relay_connect", { status: "online", auto: opts.silent ? 1 : 0 });
       if (!opts.keepOpen) relayClose();
-      relayRefresh(true);
+      relayRefresh(!opts.silent);
     }).catch(function (err) {
       relay.state = "error";
       relayRender();
       var reason = err && err.name === "AbortError"
         ? "응답 시간 초과(6.5초)"
         : (err && err.message) || "응답 없음";
-      relayMsg("연결하지 못했습니다 — " + reason +
+      if (!opts.silent) relayMsg("연결하지 못했습니다 — " + reason +
         ". 태블릿의 server.js·터널 주소를 확인해 주세요.", "warn");
-      trackEvent("relay_connect", { status: "error" });
+      trackEvent("relay_connect", { status: "error", auto: opts.silent ? 1 : 0 });
     });
   }
 
@@ -603,7 +612,7 @@
     relay.noticeShown = "";
     relayRender();
     if (mapReady && window.PokeMoaMap) window.PokeMoaMap.clearRelay();
-    relayMsg("연결을 해제했습니다. 제보·샘플 재고로 표시합니다.", "ok");
+    relayMsg("연결을 해제했습니다. 이제 매장 위치만 표시합니다(수량 미확인).", "ok");
     toast("실시간 중계 연결을 해제했습니다.");
   }
 
@@ -618,7 +627,10 @@
     relay.busy = true;
     var ctrl = new AbortController();
     var timer = setTimeout(function () { ctrl.abort(); }, 18000);
-    var url = relay.url + "/api/nearby?lat=" + lat + "&lng=" + lng + "&keyword=" + encodeURIComponent("포켓몬");
+    /* 검색어는 '포켓몬카드' — '포켓몬'으로 넣으면 CU가 과자(빼빼로)만 잡아 카드 상품이 0건이 된다. */
+    var radiusKm = mstate && mstate.radius ? Math.round(mstate.radius) : 3000;
+    var url = relay.url + "/api/nearby?lat=" + lat + "&lng=" + lng +
+      "&keyword=" + encodeURIComponent("포켓몬카드") + "&radius=" + radiusKm;
     fetch(url, { signal: ctrl.signal, mode: "cors", cache: "no-store" })
       .then(function (res) {
         if (!res.ok) throw new Error("HTTP " + res.status);
@@ -632,7 +644,7 @@
         if (!n) {
           if (relay.noticeShown !== "empty:" + key) {
             relay.noticeShown = "empty:" + key;
-            toast("중계는 연결됐지만 이 지역에서 받은 실재고가 없습니다 · 제보·샘플로 표시합니다.");
+            toast("중계는 연결됐지만 이 지역에서 받은 실재고가 없습니다 · 매장 확인 필요로 표시합니다.");
           }
         } else if (manual || relay.noticeShown !== key) {
           relay.noticeShown = key;
@@ -644,7 +656,7 @@
         relay.lastCount = 0;
         relayRender();
         if (window.PokeMoaMap) window.PokeMoaMap.clearRelay();
-        toast("중계 서버 응답이 없습니다 · 기존 샘플 모드로 표시합니다.");
+        toast("중계 서버 응답이 없습니다 · 매장 확인 필요로 표시합니다.");
       })
       .finally(function () {
         clearTimeout(timer);
@@ -683,7 +695,9 @@
   document.addEventListener("pokemoa:loaded", relayScheduleRefresh);
   document.addEventListener("pokemoa:geo-done", relayScheduleRefresh);
 
-  /* ?relay=https://… 로 열면 그 주소를 저장하고 바로 연결한다 */
+  /* ?relay=https://… 로 열면 그 주소를 저장하고 바로 연결한다.
+     주소가 없으면 data.js 의 relayPreset(최근 태블릿 터널)으로 조용히 자동 연결한다 —
+     방문자가 모달에서 '연결 확인'을 누르지 않아도 실재고가 바로 뜬다. */
   function relayInit() {
     relayRender();
     var param = "";
@@ -694,10 +708,27 @@
     }
     var fromQuery = relayNormalize(param);
     if (fromQuery) {
-      relayConnect(fromQuery, { keepOpen: false });
+      relayConnect(fromQuery, { keepOpen: true, silent: true });
       return;
     }
+    var preset = relayNormalize(RELAY_PRESET && RELAY_PRESET.url);
     var saved = relayNormalize(relaySaved());
+    var lastPreset = "";
+    try {
+      lastPreset = relayNormalize(localStorage.getItem(RELAY_PRESET_KEY) || "");
+    } catch (e) {
+      lastPreset = "";
+    }
+    /* 직접 넣은 주소(프리셋으로 저장된 게 아닌 값)가 있으면 그것을 먼저 쓴다 */
+    var ownSaved = saved && (!preset || saved !== lastPreset);
+    if (ownSaved) {
+      relayConnect(saved, { keepOpen: true, silent: true });
+      return;
+    }
+    if (preset) {
+      relayConnect(preset, { keepOpen: true, silent: true, fromPreset: true });
+      return;
+    }
     if (saved) relayConnect(saved, { keepOpen: true, silent: true });
   }
   relayInit();
