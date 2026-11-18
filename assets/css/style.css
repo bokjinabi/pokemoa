@@ -3033,6 +3033,20 @@ button { font: inherit; color: inherit; cursor: pointer; }
   transform: none;
 }
 
+/* 5km 보기: 칩이 겹치는 자리는 숫자만 담은 작은 원으로 줄인다 */
+#mapShell .pm-cluster.is-mini {
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  padding: 0;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  font-size: 11px;
+  box-shadow: 0 2px 6px rgba(16, 31, 60, 0.25);
+}
+
 /* 내 위치 표시 (카카오 CustomOverlay) */
 #mapShell .pm-me {
   display: inline-flex;
