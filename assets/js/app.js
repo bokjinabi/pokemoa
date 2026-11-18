@@ -391,8 +391,9 @@
       if (!s) { bpSet(id, 100, "미연동 · 매장 위치만", "off"); return; }
       if (s.ok) {
         var row = byBrand[id] || { stores: 0, qty: 0 };
-        var n = Number(s.count);
-        if (!isFinite(n)) n = row.stores;
+        /* 응답에 실린 점포 수가 실제 화면에 반영되는 수다(수집 단계 count 는 더 클 수 있다) */
+        var n = row.stores;
+        if (!n && isFinite(Number(s.count))) n = Number(s.count);
         if (!n) {
           bpSet(id, 100, "조회 완료 · 0곳 확인", "done");
           return;
@@ -602,7 +603,7 @@
           ? '<span class="chip chip-offline">재고 미확인</span>'
           : (s.relay
             ? '<span class="chip chip-relay">실시간 ' + (s.relayQty || 0) + '개</span>'
-            : '<span class="chip chip-check">미조회</span>')) +
+            : '<span class="chip chip-check">수량 미확인</span>')) +
         (s.street ? "<small>" + escapeHtml(s.street) + "</small>" : "") +
         "</span>" +
         productTagsHtml(s);
@@ -1340,8 +1341,13 @@
       html += '<button type="button" class="bs-card' + (activeBrand === id ? " is-active" : "") + '" data-brand="' + id + '" style="--brand:' + meta.color + '">' +
         '<span class="bs-head"><i class="bs-dot"></i><span class="bs-name">' + meta.label + "</span></span>" +
         '<strong class="bs-count">' + c.total + "<small>곳</small></strong>" +
-        '<span class="bs-sub">' + (c.in ? "재고 " + c.in + "곳" : "없음 " + c.none + "곳") +
-          (c.check ? " · 미조회 " + c.check + "곳" : "") + "</span></button>";
+        '<span class="bs-sub">' + (function () {
+          var bits = [];
+          if (c.in) bits.push("재고 " + c.in + "곳");
+          if (c.none) bits.push("없음 " + c.none + "곳");
+          if (c.check) bits.push("미조회 " + c.check + "곳");
+          return bits.length ? bits.join(" · ") : "표시할 매장 없음";
+        })() + "</span></button>";
     });
     brandSummary.innerHTML = html;
   }
@@ -2917,7 +2923,7 @@
     if (cached) { fxPaint(cached); return; }
     if (fxSrcEl) fxSrcEl.textContent = "불러오는 중…";
     var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
-    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 9000) : null;
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 12000) : null;
     var opts = { cache: "no-store" };
     if (ctrl) opts.signal = ctrl.signal;
     fetch("https://open.er-api.com/v6/latest/USD", opts)
@@ -2982,10 +2988,9 @@
       return "https://www.ebay.com/sch/i.html?_nkw=" + encodeURIComponent((q || "포켓몬카드") + " PSA") +
         "&LH_BIN=1&_sop=15";
     },
-    snkrdunk: function (q) {
-      return q
-        ? "https://snkrdunk.com/en/search?keywords=" + encodeURIComponent(q)
-        : "https://snkrdunk.com/en/brands/pokemon/trading-cards";
+    snkrdunk: function () {
+      /* 카드 목록 바로가기는 고정 — 검색은 아래 '스니커덩크 검색' 링크가 맡는다 */
+      return "https://snkrdunk.com/en/brands/pokemon/trading-cards";
     },
     snkrdunkSearch: function (q) {
       return "https://snkrdunk.com/en/search?keywords=" + encodeURIComponent(q || "pokemon card");
