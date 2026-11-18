@@ -2,9 +2,11 @@
  * 포켓몬카드모아 — 실제 지도 엔진 (카카오맵 JavaScript SDK + 카카오 장소 검색)
  *
  * · 지도 타일: 카카오맵 JavaScript SDK (라이트·저채도 느낌은 카카오 기본 스타일 그대로)
- * · 주변 매장: 카카오 장소 검색(Places) — 편의점 카테고리(CS2) 3페이지 병렬 조회 +
+ * · 주변 매장: 카카오 장소 검색(Places) — 편의점 카테고리(CS2) 병렬 조회 +
  *   결과에 없는 브랜드는 브랜드별 키워드 검색으로 보충한다(편의점 4사만:
  *   GS25·CU·세븐일레븐·이마트24). 해외 Overpass API 왕복이 없어 1초 안팎에 끝난다.
+ *   카카오 장소 검색은 한 번에 최대 45건이라, 3km 이하는 중심 1곳에서 3페이지를,
+ *   5km·20km는 중심 + 방위 오프셋 격자로 여러 번 나눠 조회해 외곽 매장까지 받는다.
  * · 동네·역 이름 검색도 카카오 장소 검색(keywordSearch)으로 즉시 조회한다.
  * · 매장 마커는 둥근 핀 대신 상태가 바로 읽히는 말풍선(알약) 마커
  *   (kakao.maps.CustomOverlay): 재고 있음 = 브랜드 색 말풍선(`CU · 입고 2종`),
@@ -25,9 +27,13 @@ window.PokeMoaMap = (function () {
   var KAKAO_SDK = "https://dapi.kakao.com/v2/maps/sdk.js?appkey=" + KAKAO_KEY +
     "&libraries=services&autoload=false";
   var SDK_TIMEOUT = 9000;        /* SDK·지도 초기화를 이 시간까지 기다린다 */
-  var SEARCH_TIMEOUT = 6000;     /* 장소 검색이 늦으면 내장 좌표로 먼저 표시 */
-  var MAX_MARKERS = 90;
-  var MAX_MARKERS_20 = 100;
+  var SEARCH_TIMEOUT = 8000;     /* 다점 격자 조회가 늦으면 내장 좌표로 먼저 표시 */
+  var MAX_MARKERS = 90;          /* 1km·3km */
+  var MAX_MARKERS_5 = 120;       /* 5km — 격자 조회로 받은 외곽 매장까지 넉넉히 */
+  var MAX_MARKERS_20 = 200;      /* 20km — 반경 전역(포항 남구·양덕·유강·오천 등) */
+  /* 5km·20km 격자 조회의 방위(도, 북=0·동=90) */
+  var DIRS4 = [0, 90, 180, 270];
+  var DIRS8 = [0, 45, 90, 135, 180, 225, 270, 315];
   var BRAND_QUERY = { gs25: "GS25", cu: "CU", seven: "세븐일레븐", emart24: "이마트24" };
   var BRAND_ORDER_LIST = ["gs25", "cu", "seven", "emart24"];
 
@@ -51,6 +57,7 @@ window.PokeMoaMap = (function () {
     product: "all",
     stockOnly: false,
     compact: false,
+    cluster: false,
     radius: 3000,
     regionId: "pohang-north",
     origin: "region",  /* region | geo | search */
@@ -93,6 +100,25 @@ window.PokeMoaMap = (function () {
     var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(la1) * Math.cos(la2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
     return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+  }
+
+  /* 중심에서 dist(m) 떨어진 방위각(도, 북=0·동=90) 좌표 */
+  function offsetPoint(center, dist, angleDeg) {
+    var R = 6371008.8;
+    var a = angleDeg * Math.PI / 180;
+    var dLat = (dist * Math.cos(a)) / R * 180 / Math.PI;
+    var dLng = (dist * Math.sin(a)) / (R * Math.cos(center.lat * Math.PI / 180)) * 180 / Math.PI;
+    return { lat: center.lat + dLat, lng: center.lng + dLng };
+  }
+
+  /* 고리 위 방위 지점들 — 중심에서 dist(m) 떨어진 곳을 ringRadius(m)로 pages페이지씩 */
+  function pushRing(pts, center, dist, ringRadius, pages, dirs) {
+    dirs.forEach(function (a) {
+      var o = offsetPoint(center, dist, a);
+      for (var p = 1; p <= pages; p++) {
+        pts.push({ lat: o.lat, lng: o.lng, radius: ringRadius, page: p });
+      }
+    });
   }
 
   function escapeHtml(s) {
@@ -317,22 +343,29 @@ window.PokeMoaMap = (function () {
     });
     st.ring.setMap(st.map);
 
-    st.compact = compactMode();
+    applyZoomMode();
     try {
       K.event.addListener(st.map, "zoom_changed", function () {
-        var c = compactMode();
-        if (c === st.compact) return;
-        st.compact = c;
-        renderMarkers();
+        if (applyZoomMode()) renderMarkers();
       });
     } catch (e) {}
   }
 
   /* ------------------------------------------------------------- 마커 */
-  /* 줌이 넓으면(20km 보기) 말풍선 대신 작은 점·브랜드 칩만 그려 겹칩을 줄인다. */
-  function compactMode() {
-    if (!st.map) return false;
-    return st.map.getLevel() >= 8;   /* Leaflet 줌 12 이하와 같은 넓이 */
+  /* 줌 단계에 따라 마커 모양을 바꾼다.
+     · 가까이(level < 7): 브랜드 색 말풍선(알약) + 보유 상품
+     · 5km 보기(level 7~9): 작은 브랜드 칩·점 — 매장이 많아도 고르게 퍼진다
+     · 20km 보기(level >= 10): 구역별 `N곳` 묶음 */
+  var CHIP_LEVEL = 7;
+  var CLUSTER_LEVEL = 10;
+  function applyZoomMode() {
+    var lv = st.map ? st.map.getLevel() : 0;
+    var compact = lv >= CHIP_LEVEL;
+    var cluster = lv >= CLUSTER_LEVEL;
+    var changed = compact !== st.compact || cluster !== st.cluster;
+    st.compact = compact;
+    st.cluster = cluster;
+    return changed;
   }
 
   function stockProductCount(s) {
@@ -418,8 +451,9 @@ window.PokeMoaMap = (function () {
     var proj = null;
     try { proj = st.map.getProjection(); } catch (e) {}
     var level = st.map.getLevel();
-    /* 줌이 낮을수록 넓은 칸으로 묶어 말풍선이 겹치지 않게 한다 */
-    var cell = level >= 11 ? 150 : level >= 10 ? 110 : 80;
+    /* 줌이 낮을수록 넓은 칸으로 묶되, 20km(level 10)에서는 칸을 줄여
+       반경 전역이 지역별 여러 묶음으로 나뉘어 보이게 한다 */
+    var cell = level >= 11 ? 85 : level >= 10 ? 58 : 40;
     list.forEach(function (s) {
       var pt;
       try { pt = proj.containerPointFromCoords(latlng(s.lat, s.lng)); } catch (e) { pt = null; }
@@ -456,8 +490,9 @@ window.PokeMoaMap = (function () {
   }
 
   function renderMarkers() {
+    applyZoomMode();
     if (st.ready) clearOverlays();
-    var cap = st.radius >= 20000 ? MAX_MARKERS_20 : MAX_MARKERS;
+    var cap = st.radius >= 20000 ? MAX_MARKERS_20 : st.radius >= 5000 ? MAX_MARKERS_5 : MAX_MARKERS;
     var list = st.all.filter(match).slice().sort(function (a, b) {
       return a.distance - b.distance;
     });
@@ -477,7 +512,7 @@ window.PokeMoaMap = (function () {
       return;
     }
 
-    if (st.compact) {
+    if (st.cluster) {
       renderClusters(st.visible);
       if (st.selectedId) closeCard();
       emit("pokemoa:visible", { stores: st.visible });
@@ -666,7 +701,7 @@ window.PokeMoaMap = (function () {
       };
     }
     if (st.source === "live") {
-      var cap = st.radius >= 20000 ? MAX_MARKERS_20 : MAX_MARKERS;
+      var cap = st.radius >= 20000 ? MAX_MARKERS_20 : st.radius >= 5000 ? MAX_MARKERS_5 : MAX_MARKERS;
       var txt = st.all.length > cap
         ? "실시간 조회 · 카카오맵 주변 매장 " + st.all.length + "곳 중 가까운 " + cap + "곳 표시"
         : "실시간 조회 · 카카오맵 주변 편의점 4사 " + st.all.length + "곳";
@@ -806,22 +841,48 @@ window.PokeMoaMap = (function () {
     return out;
   }
 
-  /* 카테고리 3페이지 병렬 → 빠진 브랜드는 브랜드별 키워드 1페이지로 보충 */
+  /* 반경별 조회 계획 — {lat,lng,radius,page} 목록
+     · ~3km: 중심 1곳에서 3페이지(최대 45건, 1초 안팎)
+     · 5km: 중심(반경 3km·2p) + 동·서·남·북 2.8km 지점(반경 2.6km·2p)
+     · 20km: 중심(반경 5km·2p) + 반경 5km 고리(8방위 · 4km · 1p) + 반경 13km 고리(8방위 · 7km · 1p)
+       → 중심만 조회하면 45건 상한에 가까운 매장이 차서 외곽이 통째로 빠지므로,
+         여러 지점에서 나눠 받아 합친 뒤 반경으로 다시 거른다. */
+  function searchPlan(center, radius) {
+    var pts = [];
+    var p;
+    if (radius >= 20000) {
+      for (p = 1; p <= 2; p++) pts.push({ lat: center.lat, lng: center.lng, radius: 5000, page: p });
+      pushRing(pts, center, 5000, 4000, 1, DIRS8);
+      pushRing(pts, center, 13000, 7000, 1, DIRS8);
+      return pts;
+    }
+    if (radius > 3000) {
+      for (p = 1; p <= 2; p++) pts.push({ lat: center.lat, lng: center.lng, radius: 3000, page: p });
+      pushRing(pts, center, 2800, 2600, 2, DIRS4);
+      return pts;
+    }
+    for (p = 1; p <= 3; p++) pts.push({ lat: center.lat, lng: center.lng, radius: radius, page: p });
+    return pts;
+  }
+
+  /* 격자 조회 → id 중복 제거 → 반경 필터 → 빠진 브랜드는 브랜드별 키워드 1페이지로 보충 */
   function searchNearby(center, radius) {
-    var reqs = [categoryPage(center, radius, 1),
-      categoryPage(center, radius, 2),
-      categoryPage(center, radius, 3)];
+    var reqs = searchPlan(center, radius).map(function (pt) {
+      return categoryPage(pt, pt.radius, pt.page);
+    });
     return Promise.all(reqs).then(function (pages) {
       var anyOk = pages.some(function (p) { return p.ok; });
       if (!anyOk) throw new Error("place-search-failed");
-      var rows = rowsFrom(pages);
+      var rows = rowsFrom(pages).filter(function (r) { return meters(center, r) <= radius + 1; });
       var missing = BRAND_ORDER_LIST.filter(function (b) {
         return !rows.some(function (r) { return r.brand === b; });
       });
       if (!missing.length) return rows;
       var extra = missing.map(function (b) { return keywordPage(BRAND_QUERY[b], center, radius, 1); });
       return Promise.all(extra).then(function (pages2) {
-        var more = rowsFrom(pages2).filter(function (r) { return missing.indexOf(r.brand) >= 0; });
+        var more = rowsFrom(pages2).filter(function (r) {
+          return missing.indexOf(r.brand) >= 0 && meters(center, r) <= radius + 1;
+        });
         return rows.concat(more);
       });
     });
@@ -890,7 +951,7 @@ window.PokeMoaMap = (function () {
       source: st.source,
       total: st.all.length,
       allow20: allow20(),
-      markerCap: st.radius >= 20000 ? MAX_MARKERS_20 : MAX_MARKERS,
+      markerCap: st.radius >= 20000 ? MAX_MARKERS_20 : st.radius >= 5000 ? MAX_MARKERS_5 : MAX_MARKERS,
       error: st.lastError,
       late: !!liveNow && st.badgeWasSnapshot
     });
@@ -1055,8 +1116,13 @@ window.PokeMoaMap = (function () {
     var before = st.radius;
     st.radius = radius;
     if (st.ring) st.ring.setRadius(radius);
-    /* 20km는 반경 전체가 보이도록 지도를 맞춘다 */
-    if (radius >= 20000) fitRing();
+    /* 5km·20km는 반경 원 전체가 화면에 들어오도록 지도를 맞춘다 */
+    if (radius >= 5000) {
+      fitRing();
+    } else if (before >= 5000 && st.ready && st.center) {
+      /* 넓게 보던 지도에서 1km·3km로 좁힐 때는 기본 확대(줌 15)로 되돌린다 */
+      setView(st.center, 15);
+    }
     renderMarkers();
     pushData();
     /* 조회 범위보다 넓어졌으면(스냅샷 포함) 그 반경으로 다시 조회한다 */
