@@ -37,7 +37,7 @@
 <meta name="twitter:image:alt" content="포켓몬카드모아 — 내 주변 편의점 재고 · 인기 카드 시세 · 도감">
 <meta name="theme-color" content="#101f3c">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23101f3c'/%3E%3Crect x='7' y='7' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05'/%3E%3Crect x='17.5' y='7' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05' opacity='.7'/%3E%3Crect x='7' y='17.5' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05' opacity='.7'/%3E%3Crect x='17.5' y='17.5' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="assets/css/style.css?v=84">
+<link rel="stylesheet" href="assets/css/style.css?v=85">
 <!-- 카카오맵 JavaScript SDK — autoload=false로 불러 두고 map.js가 kakao.maps.load()로 초기화합니다.
      JavaScript 키 도메인에는 https://moa-kr.github.io 만 등록되어 있어, 그 밖의 주소(미등록 프리뷰)에서는
      지도 대신 내장 좌표 스냅샷 안내가 표시됩니다. -->
@@ -682,7 +682,7 @@
       </aside>
     </div>
 
-    <div class="status-guide">
+    <div class="status-guide" data-section="map-status">
       <div><b data-copy="status1Title">재고 있음</b><span data-copy="status1Desc">실시간 조회에서 수량 1개 이상을 확인한 매장입니다. 조회 시점 기준이니 방문 전 매장에 확인하세요.</span></div>
       <div><b data-copy="status3Title">없음</b><span data-copy="status3Desc">실시간 조회에서 재고 0으로 확인된 매장입니다. 아직 입고 전일 수도 있습니다.</span></div>
       <div><b data-copy="status2Title">미조회</b><span data-copy="status2Desc">아직 실시간 조회 대상이 아니거나 수량을 받지 못한 매장입니다. 수량을 지어내지 않고 위치만 표시합니다.</span></div>
@@ -690,7 +690,8 @@
       <div><b data-copy="status5Title">오프라인 판매처</b><span data-copy="status5Desc">대형마트·아트박스는 카카오 장소 검색으로 위치만 표시하고, 공식 자판기(포켓몬코리아 자판기 안내, 176곳)·공인 카드샵(16곳)은 공식 목록의 설치 장소를 옮겨 온 것입니다.</span></div>
     </div>
 
-    <h3 class="mt-24" style="font-size:15px;margin-bottom:10px;">실제 재고를 확인하는 공식 채널</h3>
+    <div data-section="map-channels">
+    <h3 class="mt-24" style="font-size:15px;margin-bottom:10px;" data-copy="mapChannelsTitle">실제 재고를 확인하는 공식 채널</h3>
     <div class="map-shortcuts">
       <a class="shortcut" href="https://www.gs25.com/main.do" target="_blank" rel="noopener"><span class="sc-dot"></span><span><strong>우리동네GS</strong><small>GS25 매장 재고찾기</small></span><span class="sc-go">↗</span></a>
       <a class="shortcut" href="https://www.cu.co.kr/" target="_blank" rel="noopener"><span class="sc-dot"></span><span><strong>포켓CU</strong><small>CU 앱 재고 조회</small></span><span class="sc-go">↗</span></a>
@@ -701,6 +702,7 @@
       <a class="shortcut" href="https://pokamap.shop/" target="_blank" rel="noopener"><span class="sc-dot"></span><span><strong>포카맵</strong><small>자판기·카드샵 지도</small></span><span class="sc-go">↗</span></a>
       <a class="shortcut" href="https://pokemonkorea.co.kr/card_vending_machine" target="_blank" rel="noopener"><span class="sc-dot"></span><span><strong>공식 자판기 지도</strong><small>포켓몬코리아 안내</small></span><span class="sc-go">↗</span></a>
       <a class="shortcut" href="https://www.pokemonkorea.co.kr/pokemon_cardshop" target="_blank" rel="noopener"><span class="sc-dot"></span><span><strong>공식 카드샵 16곳</strong><small>포켓몬코리아 안내</small></span><span class="sc-go">↗</span></a>
+    </div>
     </div>
 
     <div class="ad-slot is-banner" data-ad-slot="map-bottom" aria-hidden="true">
@@ -839,7 +841,7 @@
     </div>
 
     <div class="subtab-body" id="subtabNews" role="tabpanel" aria-labelledby="subtabBtnNews">
-<section class="section" id="issueSection" aria-labelledby="issues-title">
+<section class="section" id="issueSection" aria-labelledby="issues-title" data-section="issues">
       <div class="section-head">
         <div>
           <span class="eyebrow" data-copy="issuesEyebrow">최근 이슈되는 카드 이슈</span>
@@ -851,7 +853,7 @@
       <ol class="issue-list" id="issueList"></ol>
     </section>
 
-<section class="section" id="releaseSection" aria-labelledby="releases-title">
+<section class="section" id="releaseSection" aria-labelledby="releases-title" data-section="releases">
       <div class="section-head">
         <div>
           <span class="eyebrow" data-copy="releasesEyebrow">신규 팩 발매 소식</span>
@@ -884,9 +886,9 @@
     </div>
 
     <!-- 실시간 환율 (USD · JPY) — 무료 공개 API 실시간 호출 -->
-    <section class="fx-widget" id="fxWidget" aria-labelledby="fxTitle">
+    <section class="fx-widget" id="fxWidget" aria-labelledby="fxTitle" data-section="rates">
       <div class="fx-head">
-        <span class="fx-title" id="fxTitle">오늘의 환율</span>
+        <span class="fx-title" id="fxTitle" data-copy="fxTitle">오늘의 환율</span>
         <span class="fx-src" id="fxSrc">불러오는 중…</span>
       </div>
       <div class="fx-cards">
@@ -906,10 +908,10 @@
     </section>
 
     <!-- PSA 거래 내역 (경매 낙찰가 · 즉구가) · SNKRDUNK 조회 -->
-    <section class="market-tools" id="marketTools" aria-labelledby="marketToolsTitle">
+    <section class="market-tools" id="marketTools" aria-labelledby="marketToolsTitle" data-section="market">
       <div class="mt-head">
         <span class="eyebrow">시세 · 거래가 조회</span>
-        <h2 class="mt-title" id="marketToolsTitle">PSA 거래 내역 조회 (경매가·즉구가)</h2>
+        <h2 class="mt-title" id="marketToolsTitle" data-copy="marketTitle">PSA 거래 내역 조회 (경매가·즉구가)</h2>
         <p class="mt-lead">카드명·세트·키워드를 넣으면 아래 조회 링크가 그 검색어로 바뀝니다. <b>PSA 공식 경매 낙찰가(APR)</b>과 <b>eBay 경매 완료가</b>로 낙찰가를, <b>eBay 즉구(Buy It Now)</b>와 <b>스니커덩크(SNKRDUNK)</b>로 지금 사는 가격을 비교하세요.</p>
       </div>
       <div class="mt-search">
@@ -1442,12 +1444,12 @@
   </div>
 </template>
 
-<script src="assets/js/data.js?v=84"></script>
-<script src="assets/js/map.js?v=84"></script>
-<script src="assets/js/app.js?v=84"></script>
+<script src="assets/js/data.js?v=85"></script>
+<script src="assets/js/map.js?v=85"></script>
+<script src="assets/js/app.js?v=85"></script>
 <!-- 모아 어드민(moa-kr/moa-admin)이 커밋하는 assets/config/site-config.json 을 화면에 적용합니다.
      공지 바·팝업·탭/섹션 순서와 노출·문구가 이 파일 값으로 바뀝니다. -->
-<script src="assets/js/site-config-loader.js?v=84" defer
+<script src="assets/js/site-config-loader.js?v=85" defer
         data-config="assets/config/site-config.json"
         data-tab-container=".main-nav"
         data-banner-host=".site-header"></script>
