@@ -1821,6 +1821,38 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .contact-form textarea { min-height: 110px; resize: vertical; }
 .form-note { font-size: 11px; color: var(--muted-2); }
+.form-note a { color: var(--navy); text-decoration: underline; }
+
+/* --------------------------------------------------------- 관리자 문의 */
+.inquiry-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
+.inquiry-actions .btn { flex: 1 1 auto; }
+
+.inquiry-cta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 30px 0 6px;
+  padding: 15px 16px;
+  background: #fff;
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow-sm);
+}
+.inquiry-cta-copy { display: grid; gap: 3px; flex: 1 1 260px; min-width: 0; }
+.inquiry-cta-copy b { font-size: 13.5px; color: var(--ink); letter-spacing: -0.01em; }
+.inquiry-cta-copy span { font-size: 12px; line-height: 1.6; color: var(--muted); }
+.inquiry-cta-copy a { color: var(--navy); font-weight: 700; text-decoration: underline; }
+.inquiry-cta .btn { flex: 0 0 auto; }
+@media (max-width: 679px) {
+  .inquiry-cta { padding: 14px; margin-top: 22px; }
+  .inquiry-cta .btn { flex: 1 1 100%; }
+  .inquiry-actions .btn { flex: 1 1 100%; }
+}
+@media (max-width: 359px) {
+  /* 320px 급 화면에서는 헤더 한 줄을 지키기 위해 관리자 문의는 푸터·탭 하단 카드로만 둔다 */
+  .header-actions .header-inquiry { display: none; }
+}
 
 .dex-modal-card { display: flex; gap: 16px; align-items: flex-start; }
 .dex-modal-art {
@@ -1997,6 +2029,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .nav-btn .nav-ico { font-size: 15px; line-height: 1; }
   .nav-btn.is-active { background: var(--navy); color: #fff; }
   .header-actions .header-date { display: none; }
+  .header-inner { gap: 8px; }
+  .header-actions { gap: 6px; margin-left: 4px; }
+  .header-actions .btn-sm { padding: 8px 10px; font-size: 12px; white-space: nowrap; }
   .hero { border-radius: 20px; padding: 26px 20px 24px; }
   .hero h1 { font-size: 27px; }
   .price-row { display: grid; grid-template-columns: 1fr 1fr; }

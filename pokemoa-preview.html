@@ -1855,6 +1855,38 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .contact-form textarea { min-height: 110px; resize: vertical; }
 .form-note { font-size: 11px; color: var(--muted-2); }
+.form-note a { color: var(--navy); text-decoration: underline; }
+
+/* --------------------------------------------------------- 관리자 문의 */
+.inquiry-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
+.inquiry-actions .btn { flex: 1 1 auto; }
+
+.inquiry-cta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 30px 0 6px;
+  padding: 15px 16px;
+  background: #fff;
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow-sm);
+}
+.inquiry-cta-copy { display: grid; gap: 3px; flex: 1 1 260px; min-width: 0; }
+.inquiry-cta-copy b { font-size: 13.5px; color: var(--ink); letter-spacing: -0.01em; }
+.inquiry-cta-copy span { font-size: 12px; line-height: 1.6; color: var(--muted); }
+.inquiry-cta-copy a { color: var(--navy); font-weight: 700; text-decoration: underline; }
+.inquiry-cta .btn { flex: 0 0 auto; }
+@media (max-width: 679px) {
+  .inquiry-cta { padding: 14px; margin-top: 22px; }
+  .inquiry-cta .btn { flex: 1 1 100%; }
+  .inquiry-actions .btn { flex: 1 1 100%; }
+}
+@media (max-width: 359px) {
+  /* 320px 급 화면에서는 헤더 한 줄을 지키기 위해 관리자 문의는 푸터·탭 하단 카드로만 둔다 */
+  .header-actions .header-inquiry { display: none; }
+}
 
 .dex-modal-card { display: flex; gap: 16px; align-items: flex-start; }
 .dex-modal-art {
@@ -2031,6 +2063,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .nav-btn .nav-ico { font-size: 15px; line-height: 1; }
   .nav-btn.is-active { background: var(--navy); color: #fff; }
   .header-actions .header-date { display: none; }
+  .header-inner { gap: 8px; }
+  .header-actions { gap: 6px; margin-left: 4px; }
+  .header-actions .btn-sm { padding: 8px 10px; font-size: 12px; white-space: nowrap; }
   .hero { border-radius: 20px; padding: 26px 20px 24px; }
   .hero h1 { font-size: 27px; }
   .price-row { display: grid; grid-template-columns: 1fr 1fr; }
@@ -3029,7 +3064,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
     <div class="header-actions">
       <span class="header-date">데이터 기준 11-17</span>
-      <button type="button" class="btn btn-dark btn-sm" data-modal="contact">재고 제보</button>
+      <button type="button" class="btn btn-ghost btn-sm header-inquiry" data-modal="inquiry">관리자 문의</button>
+      <button type="button" class="btn btn-dark btn-sm" data-modal="inquiry" data-inquiry-type="재고·매장 정보 오류">재고 제보</button>
     </div>
   </div>
 </header>
@@ -3379,6 +3415,15 @@ button { font: inherit; color: inherit; cursor: pointer; }
         </ul>
       </div>
     </section>
+
+    <!-- -------------------------------------------------- 관리자 문의 안내 -->
+    <div class="inquiry-cta">
+      <div class="inquiry-cta-copy">
+        <b>정가·재고 정보가 실제와 다른가요?</b>
+        <span>재고·매장 정보 오류, 정가·출시 일정 제보, 광고·제휴 문의를 <a href="mailto:acewoni3717@gmail.com">acewoni3717@gmail.com</a>으로 보낼 수 있습니다.</span>
+      </div>
+      <button type="button" class="btn btn-dark btn-sm" data-modal="inquiry">관리자 문의</button>
+    </div>
   </div>
 </section>
 
@@ -3883,6 +3928,15 @@ button { font: inherit; color: inherit; cursor: pointer; }
     </div>
 
     <p class="src-note">자료 출처 — 정가·구성: <a href="https://pokemoncard.co.kr/card/960" target="_blank" rel="noopener">포켓몬 카드 게임 공식 제품 정보</a> · 수록 카드: <a href="https://www.tcgheart.com/set/30th-celebration-korean" target="_blank" rel="noopener">30th Celebration 카드 목록</a> · 시세: <a href="https://kream.co.kr/search?keyword=30th%20CELEBRATION" target="_blank" rel="noopener">KREAM</a> 2026-11-17 확인(미개봉 1박스, 슈링크·논슈링크, 배송비·수수료 별도). 포켓몬카드모아는 포켓몬코리아와 무관한 비공식 정보 사이트입니다.</p>
+
+    <!-- -------------------------------------------------- 관리자 문의 안내 -->
+    <div class="inquiry-cta">
+      <div class="inquiry-cta-copy">
+        <b>도감·가이드에서 빠진 정보가 있나요?</b>
+        <span>정가·출시 일정 제보, 수록 카드·시세 오류 신고, 광고·제휴 문의를 <a href="mailto:acewoni3717@gmail.com">acewoni3717@gmail.com</a>으로 보낼 수 있습니다.</span>
+      </div>
+      <button type="button" class="btn btn-dark btn-sm" data-modal="inquiry">관리자 문의</button>
+    </div>
   </div>
 </section>
 
@@ -3919,7 +3973,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
           <li><button type="button" data-modal="about">포켓몬카드모아 소개</button></li>
           <li><button type="button" data-modal="privacy">개인정보처리방침</button></li>
           <li><button type="button" data-modal="terms">이용약관</button></li>
-          <li><button type="button" data-modal="contact">운영 문의 · 재고 제보</button></li>
+          <li><button type="button" data-modal="inquiry">관리자 문의</button></li>
+          <li><button type="button" data-modal="inquiry" data-inquiry-type="재고·매장 정보 오류">운영 문의 · 재고 제보</button></li>
           <li><a href="privacy.html">개인정보처리방침 (문서)</a></li>
           <li><a href="terms.html">이용약관 (문서)</a></li>
         </ul>
@@ -4059,7 +4114,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
     <p>이용자는 언제든지 자신이 제공한 정보의 열람·정정·삭제를 요청할 수 있습니다. 아래 문의처로 연락하면 지체 없이 처리합니다.</p>
 
     <h4>8. 문의처</h4>
-    <p>운영 문의: 사이트 내 <strong>운영 문의</strong> 양식 (배포 시 운영 이메일로 연결)</p>
+    <p>운영 문의: 사이트 상단·푸터의 <strong>관리자 문의</strong> 메뉴 또는 이메일 <a href="mailto:acewoni3717@gmail.com">acewoni3717@gmail.com</a></p>
 
     <div class="note-box">본 방침은 사이트 개편이나 관련 법령 변경에 따라 수정될 수 있으며, 변경 시 본 페이지에 게시합니다.</div>
   </div>
@@ -4100,26 +4155,31 @@ button { font: inherit; color: inherit; cursor: pointer; }
   </div>
 </template>
 
-<template id="tpl-contact">
+<template id="tpl-inquiry">
   <div class="prose">
-    <p>매장 재고 제보, 정보 오류 신고, 제휴·광고 문의를 받습니다. 재고 제보 시 <strong>매장명 · 확인 시각 · 판매 단위 · 수량</strong>을 함께 적어주시면 검수에 도움이 됩니다.</p>
-    <p class="form-note">※ 이 화면은 데모입니다. 전송 버튼을 눌러도 실제로 발송되지 않으며, 배포 시 운영 이메일과 폼 백엔드를 연결합니다.</p>
-    <form class="contact-form" id="contactForm" novalidate>
+    <p>매장 재고·정가 정보 제보, 오류 신고, 광고·제휴 문의를 받습니다. 내용을 적고 <b>메일 앱으로 보내기</b>를 누르면 운영자 메일(<a href="mailto:acewoni3717@gmail.com">acewoni3717@gmail.com</a>)로 보낼 수 있습니다. 메일 앱이 열리지 않으면 <b>운영자 이메일 복사</b>로 주소를 복사해 사용 중인 메일에서 보내주세요.</p>
+    <form class="contact-form" id="inquiryForm" novalidate>
       <label>문의 유형
-        <select id="contactType">
-          <option>재고 제보</option>
-          <option>정보 오류 신고</option>
-          <option>제휴·광고 문의</option>
+        <select id="inquiryType">
+          <option>재고·매장 정보 오류</option>
+          <option>정가·출시 일정 제보</option>
+          <option>광고·제휴 문의</option>
           <option>기타</option>
         </select>
       </label>
-      <label>이메일 (답변 받을 주소)
-        <input type="email" id="contactEmail" placeholder="you@example.com" autocomplete="email">
+      <label>제목
+        <input type="text" id="inquirySubject" maxlength="80" autocomplete="off" placeholder="예: GS25 환호공원점 재고가 없음으로 나옵니다">
       </label>
       <label>내용
-        <textarea id="contactBody" placeholder="예: GS25 ○○점 / 11-17 09:40 / 낱팩 6개 / 30th CELEBRATION"></textarea>
+        <textarea id="inquiryBody" maxlength="2000" placeholder="예: GS25 ○○점 / 11-17 09:40 / 낱팩 6개 확인 / 30th CELEBRATION"></textarea>
       </label>
-      <button type="submit" class="btn btn-dark">문의 보내기</button>
+      <p class="form-note">재고 제보는 매장명 · 확인 시각 · 판매 단위 · 수량을 함께 적어주시면 검수에 도움이 됩니다.</p>
+      <div class="inquiry-actions">
+        <button type="submit" class="btn btn-dark" id="inquiryMail">메일 앱으로 보내기</button>
+        <button type="button" class="btn btn-ghost" id="inquiryCopyEmail">운영자 이메일 복사</button>
+        <button type="button" class="btn btn-ghost" id="inquiryCopyBody">문의 내용 복사</button>
+      </div>
+      <p class="form-note">운영자 메일 <a href="mailto:acewoni3717@gmail.com">acewoni3717@gmail.com</a> · 보내주신 메일 주소로 답장을 드립니다.</p>
     </form>
   </div>
 </template>
@@ -8542,6 +8602,107 @@ window.PokeMoaMap = (function () {
   var modalClose = $("#modalClose");
   var lastFocus = null;
 
+  /* ------------------------------------------- 관리자 문의 (정적 사이트 단독 동작) */
+  /* 서버 없이도 100% 동작해야 하므로 mailto: 와 이메일·내용 복사만 쓴다.
+     회사복지모아 API(https://bokjimoa.onrender.com/api/inquiries)는 CORS가 열려 있지만
+     이 사이트는 호출하지 않는다. 나중에 연동하더라도 아래 두 경로는 그대로 남긴다. */
+  var INQUIRY_EMAIL = "acewoni3717@gmail.com";
+  var pendingInquiryType = "";
+
+  function inquiryTypeValue() {
+    var el = modalBody && modalBody.querySelector("#inquiryType");
+    return el ? el.value : "기타";
+  }
+
+  /* 메일 제목·본문 — 받는 사람이 유형·제목·내용·보낸 페이지를 바로 알 수 있게 만든다 */
+  function buildInquiryMail() {
+    var subjectEl = modalBody ? modalBody.querySelector("#inquirySubject") : null;
+    var bodyEl = modalBody ? modalBody.querySelector("#inquiryBody") : null;
+    var type = inquiryTypeValue();
+    var subject = subjectEl ? subjectEl.value.trim() : "";
+    var body = bodyEl ? bodyEl.value.trim() : "";
+    var where = (location.origin && location.origin !== "null")
+      ? location.origin + location.pathname
+      : "포켓몬카드모아";
+    return {
+      subject: "[포켓몬카드모아 관리자 문의] " + (subject || type),
+      body: [
+        "문의 유형: " + type,
+        "제목: " + (subject || "(없음)"),
+        "",
+        body,
+        "",
+        "--",
+        "보낸 곳: " + where + " (" + new Date().toLocaleString("ko-KR") + ")"
+      ].join("\n")
+    };
+  }
+
+  function copyText(text, okMsg, failMsg) {
+    function fallback() {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.top = "-1000px";
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = false;
+      try { ok = document.execCommand("copy"); } catch (err) { ok = false; }
+      document.body.removeChild(ta);
+      toast(ok ? okMsg : failMsg);
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(function () { toast(okMsg); }, fallback);
+    } else {
+      fallback();
+    }
+  }
+
+  function initInquiryForm(form) {
+    var typeEl = form.querySelector("#inquiryType");
+    var subjectEl = form.querySelector("#inquirySubject");
+    var bodyEl = form.querySelector("#inquiryBody");
+    if (typeEl && pendingInquiryType) typeEl.value = pendingInquiryType;
+    pendingInquiryType = "";
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (bodyEl && !bodyEl.value.trim()) {
+        toast("문의 내용을 적어 주세요.");
+        bodyEl.focus();
+        return;
+      }
+      var mail = buildInquiryMail();
+      trackEvent("admin_inquiry", { method: "mailto", inquiry_type: inquiryTypeValue() });
+      window.location.href = "mailto:" + INQUIRY_EMAIL +
+        "?subject=" + encodeURIComponent(mail.subject) +
+        "&body=" + encodeURIComponent(mail.body);
+      toast("메일 앱이 열립니다. 열리지 않으면 이메일 복사로 주소를 복사해 보내주세요.");
+    });
+
+    var copyEmailBtn = form.querySelector("#inquiryCopyEmail");
+    if (copyEmailBtn) {
+      copyEmailBtn.addEventListener("click", function () {
+        copyText(INQUIRY_EMAIL,
+          "운영자 이메일을 복사했습니다 · " + INQUIRY_EMAIL,
+          "복사하지 못했습니다. 메일 주소를 길게 눌러 선택해 주세요.");
+        trackEvent("admin_inquiry", { method: "copy_email", inquiry_type: inquiryTypeValue() });
+      });
+    }
+
+    var copyBodyBtn = form.querySelector("#inquiryCopyBody");
+    if (copyBodyBtn) {
+      copyBodyBtn.addEventListener("click", function () {
+        var mail = buildInquiryMail();
+        copyText("받는 사람: " + INQUIRY_EMAIL + "\n제목: " + mail.subject + "\n\n" + mail.body,
+          "문의 내용을 복사했습니다. 메일에 붙여넣어 보내주세요.",
+          "복사하지 못했습니다. 내용을 길게 눌러 선택해 주세요.");
+        trackEvent("admin_inquiry", { method: "copy_body", inquiry_type: inquiryTypeValue() });
+      });
+    }
+  }
+
   function openModalFromTemplate(key, title) {
     var tpl = document.getElementById("tpl-" + key);
     if (!tpl || !backdrop) return;
@@ -8554,25 +8715,8 @@ window.PokeMoaMap = (function () {
     modalBody.scrollTop = 0;
     setTimeout(function () { if (modalClose) modalClose.focus(); }, 20);
 
-    var form = modalBody.querySelector("#contactForm");
-    if (form) {
-      form.addEventListener("submit", function (e) {
-        e.preventDefault();
-        var email = modalBody.querySelector("#contactEmail");
-        var body = modalBody.querySelector("#contactBody");
-        if (email && email.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
-          toast("이메일 형식을 확인해 주세요.");
-          email.focus();
-          return;
-        }
-        if (body && !body.value.trim()) {
-          toast("문의 내용을 적어 주세요.");
-          body.focus();
-          return;
-        }
-        toast("데모 화면입니다 — 실제 전송은 배포 후 연결됩니다.");
-      });
-    }
+    var form = modalBody.querySelector("#inquiryForm");
+    if (form) initInquiryForm(form);
   }
 
   function openCardModal(card) {
@@ -8617,8 +8761,9 @@ window.PokeMoaMap = (function () {
         about: "포켓몬카드모아 소개",
         privacy: "개인정보처리방침",
         terms: "이용약관",
-        contact: "운영 문의 · 재고 제보"
+        inquiry: "관리자 문의"
       };
+      pendingInquiryType = btn.getAttribute("data-inquiry-type") || "";
       openModalFromTemplate(key, titles[key] || "포켓몬카드모아");
     });
   });

@@ -31,7 +31,7 @@
 <meta name="theme-color" content="#101f3c">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23101f3c'/%3E%3Crect x='7' y='7' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05'/%3E%3Crect x='17.5' y='7' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05' opacity='.7'/%3E%3Crect x='7' y='17.5' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05' opacity='.7'/%3E%3Crect x='17.5' y='17.5' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="assets/css/style.css?v=42">
+<link rel="stylesheet" href="assets/css/style.css?v=43">
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <!-- =====================================================================
@@ -120,7 +120,8 @@
 
     <div class="header-actions">
       <span class="header-date">데이터 기준 11-17</span>
-      <button type="button" class="btn btn-dark btn-sm" data-modal="contact">재고 제보</button>
+      <button type="button" class="btn btn-ghost btn-sm header-inquiry" data-modal="inquiry">관리자 문의</button>
+      <button type="button" class="btn btn-dark btn-sm" data-modal="inquiry" data-inquiry-type="재고·매장 정보 오류">재고 제보</button>
     </div>
   </div>
 </header>
@@ -470,6 +471,15 @@
         </ul>
       </div>
     </section>
+
+    <!-- -------------------------------------------------- 관리자 문의 안내 -->
+    <div class="inquiry-cta">
+      <div class="inquiry-cta-copy">
+        <b>정가·재고 정보가 실제와 다른가요?</b>
+        <span>재고·매장 정보 오류, 정가·출시 일정 제보, 광고·제휴 문의를 <a href="mailto:acewoni3717@gmail.com">acewoni3717@gmail.com</a>으로 보낼 수 있습니다.</span>
+      </div>
+      <button type="button" class="btn btn-dark btn-sm" data-modal="inquiry">관리자 문의</button>
+    </div>
   </div>
 </section>
 
@@ -974,6 +984,15 @@
     </div>
 
     <p class="src-note">자료 출처 — 정가·구성: <a href="https://pokemoncard.co.kr/card/960" target="_blank" rel="noopener">포켓몬 카드 게임 공식 제품 정보</a> · 수록 카드: <a href="https://www.tcgheart.com/set/30th-celebration-korean" target="_blank" rel="noopener">30th Celebration 카드 목록</a> · 시세: <a href="https://kream.co.kr/search?keyword=30th%20CELEBRATION" target="_blank" rel="noopener">KREAM</a> 2026-11-17 확인(미개봉 1박스, 슈링크·논슈링크, 배송비·수수료 별도). 포켓몬카드모아는 포켓몬코리아와 무관한 비공식 정보 사이트입니다.</p>
+
+    <!-- -------------------------------------------------- 관리자 문의 안내 -->
+    <div class="inquiry-cta">
+      <div class="inquiry-cta-copy">
+        <b>도감·가이드에서 빠진 정보가 있나요?</b>
+        <span>정가·출시 일정 제보, 수록 카드·시세 오류 신고, 광고·제휴 문의를 <a href="mailto:acewoni3717@gmail.com">acewoni3717@gmail.com</a>으로 보낼 수 있습니다.</span>
+      </div>
+      <button type="button" class="btn btn-dark btn-sm" data-modal="inquiry">관리자 문의</button>
+    </div>
   </div>
 </section>
 
@@ -1010,7 +1029,8 @@
           <li><button type="button" data-modal="about">포켓몬카드모아 소개</button></li>
           <li><button type="button" data-modal="privacy">개인정보처리방침</button></li>
           <li><button type="button" data-modal="terms">이용약관</button></li>
-          <li><button type="button" data-modal="contact">운영 문의 · 재고 제보</button></li>
+          <li><button type="button" data-modal="inquiry">관리자 문의</button></li>
+          <li><button type="button" data-modal="inquiry" data-inquiry-type="재고·매장 정보 오류">운영 문의 · 재고 제보</button></li>
           <li><a href="privacy.html">개인정보처리방침 (문서)</a></li>
           <li><a href="terms.html">이용약관 (문서)</a></li>
         </ul>
@@ -1150,7 +1170,7 @@
     <p>이용자는 언제든지 자신이 제공한 정보의 열람·정정·삭제를 요청할 수 있습니다. 아래 문의처로 연락하면 지체 없이 처리합니다.</p>
 
     <h4>8. 문의처</h4>
-    <p>운영 문의: 사이트 내 <strong>운영 문의</strong> 양식 (배포 시 운영 이메일로 연결)</p>
+    <p>운영 문의: 사이트 상단·푸터의 <strong>관리자 문의</strong> 메뉴 또는 이메일 <a href="mailto:acewoni3717@gmail.com">acewoni3717@gmail.com</a></p>
 
     <div class="note-box">본 방침은 사이트 개편이나 관련 법령 변경에 따라 수정될 수 있으며, 변경 시 본 페이지에 게시합니다.</div>
   </div>
@@ -1191,26 +1211,31 @@
   </div>
 </template>
 
-<template id="tpl-contact">
+<template id="tpl-inquiry">
   <div class="prose">
-    <p>매장 재고 제보, 정보 오류 신고, 제휴·광고 문의를 받습니다. 재고 제보 시 <strong>매장명 · 확인 시각 · 판매 단위 · 수량</strong>을 함께 적어주시면 검수에 도움이 됩니다.</p>
-    <p class="form-note">※ 이 화면은 데모입니다. 전송 버튼을 눌러도 실제로 발송되지 않으며, 배포 시 운영 이메일과 폼 백엔드를 연결합니다.</p>
-    <form class="contact-form" id="contactForm" novalidate>
+    <p>매장 재고·정가 정보 제보, 오류 신고, 광고·제휴 문의를 받습니다. 내용을 적고 <b>메일 앱으로 보내기</b>를 누르면 운영자 메일(<a href="mailto:acewoni3717@gmail.com">acewoni3717@gmail.com</a>)로 보낼 수 있습니다. 메일 앱이 열리지 않으면 <b>운영자 이메일 복사</b>로 주소를 복사해 사용 중인 메일에서 보내주세요.</p>
+    <form class="contact-form" id="inquiryForm" novalidate>
       <label>문의 유형
-        <select id="contactType">
-          <option>재고 제보</option>
-          <option>정보 오류 신고</option>
-          <option>제휴·광고 문의</option>
+        <select id="inquiryType">
+          <option>재고·매장 정보 오류</option>
+          <option>정가·출시 일정 제보</option>
+          <option>광고·제휴 문의</option>
           <option>기타</option>
         </select>
       </label>
-      <label>이메일 (답변 받을 주소)
-        <input type="email" id="contactEmail" placeholder="you@example.com" autocomplete="email">
+      <label>제목
+        <input type="text" id="inquirySubject" maxlength="80" autocomplete="off" placeholder="예: GS25 환호공원점 재고가 없음으로 나옵니다">
       </label>
       <label>내용
-        <textarea id="contactBody" placeholder="예: GS25 ○○점 / 11-17 09:40 / 낱팩 6개 / 30th CELEBRATION"></textarea>
+        <textarea id="inquiryBody" maxlength="2000" placeholder="예: GS25 ○○점 / 11-17 09:40 / 낱팩 6개 확인 / 30th CELEBRATION"></textarea>
       </label>
-      <button type="submit" class="btn btn-dark">문의 보내기</button>
+      <p class="form-note">재고 제보는 매장명 · 확인 시각 · 판매 단위 · 수량을 함께 적어주시면 검수에 도움이 됩니다.</p>
+      <div class="inquiry-actions">
+        <button type="submit" class="btn btn-dark" id="inquiryMail">메일 앱으로 보내기</button>
+        <button type="button" class="btn btn-ghost" id="inquiryCopyEmail">운영자 이메일 복사</button>
+        <button type="button" class="btn btn-ghost" id="inquiryCopyBody">문의 내용 복사</button>
+      </div>
+      <p class="form-note">운영자 메일 <a href="mailto:acewoni3717@gmail.com">acewoni3717@gmail.com</a> · 보내주신 메일 주소로 답장을 드립니다.</p>
     </form>
   </div>
 </template>
@@ -1226,8 +1251,8 @@
   </div>
 </template>
 
-<script src="assets/js/data.js?v=42"></script>
-<script src="assets/js/map.js?v=42"></script>
-<script src="assets/js/app.js?v=42"></script>
+<script src="assets/js/data.js?v=43"></script>
+<script src="assets/js/map.js?v=43"></script>
+<script src="assets/js/app.js?v=43"></script>
 </body>
 </html>

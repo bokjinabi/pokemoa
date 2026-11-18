@@ -22,6 +22,7 @@
 
 - **v3.8 변경(집 태블릿 실재고 중계)**: 「동네에서 찾기」 상단에 **`실시간 중계` 상태 바**(연결 안 됨 / 확인 중 / 연결됨 / 응답 없음)와 `중계 연결` 버튼을 넣었습니다. 모달에서 태블릿 중계 서버 주소를 넣으면 `/health`로 확인해 localStorage에 저장하고, `?relay=https://…` 쿼리로도 자동 연결됩니다. 연결된 동안에는 조회 지역이 바뀔 때마다 `{relay}/api/nearby?lat&lng&keyword`를 호출해 **실제 매장명·실제 카드명·실제 수량(N개)**을 지도 말풍선(`CU · 3개`)·매장 카드·목록에 `실시간 재고` 배지로 표시하고, 끊기면 기존 OSM + 제보·샘플 모드로 조용히 돌아갑니다. 서버는 `relay/server.js` 단일 파일(외부 패키지 0, 포트 3100, CORS `*`, OPTIONS 204, 체인별 8초 제한 + `Promise.allSettled` 격리 + 60초 캐시)로, 이마트24·CU·세븐일레븐 앱/웹 재고 API를 조회 전용으로 호출합니다.
 - **v4.0 변경(서비스명 `포케모아` → `포켓몬카드모아`)**: 검색에서 「포켓몬 카드」로 바로 걸리도록 서비스 이름을 `포켓몬카드모아`로 바꿨습니다. 화면에 보이는 이름(헤더·푸터 로고, `<title>`, `og:site_name`·`og:title`·`og:description`, `meta[name="description"]`·`keywords`·`author`, JSON-LD `WebSite.name`(+`alternateName` `카드모아`), FAQ 문항, 개인정보처리방침·이용약관, 중계 서버 안내 페이지)과 코드 주석·README를 모두 새 이름으로 통일했고, 영문 표기는 `POKEMON CARD MOA`(보조 표기 `PokemonCardMoa`)로 바꿨습니다. 배포 주소 `https://moa-kr.github.io/pokemoa/`, GA4 `G-LWRMBRD0X9`, 쿠팡 파트너스 위젯 `iframe` 2종(`coupa.ng/cq5BV0`, `coupa.ng/cq5DGN`), 중계 서버 동작, JS 전역 이름(`window.PokeMoaMap`·`window.POKEMOA_DATA`)은 그대로 두었습니다. 자산 버전은 `v=42`로 올렸습니다.
+- **v4.1 변경(관리자 문의 메뉴)**: 헤더 우측 `재고 제보` 옆, 푸터 `운영·정책`, 그리고 「정가 구매처」·「도감·가이드」 탭 하단 안내 카드에 **`관리자 문의`** 진입점을 넣었습니다. 모달에서 **문의 유형**(재고·매장 정보 오류 / 정가·출시 일정 제보 / 광고·제휴 문의 / 기타) · **제목** · **내용**을 적고 **`메일 앱으로 보내기`**(`mailto:acewoni3717@gmail.com`, 제목·본문에 유형·제목·내용·보낸 페이지·시각을 담아 전송) 또는 **`운영자 이메일 복사`**(`acewoni3717@gmail.com`, `navigator.clipboard` 실패 시 `execCommand` 대체), **`문의 내용 복사`**를 쓸 수 있어 **정적 사이트 단독으로 100% 동작**합니다. 회사복지모아 서버(`https://bokjimoa.onrender.com/api/inquiries`)는 CORS가 열려 있어도 호출하지 않으며, 나중에 연동해도 위 두 경로는 그대로 둡니다. 기존 `재고 제보`는 같은 모달을 유형 `재고·매장 정보 오류`로 미리 골라 엽니다(데모 전송 안내 문구 삭제). 모바일 390px 헤더는 56px 한 줄 유지(버튼 패딩·글자 축소), 320px급에서는 헤더 버튼을 숨기고 푸터·탭 하단 카드로 진입합니다. 자산 버전은 `v=43`으로 올렸습니다.
 
 > 타일 참고: 브리프의 CARTO Positron(`basemaps.cartocdn.com/light_all`)은 2026-11 확인 시 **API 키가 없으면 `API KEY REQUIRED` 워터마크 타일**이 내려와 쓸 수 없었습니다. 그래서 OSM 표준 타일에 저채도·밝기 필터를 걸어 Positron과 같은 라이트 느낌을 냈고(한국어 지명 그대로), 타일 서버가 막히면 OSM 독일 미러로 자동 대체합니다.
 
@@ -128,12 +129,12 @@ pokemoa/
 - AdSense 슬롯 6곳: `home-top-banner`, `home-infeed-1`, `map-bottom`, `schedule-bottom`,
   `guide-bottom`, `mobile-sticky` — 점선 플레이스홀더 + `data-ad-slot` 속성
 - 쿠팡 파트너스 슬롯 2곳(대가성 문구 포함) — 둘 다 **같은 2열 위젯 카드**로 통일(v3.7): 「도감·가이드」 하단 `coupang-supplies`(`coupang-widget-1` = `https://coupa.ng/cq5BV0` / `coupang-widget-2` = `https://coupa.ng/cq5DGN`)와 「정가 구매처」 중간 `coupang-30th`(`coupang-30th-widget-1` / `-2`, 같은 위젯 코드) — 각 120×240, `flex-wrap:nowrap`·`gap:12px`, 모바일 390px에서도 한 줄
-- 푸터 모달: 소개 / 개인정보처리방침 / 이용약관 / 운영 문의(재고 제보 폼)
+- 푸터 모달: 소개 / 개인정보처리방침 / 이용약관 / 관리자 문의(메일 보내기·이메일 복사)
 - **Google Analytics 4**: `G-LWRMBRD0X9` — `index.html`·`privacy.html`·`terms.html` `<head>`에 gtag 스니펫, `assets/js/app.js`의 `trackEvent()` 래퍼로 주요 행동 이벤트를 전송(v3.9)
   - `tab_view`(`tab`, `entry`: initial/switch) · `region_search`(`region`, `region_name`, `radius_km`)
   - `store_outbound_click`(`store_name`, `url`) · `dex_set_select`(`set_id`) · `dex_expand`(`expanded`) · `faq_expand`(`expanded`)
   - `affiliate_interact`(`slot`, `action`: click/focus — iframe 내부 클릭은 cross-origin이라 감지하지 못하므로 카드·슬롯 상자의 클릭·포커스만 집계)
-  - `relay_connect`(`status`: online/error)
+  - `relay_connect`(`status`: online/error) · `admin_inquiry`(`method`: mailto/copy_email/copy_body, `inquiry_type`)
   - 측정 ID를 바꾸려면 HTML 3개 파일의 gtag 스니펫 `id=`와 `gtag('config', …)` 두 곳만 교체하면 됩니다.
 - `privacy.html`, `terms.html` 단독 문서, `sitemap.xml`, `robots.txt`, OG/Twitter/JSON-LD(WebSite·FAQPage)
 
@@ -183,8 +184,10 @@ cloudflared tunnel --url http://127.0.0.1:3100   # 출력된 https://….tryclou
    각 슬롯 자리에 `<ins class="adsbygoogle" data-ad-client="ca-pub-…" data-ad-slot="…">` 삽입
 3. **쿠팡 파트너스**: 도감·가이드(`data-affiliate-card="coupang-supplies"`)와 정가 구매처(`data-affiliate-card="coupang-30th"`) 모두 **쿠팡 파트너스가 발급한 위젯 iframe 2개**로 구성되어 있습니다(`https://coupa.ng/cq5BV0` · `https://coupa.ng/cq5DGN`, 각 120×240, `data-affiliate-slot="…-widget-1/2"`) — 배너 상품을 바꾸려면 파트너스에서 새 위젯 코드를 받아
    `index.html`의 해당 `.affiliate-slot` 안 iframe `src`만 바꾸면 됩니다(이미지·상품명·링크는 쿠팡이 내려줍니다). 카드 본문에는 **가격을 표기하지 않습니다**(v3.5) — 배너 안의 가격은 쿠팡 위젯이 실시간으로 표시합니다.
-4. **운영 문의**: `tpl-contact`의 폼을 실제 폼 백엔드(Formspree·Google Forms 등)나 메일 주소로 연결,
-   `privacy.html` 문의처에 운영 이메일 기입
+4. **관리자 문의**: `tpl-inquiry`의 폼은 서버 없이 `mailto:acewoni3717@gmail.com` + 이메일·내용 복사로 동작합니다(v4.1).
+   폼 백엔드(Formspree·Google Forms·`/api/inquiries` 등)를 붙이려면 `assets/js/app.js`의 `initInquiryForm()` 제출 핸들러에
+   호출을 더하고, `mailto:`·복사 버튼은 실패 대비로 남겨 두세요. 문의처 이메일은 `index.html`(`INQUIRY_EMAIL` 값·모달·푸터)과
+   `privacy.html`에 함께 적혀 있습니다.
 5. **실데이터**: 매장 위치는 Overpass API 실시간 조회 + `assets/js/data.js`의 `osmSnapshot`(2026-11-17 스냅샷)을 사용합니다.
    스냅샷은 `python3` 스크립트로 Overpass 응답을 다시 받아 갱신하면 됩니다. 재고 상태는 아직 샘플(`sampleStatus`)이므로
    편의점 앱 재고 API 또는 이용자 제보 DB로 교체하고, 관측 시각·상태를 서버에서 내려주세요.

@@ -1419,6 +1419,107 @@
   var modalClose = $("#modalClose");
   var lastFocus = null;
 
+  /* ------------------------------------------- 관리자 문의 (정적 사이트 단독 동작) */
+  /* 서버 없이도 100% 동작해야 하므로 mailto: 와 이메일·내용 복사만 쓴다.
+     회사복지모아 API(https://bokjimoa.onrender.com/api/inquiries)는 CORS가 열려 있지만
+     이 사이트는 호출하지 않는다. 나중에 연동하더라도 아래 두 경로는 그대로 남긴다. */
+  var INQUIRY_EMAIL = "acewoni3717@gmail.com";
+  var pendingInquiryType = "";
+
+  function inquiryTypeValue() {
+    var el = modalBody && modalBody.querySelector("#inquiryType");
+    return el ? el.value : "기타";
+  }
+
+  /* 메일 제목·본문 — 받는 사람이 유형·제목·내용·보낸 페이지를 바로 알 수 있게 만든다 */
+  function buildInquiryMail() {
+    var subjectEl = modalBody ? modalBody.querySelector("#inquirySubject") : null;
+    var bodyEl = modalBody ? modalBody.querySelector("#inquiryBody") : null;
+    var type = inquiryTypeValue();
+    var subject = subjectEl ? subjectEl.value.trim() : "";
+    var body = bodyEl ? bodyEl.value.trim() : "";
+    var where = (location.origin && location.origin !== "null")
+      ? location.origin + location.pathname
+      : "포켓몬카드모아";
+    return {
+      subject: "[포켓몬카드모아 관리자 문의] " + (subject || type),
+      body: [
+        "문의 유형: " + type,
+        "제목: " + (subject || "(없음)"),
+        "",
+        body,
+        "",
+        "--",
+        "보낸 곳: " + where + " (" + new Date().toLocaleString("ko-KR") + ")"
+      ].join("\n")
+    };
+  }
+
+  function copyText(text, okMsg, failMsg) {
+    function fallback() {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.top = "-1000px";
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = false;
+      try { ok = document.execCommand("copy"); } catch (err) { ok = false; }
+      document.body.removeChild(ta);
+      toast(ok ? okMsg : failMsg);
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(function () { toast(okMsg); }, fallback);
+    } else {
+      fallback();
+    }
+  }
+
+  function initInquiryForm(form) {
+    var typeEl = form.querySelector("#inquiryType");
+    var subjectEl = form.querySelector("#inquirySubject");
+    var bodyEl = form.querySelector("#inquiryBody");
+    if (typeEl && pendingInquiryType) typeEl.value = pendingInquiryType;
+    pendingInquiryType = "";
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (bodyEl && !bodyEl.value.trim()) {
+        toast("문의 내용을 적어 주세요.");
+        bodyEl.focus();
+        return;
+      }
+      var mail = buildInquiryMail();
+      trackEvent("admin_inquiry", { method: "mailto", inquiry_type: inquiryTypeValue() });
+      window.location.href = "mailto:" + INQUIRY_EMAIL +
+        "?subject=" + encodeURIComponent(mail.subject) +
+        "&body=" + encodeURIComponent(mail.body);
+      toast("메일 앱이 열립니다. 열리지 않으면 이메일 복사로 주소를 복사해 보내주세요.");
+    });
+
+    var copyEmailBtn = form.querySelector("#inquiryCopyEmail");
+    if (copyEmailBtn) {
+      copyEmailBtn.addEventListener("click", function () {
+        copyText(INQUIRY_EMAIL,
+          "운영자 이메일을 복사했습니다 · " + INQUIRY_EMAIL,
+          "복사하지 못했습니다. 메일 주소를 길게 눌러 선택해 주세요.");
+        trackEvent("admin_inquiry", { method: "copy_email", inquiry_type: inquiryTypeValue() });
+      });
+    }
+
+    var copyBodyBtn = form.querySelector("#inquiryCopyBody");
+    if (copyBodyBtn) {
+      copyBodyBtn.addEventListener("click", function () {
+        var mail = buildInquiryMail();
+        copyText("받는 사람: " + INQUIRY_EMAIL + "\n제목: " + mail.subject + "\n\n" + mail.body,
+          "문의 내용을 복사했습니다. 메일에 붙여넣어 보내주세요.",
+          "복사하지 못했습니다. 내용을 길게 눌러 선택해 주세요.");
+        trackEvent("admin_inquiry", { method: "copy_body", inquiry_type: inquiryTypeValue() });
+      });
+    }
+  }
+
   function openModalFromTemplate(key, title) {
     var tpl = document.getElementById("tpl-" + key);
     if (!tpl || !backdrop) return;
@@ -1431,25 +1532,8 @@
     modalBody.scrollTop = 0;
     setTimeout(function () { if (modalClose) modalClose.focus(); }, 20);
 
-    var form = modalBody.querySelector("#contactForm");
-    if (form) {
-      form.addEventListener("submit", function (e) {
-        e.preventDefault();
-        var email = modalBody.querySelector("#contactEmail");
-        var body = modalBody.querySelector("#contactBody");
-        if (email && email.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
-          toast("이메일 형식을 확인해 주세요.");
-          email.focus();
-          return;
-        }
-        if (body && !body.value.trim()) {
-          toast("문의 내용을 적어 주세요.");
-          body.focus();
-          return;
-        }
-        toast("데모 화면입니다 — 실제 전송은 배포 후 연결됩니다.");
-      });
-    }
+    var form = modalBody.querySelector("#inquiryForm");
+    if (form) initInquiryForm(form);
   }
 
   function openCardModal(card) {
@@ -1494,8 +1578,9 @@
         about: "포켓몬카드모아 소개",
         privacy: "개인정보처리방침",
         terms: "이용약관",
-        contact: "운영 문의 · 재고 제보"
+        inquiry: "관리자 문의"
       };
+      pendingInquiryType = btn.getAttribute("data-inquiry-type") || "";
       openModalFromTemplate(key, titles[key] || "포켓몬카드모아");
     });
   });
