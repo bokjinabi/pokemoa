@@ -3522,3 +3522,81 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
   }
   .store-more-wrap { padding: 2px 8px 12px; }
 }
+
+/* ============================================================
+   v4.10 — 5탭 재편: 일정·소식(서브탭) / 도감·시세(세트 검색) / 팝수 조회
+   ============================================================ */
+.sub-tabs { display: flex; gap: 8px; margin: 4px 0 16px; }
+.sub-tab {
+  flex: 0 0 auto;
+  padding: 9px 15px;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  font: inherit; font-size: 12.5px; font-weight: 800; letter-spacing: -0.02em;
+  color: var(--ink-2); cursor: pointer;
+}
+.sub-tab:hover { border-color: var(--navy); }
+.sub-tab.is-active { background: var(--navy); border-color: var(--navy); color: #fff; }
+.subtab-body[hidden] { display: none; }
+
+.pop-company { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-bottom: 14px; }
+.pop-company-btn {
+  padding: 11px 4px;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  font: inherit; font-size: 13px; font-weight: 900; letter-spacing: 0.02em;
+  color: var(--ink-2); cursor: pointer;
+}
+.pop-company-btn:hover { border-color: var(--navy); }
+.pop-company-btn.is-active { background: var(--navy); border-color: var(--navy); color: var(--yellow); }
+.pop-hint { margin: 8px 0 0; font-size: 11.5px; color: var(--muted); line-height: 1.6; }
+.pop-query-line { margin: 0 0 8px; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 13px; color: var(--ink); }
+.pop-kind { padding: 2px 8px; border-radius: 999px; background: var(--paper); border: 1px solid var(--line); font-size: 10.5px; font-weight: 800; color: var(--muted); }
+.pop-match { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+.pop-match-name { font-size: 13.5px; font-weight: 800; }
+.pop-match-meta { font-size: 11.5px; color: var(--muted); }
+
+.set-search { margin: 14px 0 10px; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: #fff; box-shadow: var(--shadow-sm); }
+.set-search-label { display: block; margin-bottom: 6px; font-size: 11.5px; font-weight: 800; color: var(--muted); }
+.set-search-row { display: flex; gap: 8px; }
+.set-search-input {
+  flex: 1; min-width: 0;
+  padding: 12px 14px;
+  border: 1.5px solid var(--line); border-radius: 12px;
+  background: var(--paper); color: var(--ink);
+  font: inherit; font-size: 15px;
+}
+.set-search-input:focus { outline: none; border-color: var(--navy); background: #fff; }
+.set-search-hint { margin: 8px 0 0; font-size: 11.5px; color: var(--muted); line-height: 1.6; }
+.set-search-result { display: grid; gap: 10px; margin-bottom: 14px; }
+.set-search-result:empty { display: none; }
+.set-search-empty { margin: 0; padding: 12px; border: 1px dashed var(--line); border-radius: 12px; background: var(--paper); font-size: 12.5px; color: var(--muted); }
+.set-search-card { padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: #fff; }
+.ssc-head { display: flex; flex-direction: column; gap: 2px; margin-bottom: 10px; }
+.ssc-code { font-size: 10.5px; font-weight: 800; color: var(--muted); letter-spacing: 0.04em; }
+.ssc-head h3 { margin: 0; font-size: 16px; letter-spacing: -0.02em; }
+.ssc-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin: 0 0 10px; }
+.ssc-grid > div { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: 10px; background: var(--paper); }
+.ssc-grid dt { font-size: 10.5px; font-weight: 800; color: var(--muted); }
+.ssc-grid dd { margin: 0; font-size: 12.5px; font-weight: 700; color: var(--ink); }
+.set-resell-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.set-resell-links a {
+  padding: 7px 11px;
+  border: 1px solid var(--line); border-radius: 999px;
+  background: var(--paper);
+  font-size: 11.5px; font-weight: 800; color: var(--ink-2); text-decoration: none;
+}
+.set-resell-links a:hover { border-color: var(--navy); background: #fff; color: var(--navy); }
+.ssc-actions { margin-top: 10px; }
+
+@media (min-width: 720px) {
+  .ssc-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 679px) {
+  .pop-company { gap: 5px; }
+  .pop-company-btn { padding: 10px 2px; font-size: 12px; }
+  .sub-tab { padding: 8px 12px; font-size: 12px; }
+  .set-search { padding: 12px; }
+}

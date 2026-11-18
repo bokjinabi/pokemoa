@@ -37,7 +37,7 @@
 <meta name="twitter:image:alt" content="포켓몬카드모아 — 내 주변 편의점 재고 · 인기 카드 시세 · 도감">
 <meta name="theme-color" content="#101f3c">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23101f3c'/%3E%3Crect x='7' y='7' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05'/%3E%3Crect x='17.5' y='7' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05' opacity='.7'/%3E%3Crect x='7' y='17.5' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05' opacity='.7'/%3E%3Crect x='17.5' y='17.5' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="assets/css/style.css?v=75">
+<link rel="stylesheet" href="assets/css/style.css?v=76">
 <!-- 카카오맵 JavaScript SDK — autoload=false로 불러 두고 map.js가 kakao.maps.load()로 초기화합니다.
      JavaScript 키 도메인에는 https://moa-kr.github.io 만 등록되어 있어, 그 밖의 주소(미등록 프리뷰)에서는
      지도 대신 내장 좌표 스냅샷 안내가 표시됩니다. -->
@@ -120,15 +120,15 @@
       </button>
       <button type="button" class="nav-btn" data-tab="schedule">
         <span class="nav-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/></svg></span>
-        일정·입고
+        일정·소식
       </button>
       <button type="button" class="nav-btn" data-tab="guide">
         <span class="nav-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v18H6a2 2 0 0 1-2-2z"/><path d="M8 3v18"/></svg></span>
-        도감·가이드
+        도감·시세
       </button>
       <button type="button" class="nav-btn" data-tab="trends">
         <span class="nav-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 4 8-8"/><path d="M16 8h4v4"/></svg></span>
-        시세·팝수
+        팝수 조회
       </button>
     </nav>
 
@@ -511,27 +511,6 @@
       <small class="affiliate-disclosure">이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</small>
     </div>
 
-    <!-- --------------------------------------------------- 최근 입고 소식 -->
-    <section class="section" aria-labelledby="recent-title">
-      <div class="section-head">
-        <div>
-          <span class="eyebrow">최근 입고 타임라인</span>
-          <h2 id="recent-title">오늘 올라온 입고 제보</h2>
-          <p>아래 기록은 화면 구성을 위한 <b>샘플 데이터</b>입니다. 실서비스에서는 이용자 제보와 편의점 앱 조회 결과가 이 자리에 쌓입니다.</p>
-        </div>
-        <a class="head-link" href="#schedule" data-tab="schedule">일정·입고 전체 보기 →</a>
-      </div>
-      <div class="panel-card">
-        <ul class="stock-feed">
-          <li><span class="when">11-17 09:40</span><span><span class="where">GS25 환호공원점</span><span class="what">30th 낱팩 6개 확인 · 포항 북구</span></span><span class="type in">재고</span></li>
-          <li><span class="when">11-17 09:15</span><span><span class="where">세븐일레븐 포항해맞이점</span><span class="what">재고 0개 확인 · 포항 북구</span></span><span class="type none">없음</span></li>
-          <li><span class="when">11-16 18:20</span><span><span class="where">CU 포항양덕점</span><span class="what">30th 낱팩 입고 제보 · 포항 북구</span></span><span class="type in">재고</span></li>
-          <li><span class="when">11-16 14:05</span><span><span class="where">이마트24 포항양덕점</span><span class="what">30th 낱팩 품절 · 포항 북구</span></span><span class="type none">없음</span></li>
-          <li><span class="when">11-16 11:30</span><span><span class="where">카드샵 포항TCG</span><span class="what">박스 1인 1박스 제한 · 포항 북구</span></span><span class="type check">확인</span></li>
-        </ul>
-      </div>
-    </section>
-
     <!-- -------------------------------------------------- 관리자 문의 안내 -->
     <div class="inquiry-cta">
       <div class="inquiry-cta-copy">
@@ -699,10 +678,10 @@
 
     <div class="status-guide">
       <div><b>재고 있음</b>1개 이상으로 제보된 상태입니다. 방문 전 매장에 확인하세요.</div>
-      <div><b>매장 확인 필요</b>수량을 받지 못했거나 전산 확인이 안 된 상태입니다. '재고 없음'과 다릅니다.</div>
+      <div><b>매장 확인 필요</b>수량을 받지 못했거나 전산 확인이 안 된 상태입니다.</div>
       <div><b>재고 없음</b>조회 결과 0으로 확인된 상태입니다. 아직 입고 전일 수도 있습니다.</div>
-      <div><b>보유 카드 표시</b>매장 카드와 지도 말풍선의 태그는 그 매장이 보유·취급한 상품명과 상태(입고·소량·확인 필요·품절·미입고)입니다. 매장별로 어떤 카드가 있는지 바로 보이도록 정리했고, 이 값도 제보·샘플 기반입니다.</div>
-      <div><b>오프라인 판매처</b>대형마트·아트박스는 카카오 장소 검색으로 위치만 표시하고, 공식 자판기(포켓몬코리아 자판기 안내, 176곳)·공인 카드샵(16곳)은 공식 목록의 설치 장소를 옮겨 온 것입니다. <b>재고는 어떤 채널도 공개하지 않아</b> 임의로 표시하지 않고 <b>확인 필요(방문·매장 문의)</b>·<b>공식 설치 지점</b>으로만 구분합니다.</div>
+      <div><b>보유 카드 표시</b>매장 카드와 지도 말풍선의 태그는 그 매장이 보유·취급한 상품명과 상태(입고·소량·확인 필요·품절·미입고)입니다.</div>
+      <div><b>오프라인 판매처</b>대형마트·아트박스는 카카오 장소 검색으로 위치만 표시하고, 공식 자판기(포켓몬코리아 자판기 안내, 176곳)·공인 카드샵(16곳)은 공식 목록의 설치 장소를 옮겨 온 것입니다.</div>
     </div>
 
     <h3 class="mt-24" style="font-size:15px;margin-bottom:10px;">실제 재고를 확인하는 공식 채널</h3>
@@ -728,14 +707,21 @@
   </div>
 </section>
 
-<!-- ========================================================== 일정·입고 탭 -->
+<!-- ========================================================== 일정·소식 탭 -->
 <section class="tab-panel" id="panel-schedule" aria-labelledby="schedule-title" hidden>
   <div class="wrap">
     <div class="map-page-head">
-      <span class="eyebrow">일정 · 입고 기록</span>
-      <h1 id="schedule-title">추첨 이력과 매장별 입고 패턴</h1>
-      <p>포켓몬스토어 추첨은 회차마다 응모·발표·결제·배송 날짜가 따로 있습니다. 지난 일정을 그대로 참고하되, 새 공지가 나오면 날짜를 다시 확인하세요.</p>
+      <span class="eyebrow">일정 · 소식</span>
+      <h1 id="schedule-title">발매·재입고 일정과 카드 소식</h1>
+      <p>포켓몬스토어 추첨은 회차마다 응모·발표·결제·배송 날짜가 따로 있습니다. 아래 <b>발매·재입고 일정</b>에서 예정·종료 일정을 보고, <b>카드 뉴스·소식</b>에서 공식 공지와 신규팩 발매 소식을 함께 확인하세요.</p>
     </div>
+
+    <div class="sub-tabs" role="tablist" aria-label="일정·소식 구분">
+      <button type="button" class="sub-tab is-active" id="subtabBtnCal" data-subtab="cal" role="tab" aria-selected="true" aria-controls="subtabCal">발매·재입고 일정</button>
+      <button type="button" class="sub-tab" id="subtabBtnNews" data-subtab="news" role="tab" aria-selected="false" aria-controls="subtabNews">카드 뉴스·소식</button>
+    </div>
+
+    <div class="subtab-body" id="subtabCal" role="tabpanel" aria-labelledby="subtabBtnCal">
 
     <div class="split-2">
       <div class="panel-card">
@@ -843,19 +829,42 @@
       </table>
     </div>
 
-    <div class="panel-card mt-16">
-      <h3>최근 입고 타임라인</h3>
-      <p class="panel-sub">샘플 데이터 · 실서비스에서는 이용자 제보와 앱 조회 결과가 쌓입니다.</p>
-      <ul class="stock-feed">
-        <li><span class="when">11-17 09:40</span><span><span class="where">GS25 환호공원점</span><span class="what">30th 낱팩 6개 확인 · 포항 북구</span></span><span class="type in">재고</span></li>
-        <li><span class="when">11-17 09:15</span><span><span class="where">세븐일레븐 포항해맞이점</span><span class="what">재고 0개 확인 · 포항 북구</span></span><span class="type none">없음</span></li>
-        <li><span class="when">11-16 18:20</span><span><span class="where">CU 포항양덕점</span><span class="what">30th 낱팩 입고 제보 · 포항 북구</span></span><span class="type in">재고</span></li>
-        <li><span class="when">11-16 14:05</span><span><span class="where">이마트24 포항양덕점</span><span class="what">30th 낱팩 품절 · 포항 북구</span></span><span class="type none">없음</span></li>
-        <li><span class="when">11-16 11:30</span><span><span class="where">카드샵 포항TCG</span><span class="what">박스 1인 1박스 제한 · 포항 북구</span></span><span class="type check">확인</span></li>
-        <li><span class="when">11-15 16:10</span><span><span class="where">롯데마트 포항점 자판기</span><span class="what">낱팩 일부 남음(확인 필요) · 포항 북구</span></span><span class="type check">확인</span></li>
-      </ul>
     </div>
 
+    <div class="subtab-body" id="subtabNews" role="tabpanel" aria-labelledby="subtabBtnNews" hidden>
+      <div class="section-head mt-8">
+        <div>
+          <span class="eyebrow">카드 뉴스 · 신규팩</span>
+          <h2>공식 공지와 신규팩 발매 소식</h2>
+          <p>공식 공지·보도로 확인한 카드 게임 소식과, 공식 제품 정보에서 확인한 발매·발매 예정 상품입니다.</p>
+        </div>
+        <a class="head-link" href="https://www.pokemonkorea.co.kr/" target="_blank" rel="noopener">포켓몬코리아 소식 ↗</a>
+      </div>
+<section class="section" id="issueSection" aria-labelledby="issues-title">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">최근 이슈되는 카드 이슈</span>
+          <h2 id="issues-title">2026년 11월 카드 게임 소식</h2>
+          <p>공식 공지와 보도로 확인한 6건입니다. 날짜는 공지·보도 기준이고, 링크는 원문으로 바로 갑니다.</p>
+        </div>
+        <a class="head-link" href="https://www.pokemonkorea.co.kr/" target="_blank" rel="noopener">포켓몬코리아 소식 ↗</a>
+      </div>
+      <ol class="issue-list" id="issueList"></ol>
+    </section>
+
+<section class="section" id="releaseSection" aria-labelledby="releases-title">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">신규 팩 발매 소식</span>
+          <h2 id="releases-title">공식 사이트에서 확인한 발매·발매 예정</h2>
+          <p>포켓몬 카드 게임 공식 제품 정보(pokemoncard.co.kr)의 발매일·정가·구성입니다. 한국판 일정이 없는 상품은 '해외'로 표시했습니다.</p>
+        </div>
+        <a class="head-link" href="https://pokemoncard.co.kr/card" target="_blank" rel="noopener">공식 제품 목록 ↗</a>
+      </div>
+      <div class="release-grid" id="releaseGrid"></div>
+    </section>
+    </div>
+    
     <div class="ad-slot is-banner" data-ad-slot="schedule-bottom" aria-hidden="true">
       <span class="ad-label">AD</span>
       <span class="ad-title">Google AdSense 광고 영역</span>
@@ -866,14 +875,25 @@
   </div>
 </section>
 
-<!-- ========================================================= 도감·가이드 탭 -->
+<!-- ========================================================= 도감·시세 탭 -->
 <section class="tab-panel" id="panel-guide" aria-labelledby="guide-title" hidden>
   <div class="wrap">
     <div class="map-page-head">
-      <span class="eyebrow">도감 · 정가 가이드</span>
-      <h1 id="guide-title">세트별 정가와 리셀 기준</h1>
-      <p>포켓몬카드모아에 수록된 확장팩을 세트별로 골라 정가·구성·KREAM 시세와 수록 카드 도감을 봅니다. 세트마다 팩 수와 정가가 달라 팩당 단가로 비교해야 합니다. 시세는 2026-11-17 KREAM 한글판 1박스 즉시구매 최저가 기준입니다.</p>
+      <span class="eyebrow">도감 · 시세</span>
+      <h1 id="guide-title">세트별 정가와 리셀 시세 검색</h1>
+      <p>세트·박스 이름으로 검색하면 그 세트의 <b>공식 정가(팩·박스)</b>와 <b>리셀 시세 검색 바로가기(KREAM · 번개장터 · PriceCharting)</b>가 함께 나옵니다. 아래 세트 칩으로 골라 수록 카드 도감과 정가·리셀 비교표를 볼 수도 있습니다.</p>
     </div>
+
+    <form class="set-search" id="setSearchForm" role="search" aria-label="세트·박스 이름 검색">
+      <label class="set-search-label" for="setSearch">세트·박스 이름 검색</label>
+      <div class="set-search-row">
+        <input type="search" id="setSearch" class="set-search-input" placeholder="예: 30th CELEBRATION, 어비스아이, 블랙볼트"
+               autocomplete="off" spellcheck="false" enterkeyhint="search">
+        <button type="submit" class="btn btn-dark" id="setSearchBtn">검색</button>
+      </div>
+      <p class="set-search-hint" id="setSearchHint">세트 이름의 일부만 넣어도 됩니다. 결과에서 정가와 리셀 시세를 바로 확인하세요.</p>
+    </form>
+    <div class="set-search-result" id="setSearchResult" aria-live="polite"></div>
 
     <div class="set-picker" id="setPicker" role="tablist" aria-label="세트 선택"></div>
 
@@ -1059,7 +1079,7 @@
     <!-- -------------------------------------------------- 관리자 문의 안내 -->
     <div class="inquiry-cta">
       <div class="inquiry-cta-copy">
-        <b>도감·가이드에서 빠진 정보가 있나요?</b>
+        <b>도감·시세에서 빠진 정보가 있나요?</b>
         <span>정가·출시 일정 제보, 수록 카드·시세 오류 신고, 광고·제휴 문의를 <a href="mailto:acewoni3717@gmail.com">acewoni3717@gmail.com</a>으로 보낼 수 있습니다.</span>
       </div>
       <button type="button" class="btn btn-dark btn-sm" data-modal="inquiry">관리자 문의</button>
@@ -1071,108 +1091,36 @@
 <section class="tab-panel" id="panel-trends" aria-labelledby="trends-title" hidden>
   <div class="wrap">
     <div class="map-page-head">
-      <span class="eyebrow">시세 · 이슈 · 신규팩 · 팝수</span>
-      <h1 id="trends-title">오늘 오른 카드와 팝 리포트</h1>
-      <p>KREAM 한글판 최근 체결로 본 오늘의 시세, 2026년 11월 카드 이슈와 공식 발매 소식, 카드 번호로 찾는 PSA·BRG 팝수를 한 탭에 모았습니다. 확인한 값만 적고 <b>확인 날짜와 출처</b>를 함께 표시하며, 확인되지 않은 등락률은 만들지 않습니다.</p>
-      <div class="trend-stats" id="trendStats" aria-live="polite"></div>
+      <span class="eyebrow">팝수 조회</span>
+      <h1 id="trends-title">등급 회사를 고르고 인증서·카드 번호로 조회</h1>
+      <p><b>PSA · CGC · BRG · BGS</b> 가운데 회사를 먼저 고른 뒤 등급카드 넘버(인증서 번호 또는 카드 번호)를 넣으면, 번호를 복사해 그 회사의 팝 리포트·인증서 조회 페이지로 바로 넘겨 줍니다. 팝수는 회사별로 따로 집계되므로 보고 싶은 회사를 먼저 골라야 합니다.</p>
     </div>
-  </div>
 
-  <!-- --------------------------------------------------- 오늘 상승률 -->
-  <div class="wrap">
-    <section class="section" id="moversSection" aria-labelledby="movers-title">
-      <div class="section-head">
-        <div>
-          <span class="eyebrow">오늘 상승률 높은 카드</span>
-          <h2 id="movers-title">KREAM에서 오늘 값이 오른 카드</h2>
-          <p>KREAM 한글판 단품의 <b>같은 옵션(등급 없음 A)</b> 최근 체결 2건을 비교했습니다. 등급·언어가 섞인 체결은 등락률을 만들지 않고 표에 그대로 적었습니다.</p>
-        </div>
-        <a class="head-link" id="kreamLiveLink" href="https://kream.co.kr/content/17991" target="_blank" rel="noopener">KREAM 실시간 시세 ↗</a>
-      </div>
-
-      <div class="mover-grid" id="moverGrid"></div>
-      <noscript><p class="src-note">시세 카드는 자바스크립트로 그립니다. 아래 표와 출처 링크는 그대로 볼 수 있습니다.</p></noscript>
-
-      <div class="panel-card kream-board">
-        <div class="kream-board-head">
-          <div>
-            <h3>KREAM 최근 체결 전체</h3>
-            <p class="panel-sub" id="kreamBoardSub">2026-11-18 19:10 확인 · 한글판 · 비로그인 공개 내역 · 수수료·배송비 별도</p>
-          </div>
-          <span class="chip chip-line" id="kreamRelayBadge">정적 데이터</span>
-        </div>
-        <div class="table-scroll">
-          <table class="compare-table kream-table">
-            <thead>
-              <tr>
-                <th>카드</th>
-                <th class="num">최근 체결</th>
-                <th class="num">직전 체결</th>
-                <th class="num">같은 옵션 등락</th>
-                <th class="num">누적 거래</th>
-                <th>KREAM 표시 등락</th>
-              </tr>
-            </thead>
-            <tbody id="kreamTableBody"></tbody>
-          </table>
-        </div>
-        <p class="src-note mt-8" id="kreamNote">KREAM은 같은 카드라도 등급·언어 옵션별로 체결가가 따로 쌓입니다. 표시 등락은 KREAM 페이지가 '직전 거래 대비'로 보여 주는 값이라 등급이 다른 체결과 비교될 수 있어, 같은 옵션끼리 비교한 값과 나눠 적었습니다.</p>
-      </div>
-    </section>
-
-    <!-- ------------------------------------------------------- 카드 이슈 -->
-    <section class="section" id="issueSection" aria-labelledby="issues-title">
-      <div class="section-head">
-        <div>
-          <span class="eyebrow">최근 이슈되는 카드 이슈</span>
-          <h2 id="issues-title">2026년 11월 카드 게임 소식</h2>
-          <p>공식 공지와 보도로 확인한 6건입니다. 날짜는 공지·보도 기준이고, 링크는 원문으로 바로 갑니다.</p>
-        </div>
-        <a class="head-link" href="https://www.pokemonkorea.co.kr/" target="_blank" rel="noopener">포켓몬코리아 소식 ↗</a>
-      </div>
-      <ol class="issue-list" id="issueList"></ol>
-    </section>
-
-    <!-- ------------------------------------------------- 신규 팩 발매 -->
-    <section class="section" id="releaseSection" aria-labelledby="releases-title">
-      <div class="section-head">
-        <div>
-          <span class="eyebrow">신규 팩 발매 소식</span>
-          <h2 id="releases-title">공식 사이트에서 확인한 발매·발매 예정</h2>
-          <p>포켓몬 카드 게임 공식 제품 정보(pokemoncard.co.kr)의 발매일·정가·구성입니다. 한국판 일정이 없는 상품은 '해외'로 표시했습니다.</p>
-        </div>
-        <a class="head-link" href="https://pokemoncard.co.kr/card" target="_blank" rel="noopener">공식 제품 목록 ↗</a>
-      </div>
-      <div class="release-grid" id="releaseGrid"></div>
-    </section>
-
-    <!-- ------------------------------------------------- 팝수 조회 -->
     <section class="section" id="popSection" aria-labelledby="pop-title">
-      <div class="section-head">
-        <div>
-          <span class="eyebrow">번호·카드명으로 팝수 조회</span>
-          <h2 id="pop-title">PSA 팝수 · BRG 팝수 · 시세 바로가기</h2>
-          <p>카드 번호(<b>127/103</b>, <b>025/176</b>)나 카드명(<b>피카츄</b>, <b>리자몽</b>)을 넣으면 도감에 있는 카드는 기본 정보와 참고 시세를 함께 보여 주고, 팝 리포트·시세 검색으로 바로 넘겨 줍니다.</p>
-        </div>
-      </div>
-
       <div class="pop-board">
-        <form class="pop-form" id="popForm" role="search" aria-label="카드 번호·이름 검색">
-          <label class="pop-label" for="popQuery">카드 번호 또는 카드명</label>
+        <form class="pop-form" id="popForm" role="search" aria-label="등급카드 넘버로 팝 리포트 조회">
+          <span class="pop-label" id="popCompanyLabel">등급 회사 선택</span>
+          <div class="pop-company" id="popCompany" role="radiogroup" aria-label="등급 회사">
+            <button type="button" class="pop-company-btn is-active" data-company="psa" role="radio" aria-checked="true">PSA</button>
+            <button type="button" class="pop-company-btn" data-company="cgc" role="radio" aria-checked="false">CGC</button>
+            <button type="button" class="pop-company-btn" data-company="brg" role="radio" aria-checked="false">BRG</button>
+            <button type="button" class="pop-company-btn" data-company="bgs" role="radio" aria-checked="false">BGS</button>
+          </div>
+          <label class="pop-label" for="popQuery" id="popQueryLabel">등급카드 넘버 (인증서 번호 / 카드 번호)</label>
           <div class="pop-row">
-            <input type="search" id="popQuery" class="pop-input" placeholder="예: 127/103, 025/176, 피카츄, 리자몽"
-                   autocomplete="off" spellcheck="false" enterkeyhint="search">
+            <input type="search" id="popQuery" class="pop-input" placeholder="인증서 번호 또는 카드 번호를 입력하세요"
+                   autocomplete="off" spellcheck="false" enterkeyhint="search" inputmode="text">
             <button type="submit" class="btn btn-dark" id="popSearchBtn">조회</button>
           </div>
-          <div class="pop-chips" id="popChips" role="group" aria-label="빠른 검색"></div>
+          <p class="pop-hint" id="popHint">PSA를 선택했습니다. 인증서 번호(예: 8~9자리)를 넣으면 인증서 조회, 카드 번호(예: 127/103)를 넣으면 팝 리포트 검색으로 갑니다.</p>
         </form>
 
-        <div class="pop-links" id="popLinks" aria-label="외부 팝 리포트·시세 바로가기"></div>
+        <div class="pop-links" id="popLinks" aria-label="선택한 회사의 공식 조회 페이지"></div>
         <div class="pop-results" id="popResults" aria-live="polite"></div>
         <p class="pop-relay" id="popRelayStatus"></p>
       </div>
 
-      <p class="src-note mt-16">PSA Pop Report(psacard.com/pop) · BRG 팝 리포트(break.co.kr/pop-report) · KREAM 검색 · PriceCharting. 팝수는 등급·언어·에디션별로 따로 집계되므로, 조회할 때 세트명·카드 번호·언어판을 함께 확인하세요. 이 사이트는 팝수를 저장·가공하지 않고 공식 사이트로 넘겨 줍니다.</p>
+      <p class="src-note mt-16">PSA 인증서·팝 리포트(psacard.com) · CGC 인증서·팝 리포트(cgccards.com) · BRG 팝 리포트(break.co.kr) · BGS/Beckett 등급 조회(beckett.com). 이 사이트는 팝수를 저장·가공하지 않고 번호를 복사해 공식 페이지로 넘겨 줍니다. 팝수는 회사·등급·언어·에디션별로 따로 집계됩니다.</p>
     </section>
 
     <div class="inquiry-cta">
@@ -1206,9 +1154,9 @@
         <ul>
           <li><button type="button" data-tab="map">동네에서 찾기</button></li>
           <li><button type="button" data-tab="home">정가 구매처</button></li>
-          <li><button type="button" data-tab="schedule">일정·입고</button></li>
-          <li><button type="button" data-tab="guide">도감·가이드</button></li>
-          <li><button type="button" data-tab="trends">시세·팝수</button></li>
+          <li><button type="button" data-tab="schedule">일정·소식</button></li>
+          <li><button type="button" data-tab="guide">도감·시세</button></li>
+          <li><button type="button" data-tab="trends">팝수 조회</button></li>
           <li><a href="#cards" data-tab="guide">수록 카드 검색</a></li>
         </ul>
       </div>
@@ -1311,8 +1259,9 @@
     <ul>
       <li><strong>정가 구매처 보드</strong> — 공식 스토어부터 편의점 4사까지 채널별 정가, 배송비, 판매 단위, 확인 팁을 한 표에 정리</li>
       <li><strong>재고 지도</strong> — 편의점 4사별 현황과 반경·재고 필터로 주변 매장을 훑고, 매장별 보유 카드명·판매 단위·관측 시각을 함께 확인</li>
-      <li><strong>일정·입고 기록</strong> — 추첨 회차별 응모·발표·결제·배송 일정과 요일별 입고 패턴</li>
-      <li><strong>도감·가이드</strong> — 수록 카드와 레어도, 정가 대비 리셀 계산, 미개봉·가품 확인 체크리스트</li>
+      <li><strong>일정·소식</strong> — 추첨 회차별 응모·발표·결제·배송 일정, 요일별 입고 패턴, 카드 뉴스·신규팩 발매 소식</li>
+      <li><strong>도감·시세</strong> — 세트별 공식 정가와 리셀 시세 검색, 수록 카드와 레어도, 미개봉·가품 확인 체크리스트</li>
+      <li><strong>팝수 조회</strong> — PSA·CGC·BRG·BGS를 골라 인증서·카드 번호로 팝 리포트 조회</li>
     </ul>
 
     <h4>데이터에 대해</h4>
@@ -1442,8 +1391,8 @@
   </div>
 </template>
 
-<script src="assets/js/data.js?v=75"></script>
-<script src="assets/js/map.js?v=75"></script>
-<script src="assets/js/app.js?v=75"></script>
+<script src="assets/js/data.js?v=76"></script>
+<script src="assets/js/map.js?v=76"></script>
+<script src="assets/js/app.js?v=76"></script>
 </body>
 </html>

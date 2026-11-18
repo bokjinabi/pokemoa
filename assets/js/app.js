@@ -60,7 +60,6 @@
         setTimeout(function () { window.PokeMoaMap.invalidate(); }, 80);
       }
     }
-    if (name === "trends") loadRelayMovers();
     if (!opts || !opts.keepScroll) {
       window.scrollTo({ top: 0, behavior: "auto" });
     }
@@ -2327,102 +2326,125 @@
     return out;
   }
 
-  function renderPopLinks(context) {
-    if (!popLinks) return;
-    var q = context && context.query ? context.query : "";
-    var item = context && context.items && context.items.length ? context.items[0] : null;
-    var text = item ? popQueryText(item) : q;
-    var kreamBase = POP_TOOLS.kream || "https://kream.co.kr/search?keyword=";
-    var kreamKeyword = item ? (item.name + " " + (item.set || "")) : q;
-    popLinks.innerHTML =
-      '<button type="button" class="pop-link" data-pop-tool="psa"><b>PSA 팝 리포트</b><small>검색어 복사 후 열기</small></button>' +
-      '<button type="button" class="pop-link" data-pop-tool="brg"><b>BRG 팝 리포트</b><small>검색어 복사 후 열기</small></button>' +
-      '<a class="pop-link" href="' + kreamBase + encodeURIComponent(kreamKeyword) + '" target="_blank" rel="noopener" data-pop-tool="kream"><b>KREAM 시세 검색</b><small>' + escapeHtml(item ? item.name + " " + (item.num || "") : (q || "카드명을 넣어 보세요")) + '</small></a>' +
-      '<a class="pop-link" href="' + priceChartingUrl(item) + '" target="_blank" rel="noopener" data-pop-tool="price"><b>PriceCharting</b><small>영문 카드명 기준 검색</small></a>';
+  /* ------------------------------------------------------ 팝수 조회 */
+  /* 등급 회사를 먼저 고르고 인증서·카드 번호를 넣으면, 번호를 복사해 그 회사의
+     공식 인증서/팝 리포트 페이지로 넘긴다. 팝수를 이 사이트에 저장하지 않는다. */
+  var POP_COMPANIES = {
+    psa: {
+      label: "PSA",
+      cert: "https://www.psacard.com/cert/",
+      report: "https://www.psacard.com/pop",
+      reportLabel: "PSA 팝 리포트 검색",
+      hint: "PSA 인증서 번호(8~9자리)를 넣으면 인증서 조회, 카드 번호(예: 127/103)를 넣으면 팝 리포트 검색으로 갑니다."
+    },
+    cgc: {
+      label: "CGC",
+      cert: "https://www.cgccards.com/certlookup/?certNumber=",
+      report: "https://www.cgccards.com/population-report/",
+      reportLabel: "CGC 팝 리포트",
+      hint: "CGC 인증서 번호를 넣으면 인증서 조회, 카드 번호를 넣으면 팝 리포트로 갑니다."
+    },
+    brg: {
+      label: "BRG",
+      cert: "",
+      report: "https://break.co.kr/pop-report",
+      reportLabel: "BRG 팝 리포트",
+      hint: "BRG는 인증서 번호 대신 카드 이름·번호로 팝 리포트를 찾습니다. 번호를 복사해 붙여넣으세요."
+    },
+    bgs: {
+      label: "BGS",
+      cert: "https://www.beckett.com/grading/card-lookup?certNum=",
+      report: "https://www.beckett.com/grading/pop-report",
+      reportLabel: "BGS 팝 리포트",
+      hint: "BGS(Beckett) 인증서 번호를 넣으면 등급카드 조회, 카드 번호를 넣으면 팝 리포트로 갑니다."
+    }
+  };
+  var popCompanyEl = $("#popCompany");
+  var popHintEl = $("#popHint");
+  var popQueryLabel = $("#popQueryLabel");
+  var popCompany = "psa";
 
+  function popCompanyInfo() {
+    return POP_COMPANIES[popCompany] || POP_COMPANIES.psa;
+  }
+  function isCertNumber(raw) {
+    return /^\d{7,}$/.test(String(raw || "").replace(/[\s-]/g, ""));
+  }
+  function popTargetUrl(raw) {
+    var info = popCompanyInfo();
+    var q = String(raw || "").trim();
+    if (!q) return info.report;
+    if (isCertNumber(q) && info.cert) return info.cert + encodeURIComponent(q.replace(/[\s-]/g, ""));
+    return info.report;
+  }
+  function renderPopCompany() {
+    var info = popCompanyInfo();
+    if (popHintEl) popHintEl.textContent = info.hint;
+    if (popQueryLabel) {
+      popQueryLabel.textContent = info.cert
+        ? info.label + " 인증서 번호 또는 카드 번호"
+        : info.label + " 카드 번호 (인증서 번호 없음)";
+    }
+    if (popQueryEl) popQueryEl.placeholder = info.cert ? "인증서 번호 또는 카드 번호" : "카드 번호 (예: 127/103)";
+    if (popCompanyEl) {
+      $$(".pop-company-btn", popCompanyEl).forEach(function (b) {
+        var on = b.getAttribute("data-company") === popCompany;
+        b.classList.toggle("is-active", on);
+        b.setAttribute("aria-checked", on ? "true" : "false");
+      });
+    }
+    renderPopLinks({ query: popQueryEl ? popQueryEl.value : "", items: [] });
+    renderPopResults({ query: popQueryEl ? popQueryEl.value : "", items: [] });
+  }
+  function renderPopLinks() {
+    if (!popLinks) return;
+    var info = popCompanyInfo();
+    var q = popQueryEl ? popQueryEl.value.trim() : "";
+    var certHref = isCertNumber(q) ? popTargetUrl(q) : (info.cert ? info.cert : info.report);
+    popLinks.innerHTML =
+      (info.cert
+        ? '<a class="pop-link" href="' + certHref + '" target="_blank" rel="noopener" data-pop-tool="cert"><b>' + info.label + ' 인증서 조회</b><small>인증서 번호로 등급카드 확인</small></a>'
+        : '') +
+      '<a class="pop-link" href="' + info.report + '" target="_blank" rel="noopener" data-pop-tool="report"><b>' + info.reportLabel + '</b><small>공식 사이트에서 팝수 확인</small></a>';
     $$("[data-pop-tool]", popLinks).forEach(function (el) {
-      var tool = el.getAttribute("data-pop-tool");
-      el.addEventListener("click", function (e) {
-        trackEvent("pop_outbound", { tool: tool });
-        if (tool === "psa" || tool === "brg") {
-          e.preventDefault();
-          var url = tool === "psa" ? (POP_TOOLS.psa || {}).url : (POP_TOOLS.brg || {}).url;
-          var target = tool === "psa" ? (POP_TOOLS.psa || {}).url : (POP_TOOLS.brg || {}).url;
-          if (!target) return;
-          copyText(text || q).then(function (ok) {
-            openExternal(target);
-            toast(ok
-              ? "검색어 \u201c" + (text || q) + "\u201d를 복사했습니다. 열린 사이트 검색창에 붙여넣으세요."
-              : "검색어 \u201c" + (text || q) + "\u201d를 직접 입력해 주세요.");
-          });
-        }
+      el.addEventListener("click", function () {
+        trackEvent("pop_outbound", { tool: el.getAttribute("data-pop-tool"), company: popCompany });
       });
     });
   }
-
   function renderPopResults(context) {
     if (!popResults) return;
-    var items = context.items || [];
-    var html = "";
-    if (!context.query) {
-      html = '<p class="pop-empty">카드 번호나 카드명을 넣으면 도감·번호 인덱스에서 찾아 드립니다. 위쪽 빠른 검색을 눌러도 됩니다.</p>';
-    } else if (!items.length && !context.range) {
-      html = '<p class="pop-empty">‘' + escapeHtml(context.query) + '’에 해당하는 카드를 사이트 도감에서 찾지 못했습니다. 위 팝 리포트·KREAM 검색으로 바로 확인해 보세요.</p>';
+    var q = context && context.query ? context.query : "";
+    if (!q) {
+      popResults.innerHTML = '<p class="pop-empty">회사를 고르고 등급카드 넘버를 넣으면, 번호를 복사해 공식 팝 리포트·인증서 조회로 넘겨 드립니다.</p>';
+      return;
     }
-    if (context.range) {
-      html += '<div class="pop-range"><b>' + escapeHtml(context.range.num) + ' · ' + escapeHtml(context.range.set) + '</b>' +
-        '<span>' + escapeHtml(context.range.label) + ' 구간입니다. ' + escapeHtml(context.range.note) + '</span></div>';
+    var items = (context.items || []).slice(0, 4);
+    var head = '<p class="pop-query-line"><b>' + escapeHtml(popCompanyInfo().label) + '</b> · ' + escapeHtml(q) +
+      (isCertNumber(q) ? ' <span class="pop-kind">인증서 번호</span>' : ' <span class="pop-kind">카드 번호</span>') + '</p>';
+    if (items.length) {
+      popResults.innerHTML = head + items.map(function (item) {
+        return '<div class="pop-match"><span class="pop-match-name">' + escapeHtml(item.name) + '</span>' +
+          '<span class="pop-match-meta">' + escapeHtml(item.set || "") + (item.num ? ' · ' + escapeHtml(item.num) : '') +
+          (item.rarity ? ' · ' + escapeHtml(item.rarity) : '') + '</span></div>';
+      }).join("");
+    } else if (context.range) {
+      popResults.innerHTML = head + '<p class="pop-empty">' + escapeHtml(context.range.label) + ' 구간의 카드 번호입니다. ' + escapeHtml(context.range.note) + '</p>';
+    } else {
+      popResults.innerHTML = head + '<p class="pop-empty">사이트 도감에는 없는 번호입니다. 위 공식 조회 페이지에서 확인하세요.</p>';
     }
-    html += items.slice(0, 8).map(function (item) {
-      var mv = moverFor(item);
-      var priceLine = mv
-        ? '<span class="pop-price">KREAM 최근 체결 <b>' + won(mv.lastPrice) + '</b> · ' + escapeHtml(mv.lastWhen || "") + ' (누적 ' + (mv.trades || 0) + '건)</span>'
-        : '<span class="pop-price muted">참고 시세 없음 · KREAM 검색으로 확인</span>';
-      return '<article class="pop-card">' +
-        '<span class="pop-art ' + artFor(item) + '" data-mark="' + escapeHtml((item.set || "").slice(0, 2)) + '" style="' + artGradient(item) + '">' +
-          '<span class="mover-rarity">' + escapeHtml(item.rarity || "") + '</span></span>' +
-        '<div class="pop-info">' +
-          '<div class="pop-name">' + escapeHtml(item.name) + '</div>' +
-          '<div class="pop-set">' + escapeHtml(item.set || "") + (item.num ? ' · ' + escapeHtml(item.num) : '') + '</div>' +
-          priceLine +
-          (item.note ? '<p class="pop-note-line">' + escapeHtml(item.note) + '</p>' : '') +
-          '<div class="pop-card-links">' +
-            (item.kream ? '<a href="' + item.kream + '" target="_blank" rel="noopener">KREAM ↗</a>' : '') +
-            '<button type="button" data-pop-psa="' + escapeHtml(popQueryText(item)) + '">PSA 팝</button>' +
-            '<button type="button" data-pop-brg="' + escapeHtml(popQueryText(item)) + '">BRG 팝</button>' +
-          '</div>' +
-        '</div>' +
-      '</article>';
-    }).join("");
-    popResults.innerHTML = html;
-
-    function bind(key, url) {
-      $$('[data-pop-' + key + ']', popResults).forEach(function (b) {
-        b.addEventListener("click", function () {
-          var text = b.getAttribute('data-pop-' + key) || "";
-          trackEvent("pop_outbound", { tool: key });
-          copyText(text).then(function (ok) {
-            openExternal(url);
-            toast(ok ? "검색어 \u201c" + text + "\u201d를 복사했습니다. 검색창에 붙여넣으세요." : "검색어를 직접 입력해 주세요: " + text);
-          });
-        });
-      });
-    }
-    bind("psa", (POP_TOOLS.psa || {}).url);
-    bind("brg", (POP_TOOLS.brg || {}).url);
   }
-
   function renderPopRelay(payload, context) {
     if (!popRelayStatus) return;
     if (!payload) {
       popRelayStatus.textContent = relayUrl()
-        ? "태블릿 중계에 팝수 조회(/api/pop?q=)를 요청했습니다."
-        : "PSA·BRG 팝수는 사이트에서 직접 읽어 올 수 없어 검색어를 복사해 공식 사이트에서 확인하는 방식으로 연결합니다.";
+        ? "태블릿 중계(/api/pop)에 팝수 조회를 요청할 수 있습니다."
+        : "팝수는 공식 사이트만 공개합니다. 번호를 복사해 선택한 회사의 조회 페이지에서 확인하세요.";
       return;
     }
     var rows = payload.items || payload.results || [];
     if (!payload.ok || !rows.length) {
-      popRelayStatus.textContent = "중계 응답에 팝수가 없습니다. 팝 리포트 바로가기로 확인해 주세요.";
+      popRelayStatus.textContent = "중계에 팝수가 없습니다. 공식 조회 페이지로 확인해 주세요.";
       return;
     }
     popRelayStatus.innerHTML = '<span class="pop-relay-title">중계 팝수 · ' + escapeHtml(context.query) + '</span>' +
@@ -2434,21 +2456,33 @@
           (r.brgTotal != null ? ' / BRG 전체 ' + r.brgTotal + '장' : '') + '</span>';
       }).join("");
   }
-
   function runPopSearch(raw, from) {
-    var context = popMatches(raw);
+    var value = String(raw || "").trim();
+    var context = popMatches(value);
+    context.query = value;
     renderPopLinks(context);
     renderPopResults(context);
-    trackEvent("pop_search", { from: from || "form", has_result: context.items.length ? 1 : 0 });
+    trackEvent("pop_search", { from: from || "form", company: popCompany, has_result: context.items.length ? 1 : 0 });
+    if (!value) {
+      toast("등급카드 넘버를 먼저 넣어 주세요.");
+      return;
+    }
+    var url = popTargetUrl(value);
+    copyText(value).then(function (ok) {
+      openExternal(url);
+      toast(ok
+        ? "\u201c" + value + "\u201d를 복사하고 " + popCompanyInfo().label + " 조회 페이지를 열었습니다."
+        : "조회 페이지를 열었습니다. 검색창에 \u201c" + value + "\u201d를 붙여넣으세요.");
+    });
     var base = relayUrl();
-    if (!base || !context.query) {
+    if (!base) {
       renderPopRelay(null, context);
       return;
     }
     var seq = ++popRelaySeq;
     var ctrl = new AbortController();
     var timer = setTimeout(function () { ctrl.abort(); }, 7000);
-    fetch(base + "/api/pop?q=" + encodeURIComponent(context.query), { signal: ctrl.signal, mode: "cors", cache: "no-store" })
+    fetch(base + "/api/pop?q=" + encodeURIComponent(value) + "&company=" + popCompany, { signal: ctrl.signal, mode: "cors", cache: "no-store" })
       .then(function (res) { return res.ok ? res.json() : null; })
       .then(function (payload) {
         if (seq === popRelaySeq) renderPopRelay(payload || { ok: false }, context);
@@ -2461,25 +2495,105 @@
 
   function initPop() {
     if (!popForm) return;
+    if (popCompanyEl) {
+      $$(".pop-company-btn", popCompanyEl).forEach(function (b) {
+        b.addEventListener("click", function () {
+          popCompany = b.getAttribute("data-company") || "psa";
+          renderPopCompany();
+        });
+      });
+    }
     popForm.addEventListener("submit", function (e) {
       e.preventDefault();
       runPopSearch(popQueryEl ? popQueryEl.value : "", "form");
     });
-    if (popChips) {
-      popChips.innerHTML = (POP_TOOLS.quick || []).map(function (q) {
-        return '<button type="button" class="pop-chip" data-quick="' + escapeHtml(q) + '">' + escapeHtml(q) + '</button>';
-      }).join("");
-      $$("[data-quick]", popChips).forEach(function (b) {
-        b.addEventListener("click", function () {
-          var q = b.getAttribute("data-quick");
-          if (popQueryEl) popQueryEl.value = q;
-          runPopSearch(q, "chip");
-        });
-      });
-    }
-    renderPopLinks({ query: "", items: [] });
-    renderPopResults({ query: "", items: [] });
+    renderPopCompany();
     renderPopRelay(null, { query: "" });
+  }
+
+  /* ------------------------------------------- 세트별 정가·리셀 검색 */
+  var setSearchForm = $("#setSearchForm");
+  var setSearchEl = $("#setSearch");
+  var setSearchResult = $("#setSearchResult");
+  var BUNJANG_SEARCH = "https://m.bunjang.co.kr/search/products?q=";
+
+  function setResellLinks(s) {
+    var kw = (s.short || s.name || "") + " 박스";
+    var kream = "https://kream.co.kr/search?keyword=" + encodeURIComponent(kw);
+    var bunjang = BUNJANG_SEARCH + encodeURIComponent(kw);
+    var pc = (POP_TOOLS.pricecharting || "https://www.pricecharting.com/search-products?q=") +
+      encodeURIComponent(s.short || s.name || "") + "&type=prices";
+    return '<div class="set-resell-links">' +
+      '<a href="' + kream + '" target="_blank" rel="noopener">KREAM 리셀 ↗</a>' +
+      '<a href="' + bunjang + '" target="_blank" rel="noopener">번개장터 ↗</a>' +
+      '<a href="' + pc + '" target="_blank" rel="noopener">PriceCharting ↗</a>' +
+      '</div>';
+  }
+  function renderSetSearch(raw) {
+    if (!setSearchResult) return;
+    var q = String(raw || "").trim().toLowerCase();
+    if (!q) {
+      setSearchResult.innerHTML = "";
+      return;
+    }
+    var hits = SETS.filter(function (s) {
+      return (String(s.short) + " " + String(s.name) + " " + String(s.code) + " " + String(s.series)).toLowerCase().indexOf(q) >= 0;
+    }).slice(0, 6);
+    if (!hits.length) {
+      setSearchResult.innerHTML = '<p class="set-search-empty">\u201c' + escapeHtml(raw) + '\u201d에 맞는 세트가 없습니다. 세트 이름 일부(예: 어비스, 블랙)로 다시 검색해 보세요.</p>';
+      return;
+    }
+    setSearchResult.innerHTML = hits.map(function (s) {
+      var box = s.boxPrice ? won(s.boxPrice) : "-";
+      var pack = s.packPrice ? won(s.packPrice) : "-";
+      return '<article class="set-search-card">' +
+        '<div class="ssc-head"><span class="ssc-code">' + escapeHtml(s.code || "") + ' · ' + escapeHtml(s.series || "") + '</span>' +
+          '<h3>' + escapeHtml(s.short || s.name) + '</h3></div>' +
+        '<dl class="ssc-grid">' +
+          '<div><dt>공식 정가</dt><dd>' + pack + ' / 1박스 ' + box + '</dd></div>' +
+          '<div><dt>구성</dt><dd>1팩 ' + escapeHtml(String(s.cardsPerPack || "-")) + '장 · 1박스 ' + escapeHtml(String(s.packsPerBox || "-")) + '팩</dd></div>' +
+          '<div><dt>발매일</dt><dd>' + escapeHtml(s.release || "-") + '</dd></div>' +
+        '</dl>' +
+        setResellLinks(s) +
+        '<div class="ssc-actions"><button type="button" class="btn btn-ghost btn-sm" data-set-open="' + escapeHtml(s.id) + '">이 세트 도감·정가 비교 보기</button></div>' +
+      '</article>';
+    }).join("");
+    $$("[data-set-open]", setSearchResult).forEach(function (b) {
+      b.addEventListener("click", function () {
+        selectSet(b.getAttribute("data-set-open"));
+        var target = document.getElementById("setSummary");
+        if (target && target.scrollIntoView) target.scrollIntoView({ block: "start", behavior: "smooth" });
+      });
+    });
+  }
+  function initSetSearch() {
+    if (!setSearchForm) return;
+    setSearchForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      renderSetSearch(setSearchEl ? setSearchEl.value : "");
+      trackEvent("set_search", { q_len: (setSearchEl && setSearchEl.value || "").trim().length });
+    });
+  }
+
+  /* -------------------------------------- 일정·소식 서브탭 (일정/뉴스) */
+  function initSubTabs() {
+    var btns = $$(".sub-tab");
+    if (!btns.length) return;
+    btns.forEach(function (b) {
+      b.addEventListener("click", function () {
+        var key = b.getAttribute("data-subtab");
+        btns.forEach(function (o) {
+          var on = o.getAttribute("data-subtab") === key;
+          o.classList.toggle("is-active", on);
+          o.setAttribute("aria-selected", on ? "true" : "false");
+        });
+        [["cal", "subtabCal"], ["news", "subtabNews"]].forEach(function (pair) {
+          var panel = document.getElementById(pair[1]);
+          if (panel) panel.hidden = pair[0] !== key;
+        });
+        trackEvent("schedule_subtab", { tab: key });
+      });
+    });
   }
 
   /* --------------------------------------------------------------- 초기화 */
@@ -2493,16 +2607,18 @@
   runCalc();
   renderBoxPicker();
   renderBoxBoard();
-  applyMovers(MOVERS, "static");
   renderIssues();
   renderReleases();
   initPop();
+  initSetSearch();
+  initSubTabs();
 
   /* #stores·#boxStores는 「정가 구매처」 탭의 짧은 주소로 같이 받아 줍니다. */
   function tabOfHash(h) {
     if (h === "stores" || h === "boxStores") return "home";
     if (h === "cards") return "guide";
-    if (h === "pop" || h === "movers" || h === "issues" || h === "releases") return "trends";
+    if (h === "pop") return "trends";
+    if (h === "issues" || h === "releases") return "schedule";
     return panels[h] ? h : "";
   }
 
