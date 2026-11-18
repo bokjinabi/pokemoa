@@ -26,7 +26,7 @@
     var w = Math.min(1920, Math.max(320, parseInt(p.get("w") || "390", 10)));
     var h = Math.min(6000, Math.max(320, parseInt(p.get("h") || "844", 10)));
     var hash = (p.get("hash") || "").replace(/[^a-z0-9-]/gi, "");
-    var src = "../index.html" + (hash ? "#" + hash : "");
+    var src = "../index.html?cb=" + Date.now() + (hash ? "#" + hash : "");
     var f = document.getElementById("f");
     f.style.width = w + "px";
     f.style.height = h + "px";
