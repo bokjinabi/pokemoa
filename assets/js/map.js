@@ -891,11 +891,11 @@ window.PokeMoaMap = (function () {
     return new K.Places();
   }
 
-  /* 편의점 카테고리(CS2) 한 페이지 — 15건, 페이지를 넘기면 최대 45건 */
-  function categoryPage(center, radius, page) {
+  /* 카카오 업종 코드 한 페이지 — 편의점 CS2 · 대형마트 MT1 · 키워드 보축용. 15건씩, 페이지를 넘기면 최대 45건 */
+  function categoryPage(code, center, radius, page) {
     return new Promise(function (resolve) {
       var P = window.kakao.maps.services;
-      placesService().categorySearch("CS2", function (data, status) {
+      placesService().categorySearch(code, function (data, status) {
         resolve({ ok: status === P.Status.OK, data: data || [] });
       }, {
         location: latlng(center.lat, center.lng),
@@ -943,49 +943,46 @@ window.PokeMoaMap = (function () {
     };
   }
 
-  /* 오프라인 판매처(마트·아트박스) 이름 분류 — 이마트24 같은 편의점은 빼고 본다 */
-  /* 오프라인 판매처(마트·아트박스) 이름·업종 분류
-     · 이마트24 같은 편의점, 이마트에브리데이·노브랜드·익스프레스, 주차장은 뺀다
-     · 대형마트는 카카오 업종이 '대형마트'이면서 체인명으로 시작하는 매장만 (매장 안 문화센터·임점 매장 제외) */
-  function classifyOffline(p, brandHint) {
+  /* 오프라인 판매처(마트·아트박스) 판별
+     · 대형마트: 카카오 업종 코드 MT1(대형마트) 결과에서 체인명으로 시작하는 매장만
+       (이마트24·이마트에브리데이·노브랜드·익스프레스·매장 안 문화센터/임점 매장은 제외)
+     · 아트박스: 전용 업종 코드가 없어 키워드 검색 결과에서 이름으로 추린다 */
+  function isMartPlace(p) {
     var n = String(p.place_name || "");
-    var cat = String(p.category_name || "");
-    if (/이마트\s*24|emart\s*24/i.test(n)) return null;
-    if (/편의점/.test(cat)) return null;
-    if (/에브리데이|노브랜드|익스프레스|주차장/.test(n)) return null;
-    if (/주차/.test(cat)) return null;
-    if (/아트박스|artbox/i.test(n)) return "artbox";
-    if (brandHint === "artbox") return null;
-    if (/대형마트/.test(cat) && /^(이마트|롯데마트|홈플러스|토이저러스)/.test(n)) return "mart";
-    return null;
+    if (/이마트\s*24|에브리데이|노브랜드|익스프레스/.test(n)) return false;
+    if (!/대형마트/.test(String(p.category_name || ""))) return false;
+    return /^(이마트|롯데마트|홈플러스|토이저러스)/.test(n);
   }
 
-  function offlineRowsFrom(pages, brandHint) {
+  function offlineRow(p, brand) {
+    var lat = Number(p.y);
+    var lng = Number(p.x);
+    if (!isFinite(lat) || !isFinite(lng)) return null;
+    return {
+      id: p.id || p.place_name + ":" + lat + ":" + lng,
+      type: "offline",
+      name: p.place_name || "",
+      brand: brand,
+      shop: "offline",
+      place: brand,
+      lat: lat,
+      lng: lng,
+      street: p.road_address_name || p.address_name || "",
+      phone: p.phone || "",
+      placeUrl: p.place_url || ""
+    };
+  }
+
+  function collectOffline(pages, brand, keep) {
     var out = [];
     var seen = {};
     pages.forEach(function (pg) {
       (pg.data || []).forEach(function (p) {
-        var brand = classifyOffline(p, brandHint);
-        if (!brand) return;
-        var lat = Number(p.y);
-        var lng = Number(p.x);
-        if (!isFinite(lat) || !isFinite(lng)) return;
-        var id = (p.id || p.place_name + ":" + lat + ":" + lng);
-        if (seen[id]) return;
-        seen[id] = 1;
-        out.push({
-          id: id,
-          type: "offline",
-          name: p.place_name || "",
-          brand: brand,
-          shop: "offline",
-          place: brand,
-          lat: lat,
-          lng: lng,
-          street: p.road_address_name || p.address_name || "",
-          phone: p.phone || "",
-          placeUrl: p.place_url || ""
-        });
+        if (!keep(p)) return;
+        var row = offlineRow(p, brand);
+        if (!row || seen[row.id]) return;
+        seen[row.id] = 1;
+        out.push(row);
       });
     });
     return out;
@@ -993,25 +990,22 @@ window.PokeMoaMap = (function () {
 
   /* 마트·아트박스는 카카오 장소 검색으로 실시간 조회한다(편의점 4사와 같이) */
   function searchOffline(center, radius) {
-    var cfg = D.offlineSearch || {};
-    var reqs = [];
-    Object.keys(cfg).forEach(function (brand) {
-      (cfg[brand] || []).forEach(function (q) {
-        reqs.push({ brand: brand, p: keywordPage(q, center, radius, 1) });
+    /* 대형마트: 업종 MT1을 편의점과 같은 격자로 나눠 조회 */
+    var martReq = Promise.all(searchPlan(center, radius).map(function (pt) {
+      return categoryPage("MT1", pt, pt.radius, pt.page);
+    })).then(function (pages) {
+      return collectOffline(pages, "mart", isMartPlace);
+    }).catch(function () { return []; });
+
+    /* 아트박스: 키워드 1페이지 + 이름 필터 */
+    var artReq = keywordPage("아트박스", center, radius, 1).then(function (pg) {
+      return collectOffline([pg], "artbox", function (p) {
+        return /아트박스|artbox/i.test(String(p.place_name || ""));
       });
-    });
-    if (!reqs.length) return Promise.resolve([]);
-    return Promise.all(reqs.map(function (r) { return r.p; })).then(function (pages) {
-      var rows = [];
-      var seen = {};
-      pages.forEach(function (pg, i) {
-        offlineRowsFrom([pg], reqs[i].brand).forEach(function (row) {
-          if (seen[row.id]) return;
-          seen[row.id] = 1;
-          rows.push(row);
-        });
-      });
-      rows = rows.filter(function (r) { return meters(center, r) <= radius + 1; });
+    }).catch(function () { return []; });
+
+    return Promise.all([martReq, artReq]).then(function (res) {
+      var rows = res[0].concat(res[1]).filter(function (r) { return meters(center, r) <= radius + 1; });
       rows.sort(function (a, b) { return meters(center, a) - meters(center, b); });
       return rows.slice(0, OFFLINE_CAP);
     });
@@ -1134,7 +1128,7 @@ window.PokeMoaMap = (function () {
   /* 격자 조회 → id 중복 제거 → 반경 필터 → 빠진 브랜드는 브랜드별 키워드 1페이지로 보충 */
   function searchNearby(center, radius) {
     var reqs = searchPlan(center, radius).map(function (pt) {
-      return categoryPage(pt, pt.radius, pt.page);
+      return categoryPage("CS2", pt, pt.radius, pt.page);
     });
     return Promise.all(reqs).then(function (pages) {
       var anyOk = pages.some(function (p) { return p.ok; });

@@ -1950,10 +1950,6 @@ window.POKEMOA_DATA = (function () {
     { id: "vending", label: "공식 자판기", short: "자판" },
     { id: "cardshop", label: "공인 카드샵", short: "카드샵" }
   ];
-  var offlineSearch = {
-    mart: ["이마트", "롯데마트", "홈플러스", "토이저러스"],
-    artbox: ["아트박스"]
-  };
   /* 포켓몬코리아 「포켓몬 카드 게임 자판기」 페이지가 불러오는 공식 목록
      (https://www.pokemonkorea.co.kr/card_vending_machine → venderlist.json, 178곳 중 좌표 확인 176곳 · 2026-11-18) */
   var vendingPoints = [
@@ -2183,7 +2179,6 @@ window.POKEMOA_DATA = (function () {
     brands: brands,
     brandMeta: brandMeta,
     offlineBrands: offlineBrands,
-    offlineSearch: offlineSearch,
     vendingPoints: vendingPoints,
     cardShops: cardShops,
     shortcuts: shortcuts,
