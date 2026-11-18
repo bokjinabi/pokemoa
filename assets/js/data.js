@@ -655,6 +655,8 @@ window.POKEMOA_DATA = (function () {
   /* 지역 메타데이터: id · 이름 · 시/도 · 시군구 · 동네 · 좌표 · 20km 허용 여부 */
   /* allow20: false = 도심(5km까지) / true = 지방·외곽(20km까지) */
   var regions = [
+    /* 첫 화면 기본값 — 서울 광화문 */
+    { id: "seoul-gwanghwamun", name: "서울 · 종로 · 광화문", short: "서울 종로 광화문", label: "광화문", province: "서울", district: "종로 · 광화문", lat: 37.5759, lng: 126.9768, zoom: 15, allow20: false },
     { id: "seoul-gangnam", name: "서울 · 강남 · 역삼", short: "서울 강남 역삼", label: "역삼동", province: "서울", district: "강남 · 역삼", lat: 37.49988, lng: 127.03856, zoom: 15, allow20: false },
     { id: "seoul-hongdae", name: "서울 · 홍대 · 마포", short: "서울 홍대 마포", label: "서교동", province: "서울", district: "홍대 · 마포", lat: 37.55507, lng: 126.92382, zoom: 15, allow20: false },
     { id: "seoul-nowon", name: "서울 · 노원 · 강북", short: "서울 노원 강북", label: "상계동", province: "서울", district: "노원 · 강북", lat: 37.66727, lng: 127.07242, zoom: 15, allow20: false },

@@ -67,7 +67,7 @@ window.PokeMoaMap = (function () {
     compact: false,
     cluster: false,
     radius: 3000,
-    regionId: "pohang-north",
+    regionId: "seoul-gwanghwamun",
     origin: "region",  /* region | geo | search */
     center: null,
     source: "snapshot",/* live | snapshot */

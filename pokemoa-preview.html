@@ -4183,18 +4183,18 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
             <option value="충남">충남</option>
             <option value="전북">전북</option>
             <option value="전남">전남</option>
-            <option value="경북" selected>경북</option>
+            <option value="서울" selected>서울</option>
             <option value="경남">경남</option>
             <option value="제주">제주</option>
           </select>
         </span>
         <span class="select-wrap select-district">
           <select id="districtSelect" aria-label="시·군·구 선택">
-            <option value="pohang-north" selected>포항 · 북구 (환호동)</option>
-            <option value="pohang-south">포항 · 남구 (이동)</option>
-            <option value="gyeongbuk-gyeongju">경주</option>
-            <option value="gyeongbuk-gumi">구미</option>
-            <option value="gyeongbuk-andong">안동</option>
+            <option value="seoul-gwanghwamun" selected>종로 · 광화문</option>
+            <option value="seoul-jongno">종로 · 명동</option>
+            <option value="seoul-gangnam">강남 · 역삼</option>
+            <option value="seoul-hongdae">홍대 · 마포</option>
+            <option value="seoul-jamsil">잠실 · 송파</option>
           </select>
         </span>
         <span class="region-search">
@@ -5648,6 +5648,8 @@ window.POKEMOA_DATA = (function () {
   /* 지역 메타데이터: id · 이름 · 시/도 · 시군구 · 동네 · 좌표 · 20km 허용 여부 */
   /* allow20: false = 도심(5km까지) / true = 지방·외곽(20km까지) */
   var regions = [
+    /* 첫 화면 기본값 — 서울 광화문 */
+    { id: "seoul-gwanghwamun", name: "서울 · 종로 · 광화문", short: "서울 종로 광화문", label: "광화문", province: "서울", district: "종로 · 광화문", lat: 37.5759, lng: 126.9768, zoom: 15, allow20: false },
     { id: "seoul-gangnam", name: "서울 · 강남 · 역삼", short: "서울 강남 역삼", label: "역삼동", province: "서울", district: "강남 · 역삼", lat: 37.49988, lng: 127.03856, zoom: 15, allow20: false },
     { id: "seoul-hongdae", name: "서울 · 홍대 · 마포", short: "서울 홍대 마포", label: "서교동", province: "서울", district: "홍대 · 마포", lat: 37.55507, lng: 126.92382, zoom: 15, allow20: false },
     { id: "seoul-nowon", name: "서울 · 노원 · 강북", short: "서울 노원 강북", label: "상계동", province: "서울", district: "노원 · 강북", lat: 37.66727, lng: 127.07242, zoom: 15, allow20: false },
@@ -7480,7 +7482,7 @@ window.PokeMoaMap = (function () {
     compact: false,
     cluster: false,
     radius: 3000,
-    regionId: "pohang-north",
+    regionId: "seoul-gwanghwamun",
     origin: "region",  /* region | geo | search */
     center: null,
     source: "snapshot",/* live | snapshot */
@@ -9138,7 +9140,7 @@ window.PokeMoaMap = (function () {
   function resetStoreList() { visibleCount = listStartCount(); }
   var currentStores = [];
   var filterState = {
-    region: "pohang-north",
+    region: "seoul-gwanghwamun",
     brand: "all",
     sort: "stock",
     stockOnly: false,
@@ -10031,7 +10033,7 @@ window.PokeMoaMap = (function () {
     });
   }
 
-  /* 첫 화면: 포항 북구(환호동)를 기본 선택 */
+  /* 첫 화면: 서울 광화문을 기본 선택 (초기 지도 중심 37.5759, 126.9768) */
   var initialRegion = regionById(filterState.region) || D.regions[0];
   if (initialRegion) {
     if (provinceSelect) provinceSelect.value = initialRegion.province;
@@ -11699,7 +11701,7 @@ window.PokeMoaMap = (function () {
 </script>
 <!-- 모아 어드민(moa-kr/moa-admin)이 커밋하는 assets/config/site-config.json 을 화면에 적용합니다.
      공지 바·팝업·탭/섹션 순서와 노출·문구가 이 파일 값으로 바뀝니다. -->
-<script src="assets/js/site-config-loader.js?v=80" defer
+<script src="assets/js/site-config-loader.js?v=81" defer
         data-config="assets/config/site-config.json"
         data-tab-container=".main-nav"
         data-banner-host=".site-header"></script>

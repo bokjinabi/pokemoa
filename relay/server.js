@@ -752,11 +752,21 @@ async function collectCu(lat, lng, keyword, diag) {
                     → { code:200, data:{ storeList:[ { storeCd, stock } ] } }
    로그인·암호화 없이 평문으로 동작한다. */
 
-function sevenHeaders(extra) {
+/* 재고 경로는 게이트웨이가 "Invalid Access Token or Agent Information"(403)으로
+   막는다. 앱 웹뷰는 User-Agent 에 app:k7app 표식을 달고 있어서(앱 코드도 이 값을 보고
+   앱 안인지 판별한다) 그 표식을 붙인 UA부터 차례로 시도한다. 한 번 통한 UA는 기억한다. */
+const SEVEN_UA_VARIANTS = [
+  'Mozilla/5.0 (Linux; Android 13; SM-X710 Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/131.0.0.0 Mobile Safari/537.36 app:k7app',
+  UA_ANDROID + ' app:k7app',
+  UA_ANDROID
+];
+let sevenUaIndex = 0;
+
+function sevenHeaders(extra, uaIndex) {
   return Object.assign(
     {
       accept: 'application/json',
-      'user-agent': UA_ANDROID,
+      'user-agent': SEVEN_UA_VARIANTS[uaIndex == null ? sevenUaIndex : uaIndex] || UA_ANDROID,
       origin: BASE.seven,
       referer: BASE.seven + '/',
       'accept-language': 'ko-KR,ko;q=0.9'
@@ -771,6 +781,35 @@ function docField(row) {
   if (row.field && typeof row.field === 'object') return row.field;
   if (row.fields && typeof row.fields === 'object') return row.fields;
   return row;
+}
+
+/** 재고 경로 POST — UA 후보를 차례로 시도하고, 한 번 통한 UA를 기억한다 */
+async function sevenStockPost(path, payload, label, diag) {
+  let lastErr = null;
+  for (let i = sevenUaIndex; i < SEVEN_UA_VARIANTS.length; i++) {
+    try {
+      const body = await request(
+        BASE.seven + path,
+        {
+          method: 'POST',
+          headers: sevenHeaders({ 'content-type': 'application/json; charset=UTF-8' }, i),
+          body: JSON.stringify(payload)
+        },
+        label + (i ? ' UA' + (i + 1) : ' UA1'),
+        null,
+        diag
+      );
+      sevenUaIndex = i;
+      return body;
+    } catch (err) {
+      lastErr = err;
+      const msg = String((err && err.message) || '');
+      /* UA 문제로 보이는 403만 다음 후보로 넘어간다(그 밖의 오류는 그대로 올린다) */
+      const agentIssue = /Access Token|Agent Information/i.test(msg) || (err && err.upstreamStatus === 403);
+      if (!agentIssue || i + 1 >= SEVEN_UA_VARIANTS.length) throw err;
+    }
+  }
+  throw lastErr || new Error(label + ' 실패');
 }
 
 async function sevenItemMeta(itemCd, diag) {
@@ -863,17 +902,25 @@ function sevenAreaQueries(ctx) {
   };
   for (const src of sources) {
     const t = String(src).split(/\s+/).filter(Boolean);
-    const city = t.find((x) => /(시|군)$/.test(x)) || '';
-    const district = t.find((x) => x !== city && /(구|군)$/.test(x)) || '';
+    const PROVINCE_RE = /^(서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)/;
+    const province =
+      t.find((x) => /(특별시|광역시|특별자치시|특별자치도|도)$/.test(x)) ||
+      (t[0] && PROVINCE_RE.test(t[0]) ? t[0].slice(0, 2) : '');
+    const city = t.find((x) => x !== province && /(시|군)$/.test(x)) || '';
+    const district = t.find((x) => x !== city && x !== province && /(구|군)$/.test(x)) || '';
     const dong = t.find((x) => /(동|읍|면)$/.test(x)) || '';
     const cityBare = city.replace(/(시|군)$/, '');
+    const provinceBare = province.replace(/(특별시|광역시|특별자치시|특별자치도|도)$/, '');
     const before = out.length;
     /* 넓은 이름부터 — 좁은 이름만 쓰면 옆 동네 점포를 놓친다 */
     push(cityBare);
     push(city);
     push(cityBare + district);
     push(district);
+    /* 시/군 이름이 없는 주소(서울 종로구 …)는 시·도 이름도 후보로 둔다 */
+    push(provinceBare);
     push(dong);
+    push(province);
     /* "포항"·"강남"처럼 시/군/구/동 꼬리표가 없는 이름은 그대로 쓴다 */
     if (out.length === before) {
       push(src);
@@ -885,19 +932,14 @@ function sevenAreaQueries(ctx) {
 
 /** 점포 한 곳의 여러 상품 재고 (앱이 쓰는 02 경로) — 실패하면 null */
 async function sevenRealStocksByStore(storeCd, metas, diag) {
-  const body = await request(
-    BASE.seven + '/api/v1/open/real-stock/multi/02/stocks',
+  const body = await sevenStockPost(
+    '/api/v1/open/real-stock/multi/02/stocks',
     {
-      method: 'POST',
-      headers: sevenHeaders({ 'content-type': 'application/json; charset=UTF-8' }),
-      body: JSON.stringify({
-        itemList: metas.map((m) => ({ smCd: m.smCd, stockApplicationRate: m.stockApplicationRate })),
-        storeCd,
-        stockGbn: '02'
-      })
+      itemList: metas.map((m) => ({ smCd: m.smCd, stockApplicationRate: m.stockApplicationRate })),
+      storeCd,
+      stockGbn: '02'
     },
     '세븐일레븐 재고(02)',
-    null,
     diag
   );
   const rows = pickDeep(body, ['itemList']);
@@ -914,21 +956,16 @@ async function sevenRealStocksByStore(storeCd, metas, diag) {
 
 /** 점포 한 곳의 상품 하나 재고 (01 경로) — 02가 막혔을 때 쓴다 */
 async function sevenRealStock(storeCd, meta, diag) {
-  const body = await request(
-    BASE.seven + '/api/v1/open/real-stock/multi/01/stocks',
+  const body = await sevenStockPost(
+    '/api/v1/open/real-stock/multi/01/stocks',
     {
-      method: 'POST',
-      headers: sevenHeaders({ 'content-type': 'application/json; charset=UTF-8' }),
-      body: JSON.stringify({
-        smCd: meta.smCd,
-        stokMngCd: meta.stokMngCd,
-        stokMngQty: meta.stokMngQty,
-        stockApplicationRate: meta.stockApplicationRate,
-        storeList: [storeCd]
-      })
+      smCd: meta.smCd,
+      stokMngCd: meta.stokMngCd,
+      stokMngQty: meta.stokMngQty,
+      stockApplicationRate: meta.stockApplicationRate,
+      storeList: [storeCd]
     },
     '세븐일레븐 재고(01)',
-    null,
     diag
   );
   const qty = pickDeep(body, ['stock', 'realStock', 'stokMngQty', 'stockQty', 'qty', 'realStockQty']);

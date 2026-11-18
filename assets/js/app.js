@@ -124,7 +124,7 @@
   function resetStoreList() { visibleCount = listStartCount(); }
   var currentStores = [];
   var filterState = {
-    region: "pohang-north",
+    region: "seoul-gwanghwamun",
     brand: "all",
     sort: "stock",
     stockOnly: false,
@@ -1017,7 +1017,7 @@
     });
   }
 
-  /* 첫 화면: 포항 북구(환호동)를 기본 선택 */
+  /* 첫 화면: 서울 광화문을 기본 선택 (초기 지도 중심 37.5759, 126.9768) */
   var initialRegion = regionById(filterState.region) || D.regions[0];
   if (initialRegion) {
     if (provinceSelect) provinceSelect.value = initialRegion.province;
