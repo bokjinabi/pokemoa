@@ -471,6 +471,30 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .ad-slot.is-square { min-height: 250px; }
 .ad-slot.is-inline { min-height: 120px; margin: 0; }
 
+/* PC 넓은 화면(1360px 이상) 좌·우 160×600 스카이스크래퍼 레일
+   — 좁은 화면(모바일·태블릿)에서는 display:none 이라 레이아웃·가로 넘침에 영향이 없다. */
+.side-ad-rail { display: none; }
+.ad-slot-rail { width: 160px; height: 600px; border-radius: 12px; padding: 10px; }
+@media (min-width: 1360px) {
+  /* 광고 레일이 들어갈 좌우 여백을 확보하려고 본문 폭을 줄인다(회사복지모아와 같은 방식) */
+  :root { --wrap-w: min(var(--maxw), 100vw - 400px); }
+  .wrap { max-width: var(--wrap-w); }
+  .side-ad-rail {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: fixed;
+    top: 92px;
+    width: 160px;
+    z-index: 60;
+  }
+  .side-ad-rail--left { left: calc((100vw - var(--wrap-w)) / 2 - 172px); }
+  .side-ad-rail--right { right: calc((100vw - var(--wrap-w)) / 2 - 172px); }
+}
+@media (max-width: 1359px) {
+  .side-ad-rail { display: none !important; }
+}
+
 /* --------------------------------------------------------- 정가 구매처 */
 .channel-grid {
   display: grid;
