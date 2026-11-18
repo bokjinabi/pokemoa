@@ -37,7 +37,7 @@
 <meta name="twitter:image:alt" content="포켓몬카드모아 — 내 주변 편의점 재고 · 인기 카드 시세 · 도감">
 <meta name="theme-color" content="#101f3c">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23101f3c'/%3E%3Crect x='7' y='7' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05'/%3E%3Crect x='17.5' y='7' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05' opacity='.7'/%3E%3Crect x='7' y='17.5' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05' opacity='.7'/%3E%3Crect x='17.5' y='17.5' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="assets/css/style.css?v=85">
+<link rel="stylesheet" href="assets/css/style.css?v=86">
 <!-- 카카오맵 JavaScript SDK — autoload=false로 불러 두고 map.js가 kakao.maps.load()로 초기화합니다.
      JavaScript 키 도메인에는 https://moa-kr.github.io 만 등록되어 있어, 그 밖의 주소(미등록 프리뷰)에서는
      지도 대신 내장 좌표 스냅샷 안내가 표시됩니다. -->
@@ -134,8 +134,8 @@
 
     <div class="header-actions">
       <span class="header-date" data-copy="headerDate">데이터 기준 11-17</span>
-      <button type="button" class="btn btn-ghost btn-sm header-inquiry" data-modal="inquiry">관리자 문의</button>
-      <button type="button" class="btn btn-dark btn-sm" data-modal="inquiry" data-inquiry-type="재고·매장 정보 오류">재고 제보</button>
+      <button type="button" class="btn btn-ghost btn-sm header-inquiry" data-modal="inquiry" data-copy="inquiryBtn">관리자 문의</button>
+      <button type="button" class="btn btn-dark btn-sm" data-modal="inquiry" data-inquiry-type="재고·매장 정보 오류" data-copy="headerReport">재고 제보</button>
     </div>
   </div>
 </header>
@@ -170,14 +170,14 @@
           <p class="hero-sub" data-copy="heroDescription">포켓몬 카드 정가 구매처와 추첨 일정, 입고 기록, 편의점 4사 재고와 취급 카드까지 한 화면에 모았습니다. 리셀가에 흔들리지 않도록 기준 가격부터 확인하세요.</p>
 
           <div class="price-row">
-            <div class="price-box"><span>1팩 (카드 6장)</span><strong>3,500원</strong></div>
-            <div class="price-box is-key"><span>1박스 · 20팩</span><strong>70,000원</strong></div>
-            <div class="price-box"><span>1박스 카드 수</span><strong>120장</strong></div>
+            <div class="price-box"><span data-copy="heroPrice1Label">1팩 (카드 6장)</span><strong>3,500원</strong></div>
+            <div class="price-box is-key"><span data-copy="heroPrice2Label">1박스 · 20팩</span><strong>70,000원</strong></div>
+            <div class="price-box"><span data-copy="heroPrice3Label">1박스 카드 수</span><strong>120장</strong></div>
           </div>
 
           <div class="hero-warn">
             <span aria-hidden="true">⚠️</span>
-            <div><b>KREAM 시세 (2026-11-17)</b> — 미개봉 1박스는 슈링크 76,000원(팩당 3,800원), 논슈링크 72,000원(팩당 3,600원)입니다. 배송비·수수료 별도, 정가는 박스 70,000원·팩당 3,500원. <a href="https://kream.co.kr/search?keyword=30th%20CELEBRATION" target="_blank" rel="noopener">KREAM에서 시세 보기 ↗</a></div>
+            <div><b data-copy="heroWarnTitle">KREAM 시세 (2026-11-17)</b> — <span data-copy="heroWarnText">미개봉 1박스는 슈링크 76,000원(팩당 3,800원), 논슈링크 72,000원(팩당 3,600원)입니다. 배송비·수수료 별도, 정가는 박스 70,000원·팩당 3,500원.</span> <a href="https://kream.co.kr/search?keyword=30th%20CELEBRATION" target="_blank" rel="noopener" data-copy="heroWarnLink">KREAM에서 시세 보기 ↗</a></div>
           </div>
 
           <div class="hero-actions">
@@ -222,7 +222,6 @@
             <li>쿠폰·적립금 사용 불가, 월별 뱃지 이벤트 제외</li>
             <li>당첨 후 기한 내 결제하지 않으면 당첨 무효</li>
           </ul>
-          <p class="channel-tip"><b>확인 팁</b> — 확장팩 1차(9/8~9/13)·2차(10/19~10/25) 추첨은 모두 종료됐습니다. 다음 회차 공지는 포켓몬 카드 게임 공지와 30주년 특설 페이지에 가장 먼저 올라옵니다.</p>
           <div class="channel-links">
             <a href="https://www.pokemonstore.co.kr/pages/pokemoncardgame30th/product/m6a/index.html" target="_blank" rel="noopener">30th CELEBRATION 상품 페이지</a>
             <a href="https://www.pokemonstore.co.kr/pages/pokemoncardgame30th/product/index.html" target="_blank" rel="noopener">30주년 특설 페이지</a>
@@ -241,7 +240,6 @@
             <li>CJ대한통운 택배 · 리뷰 평점 5.0</li>
             <li>박스 1개 기준 총 결제액 73,000원</li>
           </ul>
-          <p class="channel-tip"><b>확인 팁</b> — 정가에 배송비가 붙는 구조입니다. 1개만 살 때는 총액 73,000원을, 여러 개 살 때는 배송비가 한 번만 붙는지 장바구니에서 확인하세요.</p>
           <div class="channel-links">
             <a href="https://www.ssg.com/item/itemView.ssg?itemId=1000881834004" target="_blank" rel="noopener">SSG 상품 페이지 (30th 1박스)</a>
           </div>
@@ -259,7 +257,6 @@
             <li>1팩·2팩·3팩·5팩·10팩·15팩 등 옵션 상품 운영</li>
             <li>상담 평일 10:00~17:00 (토·일·공휴일 휴무)</li>
           </ul>
-          <p class="channel-tip"><b>확인 팁</b> — 낱팩 옵션은 팩당 단가가 정가(3,500원)보다 높게 책정된 경우가 있습니다. 총액을 팩 수로 나눠 팩당 단가로 비교하세요.</p>
           <div class="channel-links">
             <a href="https://item.gmarket.co.kr/Item?goodscode=4856436280" target="_blank" rel="noopener">G마켓 상품 페이지 (30th 1박스)</a>
           </div>
@@ -277,7 +274,6 @@
             <li>인기 세트는 예약 오픈 직후 마감되는 편</li>
             <li>상담 070-8262-0805 · 평일 10:00~17:00</li>
           </ul>
-          <p class="channel-tip"><b>확인 팁</b> — 박스가 품절이면 목표 카드를 싱글카드로 사는 쪽이 예산을 아끼는 경우가 많습니다. 박스 1개 값으로 원하는 카드 1장을 확보하는 계산을 먼저 해보세요.</p>
           <div class="channel-links">
             <a href="https://tcgbox.co.kr/product/mega-%ED%99%95%EC%9E%A5%ED%8C%A9-30th-celebration-1box/22970/" target="_blank" rel="noopener">티씨지박스 상품 페이지 (30th 1BOX)</a>
           </div>
@@ -295,7 +291,6 @@
             <li>포켓몬 카드 자판기가 함께 있는 매장이 많음</li>
             <li>수·목 오전 진열 빈도가 높다는 후기 다수(공식 아님)</li>
           </ul>
-          <p class="channel-tip"><b>확인 팁</b> — 지점마다 입고일과 수량이 달라 "마트면 있겠지"는 위험합니다. 방문 전 매장 고객센터로 박스 판매 여부와 수량을 확인하세요. (토이저러스 코리아 온라인몰은 2026-11 기준 접속되지 않아 롯데ON 검색으로 대신 연결합니다.)</p>
           <div class="channel-links">
             <a href="https://www.lotteon.com/search/search/search.ecn?render=search&amp;platform=pc&amp;q=%ED%8F%AC%EC%BC%93%EB%AA%AC%EC%B9%B4%EB%93%9C" target="_blank" rel="noopener">롯데ON 포켓몬카드 검색</a>
           </div>
@@ -314,7 +309,6 @@
             <li>CU 10/7 예약 발주 → 10/24부터 매장 입고</li>
             <li>이마트24는 점포별 취급·발주 차이가 커서 앱에서 매장 확인</li>
           </ul>
-          <p class="channel-tip"><b>확인 팁</b> — 편의점 앱 재고는 전산값입니다. 방문 직전 앱으로 확인하고, 박스로 살 계획이면 매장에 전화해 판매 단위를 먼저 물어보세요. 위 지도에서 매장별 <b>취급 카드 상품명</b>까지 함께 볼 수 있습니다.</p>
           <div class="channel-links">
             <a href="https://homesearch.cu.co.kr/front/Search.jsp?qt=%ED%8F%AC%EC%BC%93%EB%AA%AC%EC%B9%B4%EB%93%9C" target="_blank" rel="noopener">CU 상품 검색</a>
             <a href="https://www.gs25.com/main.do" target="_blank" rel="noopener">GS25 (우리동네GS 재고조회)</a>
@@ -325,7 +319,7 @@
 
       </div>
 
-      <p class="src-note mt-16">출처: 포켓몬 카드 게임 공식 제품 정보(정가·구성), SSG 공식인증샵 상품 페이지(배송비), 편의점 4사 판매 일정 보도(2026-10-09 세계일보 · 10-20 TCG뉴스 정리). 가격·재고는 판매처와 시점에 따라 달라질 수 있습니다.</p>
+      <p class="src-note mt-16" data-copy="pricingSource">출처: 포켓몬 카드 게임 공식 제품 정보(정가·구성), SSG 공식인증샵 상품 페이지(배송비), 편의점 4사 판매 일정 보도(2026-10-09 세계일보 · 10-20 TCG뉴스 정리). 가격·재고는 판매처와 시점에 따라 달라질 수 있습니다.</p>
     </section>
 
     <!-- ------------------------------ 다른 확장팩·박스 정가 구매처 (v4.6) -->
@@ -345,7 +339,7 @@
         <p class="box-fallback">박스 목록을 불러오는 중입니다…</p>
       </div>
 
-      <p class="src-note mt-16">출처: 포켓몬 카드 게임 공식 제품 정보(정가·구성), KREAM 한글판 1박스 즉시구매 최저가(2026-11-17), 포켓몬 스토어 · G마켓 포켓몬카드공식인증샵 · 네이버 브랜드스토어 · SSG · 티씨지박스 · 롯데ON 판매처 페이지(2026-11-18 접속 확인). 재고와 가격은 시점·판매처에 따라 달라지므로 구매 전 판매처 페이지에서 확인하세요.</p>
+      <p class="src-note mt-16" data-copy="boxesSource">출처: 포켓몬 카드 게임 공식 제품 정보(정가·구성), KREAM 한글판 1박스 즉시구매 최저가(2026-11-17), 포켓몬 스토어 · G마켓 포켓몬카드공식인증샵 · 네이버 브랜드스토어 · SSG · 티씨지박스 · 롯데ON 판매처 페이지(2026-11-18 접속 확인). 재고와 가격은 시점·판매처에 따라 달라지므로 구매 전 판매처 페이지에서 확인하세요.</p>
     </section>
 
     <!-- ------------------------------ 오프라인 · 자판기 정가 구매처 (v4.8) -->
@@ -362,22 +356,22 @@
       <div class="store-shortcut-grid is-offline-grid">
         <a class="store-shortcut" href="https://www.poom.co.kr" target="_blank" rel="noopener">
           <span class="store-badge" style="--brand:#ff4d8d;--brand-ink:#ffffff">A</span>
-          <span class="store-shortcut-body"><strong class="store-shortcut-name">아트박스</strong><span class="store-sub">POOM 매장 재고 조회</span></span>
+          <span class="store-shortcut-body"><strong class="store-shortcut-name" data-copy="offlineArtName">아트박스</strong><span class="store-sub" data-copy="offlineArtSub">POOM 매장 재고 조회</span></span>
           <span class="store-go" aria-hidden="true">↗</span>
         </a>
         <a class="store-shortcut" href="https://www.pokemonkorea.co.kr/pokemon_cardshop" target="_blank" rel="noopener">
           <span class="store-badge" style="--brand:#12854a;--brand-ink:#ffffff">C</span>
-          <span class="store-shortcut-body"><strong class="store-shortcut-name">포켓몬 공인 카드샵</strong><span class="store-sub">전국 16곳 · 공식 목록</span></span>
+          <span class="store-shortcut-body"><strong class="store-shortcut-name" data-copy="offlineShopName">포켓몬 공인 카드샵</strong><span class="store-sub" data-copy="offlineShopSub">전국 16곳 · 공식 목록</span></span>
           <span class="store-go" aria-hidden="true">↗</span>
         </a>
         <a class="store-shortcut" href="https://www.pokemonkorea.co.kr/card_vending_machine" target="_blank" rel="noopener">
           <span class="store-badge" style="--brand:#7c4dff;--brand-ink:#ffffff">V</span>
-          <span class="store-shortcut-body"><strong class="store-shortcut-name">공식 카드 자판기</strong><span class="store-sub">전국 176곳 위치 안내</span></span>
+          <span class="store-shortcut-body"><strong class="store-shortcut-name" data-copy="offlineVendingName">공식 카드 자판기</strong><span class="store-sub" data-copy="offlineVendingSub">전국 176곳 위치 안내</span></span>
           <span class="store-go" aria-hidden="true">↗</span>
         </a>
         <a class="store-shortcut" href="#map" data-tab="map">
           <span class="store-badge" style="--brand:#1f6feb;--brand-ink:#ffffff">M</span>
-          <span class="store-shortcut-body"><strong class="store-shortcut-name">대형마트 3사</strong><span class="store-sub">지도에서 지점 찾기</span></span>
+          <span class="store-shortcut-body"><strong class="store-shortcut-name" data-copy="offlineMartName">대형마트 3사</strong><span class="store-sub" data-copy="offlineMartSub">지도에서 지점 찾기</span></span>
           <span class="store-go" aria-hidden="true">→</span>
         </a>
       </div>
@@ -405,7 +399,7 @@
 
       <div class="trend-grid">
         <a class="trend-card is-hot" href="#setSummary" data-tab="guide" data-goto-set="m6a">
-          <div class="trend-head"><span class="trend-tag">현재 최고 수요</span><span class="trend-code">M6a · MEGA</span></div>
+          <div class="trend-head"><span class="trend-tag" data-copy="trendTag1">현재 최고 수요</span><span class="trend-code">M6a · MEGA</span></div>
           <h3>30th CELEBRATION</h3>
           <div class="trend-price">
             <div>1팩<strong>3,500원</strong></div>
@@ -414,11 +408,11 @@
           <p class="trend-config">1팩 6장 / 1박스 20팩 · 2026-09-16 발매</p>
           <div class="trend-tags"><span class="chip chip-yellow">FUR 뮤 ex·뮤츠 ex</span><span class="chip">피카츄 30종</span><span class="chip">복각 30종</span></div>
           <p class="trend-note">팩마다 30주년 피카츄 1장·기본 에너지 1장이 확정 봉입됩니다. 전 카드가 포일입니다.</p>
-          <span class="trend-go">정가·시세·수록 카드 보기 →</span>
+          <span class="trend-go" data-copy="trendGo">정가·시세·수록 카드 보기 →</span>
         </a>
 
         <a class="trend-card" href="#setSummary" data-tab="guide" data-goto-set="sv9">
-          <div class="trend-head"><span class="trend-tag">가성비</span><span class="trend-code">SV9</span></div>
+          <div class="trend-head"><span class="trend-tag" data-copy="trendTag2">가성비</span><span class="trend-code">SV9</span></div>
           <h3>배틀파트너즈</h3>
           <div class="trend-price">
             <div>1팩<strong>1,000원</strong></div>
@@ -427,11 +421,11 @@
           <p class="trend-config">1팩 5장 / 1상자 30팩 · 2025-03-21 발매</p>
           <div class="trend-tags"><span class="chip">N의 조로아크 ex</span><span class="chip">릴리에의 삐삐 ex</span></div>
           <p class="trend-note">낱팩 부담이 가장 적어 입문용으로 많이 선택되는 세트입니다.</p>
-          <span class="trend-go">정가·시세·수록 카드 보기 →</span>
+          <span class="trend-go" data-copy="trendGo">정가·시세·수록 카드 보기 →</span>
         </a>
 
         <a class="trend-card" href="#setSummary" data-tab="guide" data-goto-set="m5">
-          <div class="trend-head"><span class="trend-tag">최신 MEGA</span><span class="trend-code">M5</span></div>
+          <div class="trend-head"><span class="trend-tag" data-copy="trendTag3">최신 MEGA</span><span class="trend-code">M5</span></div>
           <h3>어비스아이</h3>
           <div class="trend-price">
             <div>1팩<strong>1,500원</strong></div>
@@ -440,11 +434,11 @@
           <p class="trend-config">1팩 5장 / 1상자 30팩 · 2026-06-26 발매</p>
           <div class="trend-tags"><span class="chip">메가다크라이 ex</span><span class="chip">MUR 1종</span></div>
           <p class="trend-note">2026년 6월 가격 조정 이후 발매된 세트로 상자 정가가 45,000원입니다.</p>
-          <span class="trend-go">정가·시세·수록 카드 보기 →</span>
+          <span class="trend-go" data-copy="trendGo">정가·시세·수록 카드 보기 →</span>
         </a>
 
         <a class="trend-card" href="#setSummary" data-tab="guide" data-goto-set="sv11b">
-          <div class="trend-head"><span class="trend-tag">고가 카드</span><span class="trend-code">SV11B</span></div>
+          <div class="trend-head"><span class="trend-tag" data-copy="trendTag4">고가 카드</span><span class="trend-code">SV11B</span></div>
           <h3>블랙볼트</h3>
           <div class="trend-price">
             <div>1팩<strong>2,000원</strong></div>
@@ -453,7 +447,7 @@
           <p class="trend-config">1팩 7장 / 1박스 20팩 · 2025-08-01 발매</p>
           <div class="trend-tags"><span class="chip">제크로무 ex BWR</span><span class="chip">N의 방안 SAR</span></div>
           <p class="trend-note">BWR 제크로무 ex가 세트 최고가 카드로 꼽힙니다.</p>
-          <span class="trend-go">정가·시세·수록 카드 보기 →</span>
+          <span class="trend-go" data-copy="trendGo">정가·시세·수록 카드 보기 →</span>
         </a>
       </div>
     </section>
@@ -470,27 +464,27 @@
         <div class="tip-card">
           <span class="tip-num">1</span>
           <div>
-            <h4>공지부터 확인</h4>
-            <p>추첨·재입고는 포켓몬 카드 게임 공지와 포켓몬스토어 30주년 페이지가 가장 빠릅니다. 응모 기간과 결제 기한은 다른 날짜입니다.</p>
+            <h4 data-copy="tip1Title">공지부터 확인</h4>
+            <p data-copy="tip1Body">추첨·재입고는 포켓몬 카드 게임 공지와 포켓몬스토어 30주년 페이지가 가장 빠릅니다. 응모 기간과 결제 기한은 다른 날짜입니다.</p>
           </div>
         </div>
         <div class="tip-card">
           <span class="tip-num">2</span>
           <div>
-            <h4>앱 재고 → 전화</h4>
-            <p>편의점 4사 앱 재고는 전산값입니다. 방문 직전 앱으로 보고, 박스 단위 판매 여부는 매장에 전화로 확인하세요.</p>
+            <h4 data-copy="tip2Title">앱 재고 → 전화</h4>
+            <p data-copy="tip2Body">편의점 4사 앱 재고는 전산값입니다. 방문 직전 앱으로 보고, 박스 단위 판매 여부는 매장에 전화로 확인하세요.</p>
           </div>
         </div>
         <div class="tip-card">
           <span class="tip-num">3</span>
           <div>
-            <h4>팩당 단가로 판단</h4>
-            <p>리셀 박스는 팩당 단가로 환산해 정가 3,500원과 비교하세요. KREAM 슈링크 박스(2026-11-17) 76,000원은 팩당 3,800원입니다.</p>
+            <h4 data-copy="tip3Title">팩당 단가로 판단</h4>
+            <p data-copy="tip3Body">리셀 박스는 팩당 단가로 환산해 정가 3,500원과 비교하세요. KREAM 슈링크 박스(2026-11-17) 76,000원은 팩당 3,800원입니다.</p>
           </div>
         </div>
       </div>
       <div class="mt-16">
-        <button type="button" class="btn btn-dark" data-tab="map">내 주변 매장 지도 열기</button>
+        <button type="button" class="btn btn-dark" data-tab="map" data-copy="tipsCta">내 주변 매장 지도 열기</button>
       </div>
     </section>
 
@@ -517,7 +511,7 @@
         <b>정가·재고 정보가 실제와 다른가요?</b>
         <span>재고·매장 정보 오류, 정가·출시 일정 제보, 광고·제휴 문의를 <a href="mailto:acewoni3717@gmail.com">acewoni3717@gmail.com</a>으로 보낼 수 있습니다.</span>
       </div>
-      <button type="button" class="btn btn-dark btn-sm" data-modal="inquiry">관리자 문의</button>
+      <button type="button" class="btn btn-dark btn-sm" data-modal="inquiry" data-copy="inquiryBtn">관리자 문의</button>
     </div>
   </div>
 </section>
@@ -551,17 +545,17 @@
     <div class="brand-summary" id="brandSummary" role="group" aria-label="편의점 4사별 현황"></div>
 
     <div class="offline-bar" id="offlineBar" role="group" aria-label="오프라인 판매처 표시">
-      <span class="row-label">오프라인</span>
+      <span class="row-label" data-copy="mapOfflineLabel">오프라인</span>
       <div class="offline-chips" id="offlineChips"></div>
       <label class="offline-toggle" for="offlineToggle">
         <input type="checkbox" id="offlineToggle" checked>
-        <span>지도에 함께 보기</span>
+        <span data-copy="mapOfflineToggle">지도에 함께 보기</span>
       </label>
     </div>
 
     <div class="map-toolbar">
       <div class="toolbar-row">
-        <span class="row-label">지역</span>
+        <span class="row-label" data-copy="mapRegionLabel">지역</span>
         <span class="select-wrap select-province">
           <select id="provinceSelect" aria-label="시·도 선택">
             <option value="서울" selected>서울</option>
@@ -600,15 +594,15 @@
         </span>
         <span class="region-actions">
           <button type="button" class="btn btn-dark btn-sm geo-btn" id="regionBtn">
-            <span aria-hidden="true">🔍</span> 선택 지역 찾기
+            <span aria-hidden="true">🔍</span> <span data-copy="mapFindRegion">선택 지역 찾기</span>
           </button>
           <button type="button" class="btn btn-ghost btn-sm geo-btn" id="geoBtn">
-            <span aria-hidden="true">◎</span> 내 위치로 찾기
+            <span aria-hidden="true">◎</span> <span data-copy="mapFindMine">내 위치로 찾기</span>
           </button>
         </span>
       </div>
       <div class="toolbar-row">
-        <span class="row-label">반경</span>
+        <span class="row-label" data-copy="mapRadiusLabel">반경</span>
         <div class="radius-group" role="group" aria-label="반경 필터">
           <button type="button" class="radius-btn" data-radius="1000">1km</button>
           <button type="button" class="radius-btn is-active" data-radius="3000">3km</button>
@@ -616,11 +610,11 @@
           <button type="button" class="radius-btn" data-radius="20000" id="radius20">20km</button>
         </div>
         <span class="radius-note" id="radiusNote" hidden>도심은 5km까지 지원</span>
-        <button type="button" class="btn btn-ghost btn-sm toolbar-spacer" id="filterReset">필터 초기화</button>
+        <button type="button" class="btn btn-ghost btn-sm toolbar-spacer" id="filterReset" data-copy="mapFilterReset">필터 초기화</button>
         <span class="toolbar-count" id="mapCount">표시 중 <b>0</b>곳</span>
       </div>
       <div class="toolbar-row sort-row">
-        <span class="row-label">정렬</span>
+        <span class="row-label" data-copy="mapSortLabel">정렬</span>
         <span class="select-wrap select-sort">
           <select id="sortSelect" aria-label="정렬 기준">
             <option value="stock" selected>재고 우선</option>
@@ -630,7 +624,7 @@
         <label class="stock-toggle" for="stockOnly">
           <input type="checkbox" id="stockOnly">
           <span class="stock-toggle-track" aria-hidden="true"><i></i></span>
-          <span class="stock-toggle-label">재고 있는 매장만</span>
+          <span class="stock-toggle-label" data-copy="mapStockOnly">재고 있는 매장만</span>
         </label>
       </div>
     </div>
@@ -665,7 +659,7 @@
 
       <aside class="map-side" aria-label="매장 목록">
         <div class="map-side-head">
-          <strong>매장별 보유 카드</strong>
+          <strong data-copy="mapSideTitle">매장별 보유 카드</strong>
           <span id="sideSummary">재고 우선</span>
         </div>
         <div class="store-skeleton" id="storeSkeleton" aria-hidden="true">
@@ -677,7 +671,7 @@
         </div>
         <ul class="store-list" id="storeList" hidden></ul>
         <div class="store-more-wrap" id="storeMoreWrap" hidden>
-          <button type="button" class="store-more" id="storeMore" aria-expanded="false">더보기</button>
+          <button type="button" class="store-more" id="storeMore" aria-expanded="false" data-copy="mapMore">더보기</button>
         </div>
       </aside>
     </div>
@@ -726,16 +720,16 @@
 
     <!-- 기본으로 열리는 서브탭은 카드 뉴스·소식(news)입니다. -->
     <div class="sub-tabs" role="tablist" aria-label="일정·소식 구분">
-      <button type="button" class="sub-tab is-active" id="subtabBtnNews" data-subtab="news" role="tab" aria-selected="true" aria-controls="subtabNews">카드 뉴스·소식</button>
-      <button type="button" class="sub-tab" id="subtabBtnCal" data-subtab="cal" role="tab" aria-selected="false" aria-controls="subtabCal">발매·재입고 일정</button>
+      <button type="button" class="sub-tab is-active" id="subtabBtnNews" data-subtab="news" role="tab" aria-selected="true" aria-controls="subtabNews" data-copy="scheduleSubNews">카드 뉴스·소식</button>
+      <button type="button" class="sub-tab" id="subtabBtnCal" data-subtab="cal" role="tab" aria-selected="false" aria-controls="subtabCal" data-copy="scheduleSubCal">발매·재입고 일정</button>
     </div>
 
     <div class="subtab-body" id="subtabCal" role="tabpanel" aria-labelledby="subtabBtnCal" hidden>
 
     <div class="split-2">
       <div class="panel-card">
-        <h3>30th CELEBRATION 추첨·발매 타임라인</h3>
-        <p class="panel-sub">2026-09 ~ 2026-11 · 공식 공지 기준 · <b>오늘 이후 일정만 표시</b> (지난 기록은 접어 둡니다)</p>
+        <h3 data-copy="scheduleTimelineTitle">30th CELEBRATION 추첨·발매 타임라인</h3>
+        <p class="panel-sub" data-copy-html="scheduleTimelineSub">2026-09 ~ 2026-11 · 공식 공지 기준 · <b>오늘 이후 일정만 표시</b> (지난 기록은 접어 둡니다)</p>
         <ul class="timeline">
           <li class="done" data-end="2026-09-13">
             <span class="dot"></span>
@@ -789,8 +783,8 @@
       </div>
 
       <div class="panel-card">
-        <h3>11월 입고 캘린더</h3>
-        <p class="panel-sub">표시된 입고일은 <b>예상 샘플</b>입니다. 공식 일정이 아닙니다.</p>
+        <h3 data-copy="scheduleCalTitle">11월 입고 캘린더</h3>
+        <p class="panel-sub" data-copy-html="scheduleCalSub">표시된 입고일은 <b>예상 샘플</b>입니다. 공식 일정이 아닙니다.</p>
         <div class="calendar">
           <div class="cal-head"><strong>2026년 11월</strong><span class="chip chip-line">오늘 11-17</span></div>
           <div class="cal-grid" id="calGrid">
@@ -802,19 +796,19 @@
             <span><i class="m-shop"></i>카드샵·자판기</span>
           </div>
           <p class="cal-note" id="calNote">오늘 이후 입고 예정일만 표시합니다.</p>
-          <button type="button" class="cal-past-toggle" id="calPastToggle" aria-expanded="false">지난 입고일 보기</button>
+          <button type="button" class="cal-past-toggle" id="calPastToggle" aria-expanded="false" data-copy="schedulePastToggle">지난 입고일 보기</button>
         </div>
 
-        <h3 class="mt-24">공지 확인처</h3>
+        <h3 class="mt-24" data-copy="scheduleNoticeTitle">공지 확인처</h3>
         <div class="link-cards">
           <a class="link-card" href="https://pokemoncard.co.kr/" target="_blank" rel="noopener">
             <span class="lc-icon">📣</span>
-            <span><strong>포켓몬 카드 게임 공식 사이트</strong><small>추첨·재입고·이벤트 공지 1차 확인처</small></span>
+            <span><strong data-copy="scheduleLink1Name">포켓몬 카드 게임 공식 사이트</strong><small data-copy="scheduleLink1Sub">추첨·재입고·이벤트 공지 1차 확인처</small></span>
             <span class="lc-go">↗</span>
           </a>
           <a class="link-card" href="https://www.pokemonstore.co.kr/pages/pokemoncardgame30th/product/index.html" target="_blank" rel="noopener">
             <span class="lc-icon">🛒</span>
-            <span><strong>포켓몬스토어 30주년 특설</strong><small>상품 정보·추첨 응모 페이지</small></span>
+            <span><strong data-copy="scheduleLink2Name">포켓몬스토어 30주년 특설</strong><small data-copy="scheduleLink2Sub">상품 정보·추첨 응모 페이지</small></span>
             <span class="lc-go">↗</span>
           </a>
         </div>
@@ -822,10 +816,10 @@
     </div>
 
     <div class="panel-card mt-16">
-      <h3>요일별 입고 체크 가이드</h3>
-      <p class="panel-sub">매장 후기와 판매 일정을 정리한 <b>일반적인 패턴</b>입니다. 공식 입고일이 아니며 매장마다 다릅니다.</p>
+      <h3 data-copy="scheduleWeekTitle">요일별 입고 체크 가이드</h3>
+      <p class="panel-sub" data-copy-html="scheduleWeekSub">매장 후기와 판매 일정을 정리한 <b>일반적인 패턴</b>입니다. 공식 입고일이 아니며 매장마다 다릅니다.</p>
       <table class="week-table">
-        <thead><tr><th>요일</th><th>볼 곳</th><th>할 일</th><th>구분</th></tr></thead>
+        <thead><tr><th data-copy="scheduleWeekTh1">요일</th><th data-copy="scheduleWeekTh2">볼 곳</th><th data-copy="scheduleWeekTh3">할 일</th><th data-copy="scheduleWeekTh4">구분</th></tr></thead>
         <tbody>
           <tr><td class="day">월</td><td class="focus">온라인 공지</td><td class="detail">공식 스토어·카드샵 재입고 알림을 켜두고, 주말에 빠진 물량이 풀리는지 확인</td><td><span class="place-pill">온라인</span></td></tr>
           <tr><td class="day">화</td><td class="focus">대형마트 완구코너</td><td class="detail">오전에 진열이 도는 편이라 점심 전 방문이 유리</td><td><span class="place-pill">마트</span></td></tr>
@@ -893,79 +887,93 @@
       </div>
       <div class="fx-cards">
         <div class="fx-card">
-          <span class="fx-cur">USD <small>달러</small></span>
-          <span class="fx-line"><span class="fx-cap">1 USD =</span><strong class="fx-val" id="fxUsd">—</strong></span>
+          <span class="fx-cur"><span data-copy="fxUsdLabel">USD</span> <small>달러</small></span>
+          <span class="fx-line"><span class="fx-cap" data-copy="fxUsdCap">1 USD =</span><strong class="fx-val" id="fxUsd">—</strong></span>
         </div>
         <div class="fx-card">
-          <span class="fx-cur">JPY <small>엔화</small></span>
-          <span class="fx-line"><span class="fx-cap">100 JPY =</span><strong class="fx-val" id="fxJpy">—</strong></span>
+          <span class="fx-cur"><span data-copy="fxJpyLabel">JPY</span> <small>엔화</small></span>
+          <span class="fx-line"><span class="fx-cap" data-copy="fxJpyCap">100 JPY =</span><strong class="fx-val" id="fxJpy">—</strong></span>
         </div>
       </div>
       <div class="fx-foot">
         <span class="fx-note" id="fxNote">해외 시세(PSA·eBay·SNKRDUNK)를 원화로 환산할 때 참고하세요.</span>
-        <button type="button" class="fx-refresh" id="fxRefresh">새로고침</button>
+        <button type="button" class="fx-refresh" id="fxRefresh" data-copy="fxRefresh">새로고침</button>
       </div>
     </section>
 
-    <!-- PSA 거래 내역 (경매 낙찰가 · 즉구가) · SNKRDUNK 조회 -->
+    <!-- 시세 통합 조회: 크림 · 스니커덩크 · 130point · PriceCharting · eBay · PSA -->
     <section class="market-tools" id="marketTools" aria-labelledby="marketToolsTitle" data-section="market">
       <div class="mt-head">
-        <span class="eyebrow">시세 · 거래가 조회</span>
+        <span class="eyebrow" data-copy="marketEyebrow">시세 · 거래가 조회</span>
         <h2 class="mt-title" id="marketToolsTitle" data-copy="marketTitle">PSA 거래 내역 조회 (경매가·즉구가)</h2>
-        <p class="mt-lead">카드명·세트·키워드를 넣으면 아래 조회 링크가 그 검색어로 바뀝니다. <b>PSA 공식 경매 낙찰가(APR)</b>과 <b>eBay 경매 완료가</b>로 낙찰가를, <b>eBay 즉구(Buy It Now)</b>와 <b>스니커덩크(SNKRDUNK)</b>로 지금 사는 가격을 비교하세요.</p>
+        <p class="mt-lead" data-copy-html="marketLead">카드명·세트·키워드를 넣으면 아래 조회 링크가 그 검색어로 바뀝니다. <b>크림(KREAM)·스니커덩크</b>로 국내·일본 리셀가를, <b>130point·PriceCharting·eBay 낙찰 완료</b>로 실제 체결가와 등급별 평균 시세를, <b>eBay 즉구(Buy It Now)</b>로 지금 사는 가격을, <b>PSA 공식 경매 낙찰가(APR)</b>로 공식 기록을 봅니다.</p>
       </div>
       <div class="mt-search">
-        <label class="mt-label" for="marketQuery">카드명 · 세트 · 키워드</label>
+        <label class="mt-label" for="marketQuery" data-copy="marketLabel">카드명 · 세트 · 키워드</label>
         <div class="mt-row">
-          <input type="search" id="marketQuery" class="mt-input" placeholder="예: 뮤 ex / 30th CELEBRATION / 블랙볼트"
+          <input type="search" id="marketQuery" class="mt-input" placeholder="예: Pikachu / 피카츄 / Charizard ex / 1998 Birthday Pikachu"
                  autocomplete="off" spellcheck="false" enterkeyhint="search">
-          <button type="button" class="mt-clear" id="marketClear">지우기</button>
+          <button type="button" class="mt-clear" id="marketClear" data-copy="marketClear">지우기</button>
         </div>
-        <p class="mt-hint" id="marketHint">검색어 없이 누르면 각 사이트의 기본 조회 화면이 열립니다.</p>
+        <p class="mt-hint" id="marketHint">검색어 없이 누르면 각 사이트의 기본 조회 화면이 열립니다. 한글로 넣으면 크림은 한글 그대로, 해외 사이트는 영문으로 자동 변환해 검색합니다.</p>
       </div>
       <div class="mt-groups">
         <div class="mt-group">
-          <span class="mt-group-title">경매 낙찰가 (거래 완료)</span>
+          <span class="mt-group-title" data-copy="marketGroupKr">한국·일본 리셀 플랫폼</span>
           <div class="mt-links">
-            <a class="mt-link" data-market="psaApr" href="https://www.psacard.com/auctionprices" target="_blank" rel="noopener">
-              <span class="mt-link-body"><strong>PSA 경매 낙찰가</strong><small>Auction Prices Realized</small></span>
+            <a class="mt-link" data-market="kream" href="https://kream.co.kr/" target="_blank" rel="noopener">
+              <span class="mt-link-body"><strong data-copy="marketKreamName">KREAM (크림)</strong><small data-copy="marketKreamSub">한글 검색어 그대로 · 한국 리셀 시세</small></span>
               <span class="mt-go" aria-hidden="true">↗</span>
             </a>
-            <a class="mt-link" data-market="ebaySold" href="https://www.ebay.com/sch/i.html?_nkw=%ED%8F%AC%EC%BC%93%EB%AA%AC%EC%B9%B4%EB%93%9C%20PSA&amp;LH_Sold=1&amp;LH_Complete=1" target="_blank" rel="noopener">
-              <span class="mt-link-body"><strong>eBay 낙찰가</strong><small>경매 완료 (Sold)</small></span>
+            <a class="mt-link" data-market="snkrdunk" href="https://snkrdunk.com/en/search?keywords=" target="_blank" rel="noopener">
+              <span class="mt-link-body"><strong data-copy="marketSnkrdunkName">스니커덩크 (SNKRDUNK)</strong><small data-copy="marketSnkrdunkSub">일본 리셀 시세 · 영문 검색</small></span>
               <span class="mt-go" aria-hidden="true">↗</span>
             </a>
           </div>
         </div>
         <div class="mt-group">
-          <span class="mt-group-title">지금 사는 가격 (즉구)</span>
+          <span class="mt-group-title" data-copy="marketGroupFree">로그인 없이 보는 PSA·실거래가</span>
           <div class="mt-links">
-            <a class="mt-link" data-market="ebayBin" href="https://www.ebay.com/sch/i.html?_nkw=%ED%8F%AC%EC%BC%93%EB%AA%AC%EC%B9%B4%EB%93%9C%20PSA&amp;LH_BIN=1&amp;_sop=15" target="_blank" rel="noopener">
-              <span class="mt-link-body"><strong>eBay 즉구가</strong><small>Buy It Now</small></span>
+            <a class="mt-link" data-market="p130point" href="https://130point.com/sales/?q=" target="_blank" rel="noopener">
+              <span class="mt-link-body"><strong data-copy="market130Name">130point (실제 체결가)</strong><small data-copy="market130Sub">eBay 낙찰·베스트오퍼 실제 금액</small></span>
               <span class="mt-go" aria-hidden="true">↗</span>
             </a>
-            <a class="mt-link" data-market="snkrdunk" href="https://snkrdunk.com/en/brands/pokemon/trading-cards" target="_blank" rel="noopener">
-              <span class="mt-link-body"><strong>스니커덩크 카드</strong><small>SNKRDUNK 포켓몬</small></span>
+            <a class="mt-link" data-market="pricecharting" href="https://www.pricecharting.com/search-products?q=&amp;type=prices" target="_blank" rel="noopener">
+              <span class="mt-link-body"><strong data-copy="marketPcName">PriceCharting</strong><small data-copy="marketPcSub">PSA 등급별 평균 시세 · 거래 내역</small></span>
               <span class="mt-go" aria-hidden="true">↗</span>
             </a>
-            <a class="mt-link" data-market="snkrdunkSearch" href="https://snkrdunk.com/en/search?keywords=" target="_blank" rel="noopener">
-              <span class="mt-link-body"><strong>스니커덩크 검색</strong><small>SNKRDUNK 검색어 연동</small></span>
+            <a class="mt-link" data-market="ebaySold" href="https://www.ebay.com/sch/i.html?_nkw=&amp;LH_Sold=1&amp;LH_Complete=1" target="_blank" rel="noopener">
+              <span class="mt-link-body"><strong data-copy="marketEbaySoldName">eBay 낙찰 완료 (Sold)</strong><small data-copy="marketEbaySoldSub">경매로 끝난 실제 낙찰가</small></span>
+              <span class="mt-go" aria-hidden="true">↗</span>
+            </a>
+            <a class="mt-link" data-market="ebayBin" href="https://www.ebay.com/sch/i.html?_nkw=&amp;LH_BIN=1&amp;_sop=15" target="_blank" rel="noopener">
+              <span class="mt-link-body"><strong data-copy="marketEbayBinName">eBay 즉구가 (BIN)</strong><small data-copy="marketEbayBinSub">지금 바로 살 수 있는 가격</small></span>
               <span class="mt-go" aria-hidden="true">↗</span>
             </a>
           </div>
         </div>
+        <div class="mt-group is-official">
+          <span class="mt-group-title" data-copy="marketGroupPsa">PSA 공식 (로그인 필요)</span>
+          <div class="mt-links">
+            <a class="mt-link" data-market="psaApr" href="https://www.psacard.com/auctionprices" target="_blank" rel="noopener">
+              <span class="mt-link-body"><strong data-copy="marketPsaName">PSA 공식 경매가 (APR)</strong><small data-copy="marketPsaSub">Auction Prices Realized · 공식 낙찰 기록</small></span>
+              <span class="mt-go" aria-hidden="true">↗</span>
+            </a>
+          </div>
+          <p class="mt-badge" data-copy="marketPsaBadge">PSA 계정 로그인 필요</p>
+        </div>
       </div>
-      <p class="mt-note">해외 사이트는 영문·일본어 표기와 배송비·관세가 붙을 수 있습니다. PSA 경매 낙찰가 검색은 무료 PSA 계정 로그인을 요구할 수 있고, 이 사이트는 어떤 결제 화면도 열지 않습니다.</p>
+      <p class="mt-note" data-copy="marketNote">크림은 한글 검색어를 그대로, 스니커덩크·130point·PriceCharting·eBay·PSA는 자동 변환한 영문 검색어를 넘깁니다. 해외 사이트는 영문·일본어 표기와 배송비·관세가 붙을 수 있고, PSA 경매 낙찰가(APR) 조회는 무료 PSA 계정 로그인을 요구합니다. 이 사이트는 어떤 결제 화면도 열지 않습니다.</p>
     </section>
 
     <form class="set-search" id="setSearchForm" role="search" aria-label="세트·박스 이름 검색">
-      <label class="set-search-label" for="setSearch">세트·박스 이름 검색</label>
+      <label class="set-search-label" for="setSearch" data-copy="setSearchLabel">세트·박스 이름 검색</label>
       <div class="set-search-row">
         <input type="search" id="setSearch" class="set-search-input" placeholder="예: 30th CELEBRATION, 어비스아이, 블랙볼트"
                autocomplete="off" spellcheck="false" enterkeyhint="search">
-        <button type="submit" class="btn btn-dark" id="setSearchBtn">검색</button>
+        <button type="submit" class="btn btn-dark" id="setSearchBtn" data-copy="setSearchBtn">검색</button>
       </div>
-      <p class="set-search-hint" id="setSearchHint">세트 이름의 일부만 넣어도 됩니다. 결과에서 정가와 리셀 시세를 바로 확인하세요.</p>
+      <p class="set-search-hint" id="setSearchHint" data-copy="setSearchHint">세트 이름의 일부만 넣어도 됩니다. 결과에서 정가와 리셀 시세를 바로 확인하세요.</p>
     </form>
     <div class="set-search-result" id="setSearchResult" aria-live="polite"></div>
 
@@ -985,7 +993,7 @@
     </div>
 
     <div class="panel-card">
-      <h3>정가 vs 리셀 — 팩당 단가로 비교하기</h3>
+      <h3 data-copy="compareTitle">정가 vs 리셀 — 팩당 단가로 비교하기</h3>
       <p class="panel-sub" id="compareSub">정가 기준 1박스 70,000원 = 팩당 3,500원. 아래는 2026-11-17 KREAM 한글판 1박스 즉시구매 최저가를 정가와 비교한 값입니다(배송비·검수 수수료 별도).</p>
       <div class="table-scroll">
         <table class="compare-table">
@@ -1001,16 +1009,16 @@
       <p class="src-note mt-8" id="compareNote">KREAM 시세는 2026-11-17 확인 기준 즉시구매 최저가입니다(한글판 1박스). <a href="https://kream.co.kr/products/1072895" target="_blank" rel="noopener">KREAM 슈링크 박스</a></p>
 
       <div class="calc">
-        <h4>리셀 프리미엄 계산기 <span class="calc-set" id="calcSetName">· 30th CELEBRATION</span></h4>
+        <h4><span data-copy="calcTitle">리셀 프리미엄 계산기</span> <span class="calc-set" id="calcSetName">· 30th CELEBRATION</span></h4>
         <p class="hint" id="calcHint">박스 가격을 넣으면 팩당 단가와 정가(70,000원) 대비 차액을 계산합니다.</p>
         <div class="calc-row">
           <input type="number" id="calcInput" inputmode="numeric" placeholder="예: 76000" aria-label="박스 가격(원)" min="0" step="1000">
-          <button type="button" class="btn btn-yellow" id="calcBtn">계산</button>
+          <button type="button" class="btn btn-yellow" id="calcBtn" data-copy="calcBtn">계산</button>
         </div>
         <div class="calc-result">
           <div><span id="calcPerPackLabel">팩당 단가</span><strong id="calcPerPack">-</strong></div>
-          <div><span>정가 대비 차액</span><strong id="calcDiff">-</strong></div>
-          <div><span>정가 대비 비율</span><strong id="calcRate">-</strong></div>
+          <div><span data-copy="calcDiffLabel">정가 대비 차액</span><strong id="calcDiff">-</strong></div>
+          <div><span data-copy="calcRateLabel">정가 대비 비율</span><strong id="calcRate">-</strong></div>
         </div>
         <p class="calc-verdict" id="calcVerdict">정가 70,000원(30th CELEBRATION)을 기준으로 판단합니다.</p>
       </div>
@@ -1019,7 +1027,7 @@
     <section class="section" id="cards" aria-labelledby="cards-title" data-section="cards">
       <div class="section-head">
         <div>
-          <span class="eyebrow" id="dexEyebrow">30th CELEBRATION 도감</span>
+          <span class="eyebrow" id="dexEyebrow" data-copy="cardsEyebrow">30th CELEBRATION 도감</span>
           <h2 id="cards-title" data-section-title>수록 카드와 레어도</h2>
           <p id="dexDesc"><strong>176종(기본 103종)</strong> · 30주년 기념팩. 팩마다 30주년 피카츄 1장과 기본 에너지 1장이 확정 봉입되고, 카드 전 종이 포일입니다.</p>
         </div>
@@ -1037,12 +1045,12 @@
           <button type="button" class="rarity-chip" data-rarity="SAR">SAR</button>
           <button type="button" class="rarity-chip" data-rarity="AR">AR</button>
         </div>
-        <div class="dex-meta"><span id="dexCount">전체 34장</span><span>레어도 표기는 카드 공식 표기를 따릅니다.</span></div>
+        <div class="dex-meta"><span id="dexCount">전체 34장</span><span data-copy="cardsRarityNote">레어도 표기는 카드 공식 표기를 따릅니다.</span></div>
       </div>
 
       <div class="dex-grid" id="dexGrid"></div>
       <div class="dex-more-wrap" id="dexMoreWrap" hidden>
-        <button type="button" class="dex-more" id="dexMore" aria-expanded="false" aria-controls="dexGrid">더보기</button>
+        <button type="button" class="dex-more" id="dexMore" aria-expanded="false" aria-controls="dexGrid" data-copy="cardsMore">더보기</button>
       </div>
       <p class="src-note mt-8" id="dexNote">카드 번호는 공식 표기가 확인된 카드만 표시합니다. 017~046번은 30명의 일러스트레이터가 그린 피카츄 30종입니다.</p>
 
@@ -1051,8 +1059,8 @@
 
     <div class="split-2 is-even">
       <div class="panel-card">
-        <h3>미개봉(슈링크) 확인 체크리스트</h3>
-        <p class="panel-sub">온라인·중고 구매 전에 이 순서로 확인하세요.</p>
+        <h3 data-copy="checklistTitle">미개봉(슈링크) 확인 체크리스트</h3>
+        <p class="panel-sub" data-copy="checklistSub">온라인·중고 구매 전에 이 순서로 확인하세요.</p>
         <ul class="checklist">
           <li><input type="checkbox" id="ck1"><span><label for="ck1">박스 외부 비닐(슈링크)이 원형대로 있는지</label></span></li>
           <li><input type="checkbox" id="ck2"><span><label for="ck2">비닐 접힘선과 열봉인이 자연스러운지</label></span></li>
@@ -1065,8 +1073,8 @@
       </div>
 
       <div class="panel-card">
-        <h3>가품·재포장 주의 신호</h3>
-        <p class="panel-sub">아래 신호가 겹치면 거래를 멈추고 확인하세요.</p>
+        <h3 data-copy="fakeTitle">가품·재포장 주의 신호</h3>
+        <p class="panel-sub" data-copy="fakeSub">아래 신호가 겹치면 거래를 멈추고 확인하세요.</p>
         <ul class="channel-features" style="gap:9px;">
           <li>박스 인쇄가 흐리거나 색이 어긋나고, 로고 위치가 미묘하게 다른 경우</li>
           <li>낱팩 가장자리 접착이 들뜨거나, 팩 두께·비닐 질감이 다른 경우</li>
@@ -1074,7 +1082,7 @@
           <li>"무조건 히트 보장", "박스 검증 완료" 같은 근거 없는 문구</li>
           <li>계좌 이체만 요구하고 플랫폼 안전결제를 거부하는 경우</li>
         </ul>
-        <div class="note-box">정가 이상을 주고 사는 순간 기대값은 좋아지지 않습니다. 확률은 가격과 무관합니다.</div>
+        <div class="note-box" data-copy="fakeNote">정가 이상을 주고 사는 순간 기대값은 좋아지지 않습니다. 확률은 가격과 무관합니다.</div>
       </div>
     </div>
 
@@ -1120,7 +1128,7 @@
         </details>
       </div>
       <div class="faq-more-wrap" id="faqMoreWrap" hidden>
-        <button type="button" class="dex-more faq-more" id="faqMore" aria-expanded="false" aria-controls="faqList">더보기</button>
+        <button type="button" class="dex-more faq-more" id="faqMore" aria-expanded="false" aria-controls="faqList" data-copy="faqMore">더보기</button>
       </div>
     </section>
 
@@ -1156,7 +1164,7 @@
         <b>도감·시세에서 빠진 정보가 있나요?</b>
         <span>정가·출시 일정 제보, 수록 카드·시세 오류 신고, 광고·제휴 문의를 <a href="mailto:acewoni3717@gmail.com">acewoni3717@gmail.com</a>으로 보낼 수 있습니다.</span>
       </div>
-      <button type="button" class="btn btn-dark btn-sm" data-modal="inquiry">관리자 문의</button>
+      <button type="button" class="btn btn-dark btn-sm" data-modal="inquiry" data-copy="inquiryBtn">관리자 문의</button>
     </div>
   </div>
 </section>
@@ -1170,28 +1178,28 @@
       <p data-copy-html="trendsLead"><b>PSA · CGC · BRG · BGS</b> 가운데 회사를 먼저 고른 뒤 등급카드 넘버(인증서 번호 또는 카드 번호)를 넣으면, 번호를 복사해 그 회사의 팝 리포트·인증서 조회 페이지로 바로 넘겨 줍니다. 팝수는 회사별로 따로 집계되므로 보고 싶은 회사를 먼저 골라야 합니다.</p>
       <div class="pop-cross">
         <div class="pop-cross-copy">
-          <b>PSA 거래 내역(경매 낙찰가·즉구가)도 바로 볼 수 있습니다.</b>
-          <span>도감·시세 탭의 <b>PSA 거래 내역 조회</b>에서 카드명을 넣고 PSA 경매 낙찰가·eBay·스니덩을 한 번에 엽니다.</span>
+          <b data-copy="popCrossTitle">PSA 거래 내역(경매 낙찰가·즉구가)도 바로 볼 수 있습니다.</b>
+          <span data-copy-html="popCrossDesc">도감·시세 탭의 <b>PSA 거래 내역 조회</b>에서 카드명을 넣고 PSA 경매 낙찰가·eBay·스니덩을 한 번에 엽니다.</span>
         </div>
-        <button type="button" class="btn btn-dark btn-sm" id="popToMarket">PSA 거래 내역 조회 →</button>
+        <button type="button" class="btn btn-dark btn-sm" id="popToMarket" data-copy="popCrossCta">PSA 거래 내역 조회 →</button>
       </div>
     </div>
 
     <section class="section" id="popSection" aria-labelledby="pop-title" data-section="pop">
       <div class="pop-board">
         <form class="pop-form" id="popForm" role="search" aria-label="등급카드 넘버로 팝 리포트 조회">
-          <span class="pop-label" id="popCompanyLabel">등급 회사 선택</span>
+          <span class="pop-label" id="popCompanyLabel" data-copy="popCompanyLabel">등급 회사 선택</span>
           <div class="pop-company" id="popCompany" role="radiogroup" aria-label="등급 회사">
             <button type="button" class="pop-company-btn is-active" data-company="psa" role="radio" aria-checked="true">PSA</button>
             <button type="button" class="pop-company-btn" data-company="cgc" role="radio" aria-checked="false">CGC</button>
             <button type="button" class="pop-company-btn" data-company="brg" role="radio" aria-checked="false">BRG</button>
             <button type="button" class="pop-company-btn" data-company="bgs" role="radio" aria-checked="false">BGS</button>
           </div>
-          <label class="pop-label" for="popQuery" id="popQueryLabel">등급카드 넘버 (인증서 번호 / 카드 번호)</label>
+          <label class="pop-label" for="popQuery" id="popQueryLabel" data-copy="popQueryLabel">등급카드 넘버 (인증서 번호 / 카드 번호)</label>
           <div class="pop-row">
             <input type="search" id="popQuery" class="pop-input" placeholder="인증서 번호 또는 카드 번호를 입력하세요"
                    autocomplete="off" spellcheck="false" enterkeyhint="search" inputmode="text">
-            <button type="submit" class="btn btn-dark" id="popSearchBtn">조회</button>
+            <button type="submit" class="btn btn-dark" id="popSearchBtn" data-copy="popSearchBtn">조회</button>
           </div>
           <p class="pop-hint" id="popHint">PSA를 선택했습니다. 인증서 번호(예: 8~9자리)를 넣으면 인증서 조회, 카드 번호(예: 127/103)를 넣으면 팝 리포트 검색으로 갑니다.</p>
         </form>
@@ -1209,7 +1217,7 @@
         <b>팝수 조회가 잘 안 되나요?</b>
         <span>회사·번호 안내 오류, 빠진 카드, 공식 조회 페이지 변경을 <a href="mailto:acewoni3717@gmail.com">acewoni3717@gmail.com</a>으로 보내 주세요.</span>
       </div>
-      <button type="button" class="btn btn-dark btn-sm" data-modal="inquiry">관리자 문의</button>
+      <button type="button" class="btn btn-dark btn-sm" data-modal="inquiry" data-copy="inquiryBtn">관리자 문의</button>
     </div>
   </div>
 </section>
@@ -1248,7 +1256,7 @@
           <li><button type="button" data-modal="about">포켓몬카드모아 소개</button></li>
           <li><button type="button" data-modal="privacy">개인정보처리방침</button></li>
           <li><button type="button" data-modal="terms">이용약관</button></li>
-          <li><button type="button" data-modal="inquiry">관리자 문의</button></li>
+          <li><button type="button" data-modal="inquiry" data-copy="inquiryBtn">관리자 문의</button></li>
           <li><button type="button" data-modal="inquiry" data-inquiry-type="재고·매장 정보 오류">운영 문의 · 재고 제보</button></li>
           <li><a href="privacy.html">개인정보처리방침 (문서)</a></li>
           <li><a href="terms.html">이용약관 (문서)</a></li>
@@ -1444,12 +1452,12 @@
   </div>
 </template>
 
-<script src="assets/js/data.js?v=85"></script>
-<script src="assets/js/map.js?v=85"></script>
-<script src="assets/js/app.js?v=85"></script>
+<script src="assets/js/data.js?v=86"></script>
+<script src="assets/js/map.js?v=86"></script>
+<script src="assets/js/app.js?v=86"></script>
 <!-- 모아 어드민(moa-kr/moa-admin)이 커밋하는 assets/config/site-config.json 을 화면에 적용합니다.
      공지 바·팝업·탭/섹션 순서와 노출·문구가 이 파일 값으로 바뀝니다. -->
-<script src="assets/js/site-config-loader.js?v=85" defer
+<script src="assets/js/site-config-loader.js?v=86" defer
         data-config="assets/config/site-config.json"
         data-tab-container=".main-nav"
         data-banner-host=".site-header"></script>

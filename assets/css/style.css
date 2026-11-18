@@ -3661,6 +3661,13 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
 .mt-link-body small { font-size: 10.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mt-go { margin-left: auto; color: var(--muted-2); font-size: 12px; }
 .mt-link.is-empty .mt-link-body small { color: var(--amber); }
+.mt-group.is-official { padding: 10px 11px 8px; border: 1px dashed var(--line); border-radius: 14px; background: rgba(255, 203, 5, 0.06); }
+.mt-group.is-official .mt-group-title { color: var(--ink-2); }
+.mt-badge {
+  display: inline-block; margin: 6px 0 0; padding: 2px 8px;
+  border-radius: 999px; background: rgba(16, 31, 60, 0.08);
+  font-size: 10px; font-weight: 800; color: var(--ink-2);
+}
 .mt-note { margin: 12px 0 0; font-size: 10.5px; line-height: 1.55; color: var(--muted-2); }
 
 .pop-cross {

@@ -2969,50 +2969,261 @@
     }
   }
 
-  /* --------------------------- 시세·거래가 조회 (PSA · eBay · 스니커덩크) */
-  /* 입력한 카드명·세트·키워드를 그대로 검색어로 넘긴다. 결제 화면은 열지 않는다. */
+  /* --------------------------- 시세·거래가 통합 조회 (크림 · 스니커덩크 · 130point · PriceCharting · eBay · PSA) */
+  /* 카드명·세트명을 넣으면 아래 조회 링크가 그 검색어로 바뀝니다. 크림에는 한글 그대로,
+     해외 사이트에는 사전으로 변환한 영문 검색어를 넘깁니다. 결제 화면은 열지 않습니다. */
   var marketQueryEl = $("#marketQuery");
   var marketHintEl = $("#marketHint");
   var marketClearEl = $("#marketClear");
+
+  /* 한글 → 영문 검색어 사전 (포켓몬 이름 · 인기 카드 · 세트명 · 표기) */
+  var KO_EN_PAIRS = [
+    ["일러스트레이터 피카츄", "Pikachu Illustrator"],
+    ["생일 피카츄", "Birthday Pikachu"],
+    ["1998 Birthday Pikachu", "1998 Birthday Pikachu"],
+    ["테라스탈 페스타", "Terastal Festival"],
+    ["열풍의 아레나", "Heat Wave Arena"],
+    ["로켓단의 영광", "Glory of Team Rocket"],
+    ["배틀파트너즈", "Battle Partners"],
+    ["배틀 파트너즈", "Battle Partners"],
+    ["이브이히어로즈", "Eevee Heroes"],
+    ["화이트플레어", "White Flare"],
+    ["블랙볼트", "Black Bolt"],
+    ["어비스아이", "Abyss Eye"],
+    ["30주년", "30th Anniversary"],
+    ["포켓몬카드", "Pokemon Card"],
+    ["포켓몬 카드", "Pokemon Card"],
+    ["포켓몬", "Pokemon"],
+    ["뭉크", "Munch"],
+    ["한글판", "Korean"],
+    ["일본판", "Japanese"],
+    ["영문판", "English"],
+    ["이로치", "Shiny"],
+    ["전설", "Legendary"],
+    ["환상", "Mythical"],
+    ["프로모션", "Promo"],
+    ["프로모", "Promo"],
+    ["확장팩", "Expansion"],
+    ["박스", "Box"],
+    ["팩", "Pack"],
+    ["세트", "Set"],
+    ["카드", "Card"],
+    ["등급", "Grade"],
+    ["피카츄", "Pikachu"],
+    ["라이츄", "Raichu"],
+    ["피츄", "Pichu"],
+    ["이상해씨", "Bulbasaur"],
+    ["이상해풀", "Ivysaur"],
+    ["이상해꽃", "Venusaur"],
+    ["파이리", "Charmander"],
+    ["리자드", "Charmeleon"],
+    ["리자몽", "Charizard"],
+    ["꼬부기", "Squirtle"],
+    ["어니부기", "Wartortle"],
+    ["거북왕", "Blastoise"],
+    ["캐터피", "Caterpie"],
+    ["버터플", "Butterfree"],
+    ["구구", "Pidgey"],
+    ["피죤투", "Pidgeot"],
+    ["피죤", "Pidgeotto"],
+    ["꼬렛", "Rattata"],
+    ["나옹", "Meowth"],
+    ["삐삐", "Clefairy"],
+    ["픽시", "Clefable"],
+    ["식스테일", "Vulpix"],
+    ["나인테일", "Ninetales"],
+    ["가디", "Growlithe"],
+    ["윈디", "Arcanine"],
+    ["고라파덕", "Psyduck"],
+    ["골덕", "Golduck"],
+    ["케이시", "Abra"],
+    ["윤겔라", "Alakazam"],
+    ["고오스", "Gastly"],
+    ["고우스트", "Haunter"],
+    ["팬텀", "Gengar"],
+    ["또가스", "Koffing"],
+    ["스라크", "Scyther"],
+    ["롱스톤", "Onix"],
+    ["꼬마돌", "Geodude"],
+    ["알통몬", "Machop"],
+    ["근육몬", "Machoke"],
+    ["괴력몬", "Machamp"],
+    ["잠만보", "Snorlax"],
+    ["갸라도스", "Gyarados"],
+    ["잉어킹", "Magikarp"],
+    ["라프라스", "Lapras"],
+    ["미뇽", "Dratini"],
+    ["신뇽", "Dragonair"],
+    ["망나뇽", "Dragonite"],
+    ["뮤츠", "Mewtwo"],
+    ["뮤", "Mew"],
+    ["세레비", "Celebi"],
+    ["루기아", "Lugia"],
+    ["칠색조", "Ho-Oh"],
+    ["레쿠쟈", "Rayquaza"],
+    ["그란돈", "Groudon"],
+    ["가이오가", "Kyogre"],
+    ["지라치", "Jirachi"],
+    ["디아루가", "Dialga"],
+    ["펄기아", "Palkia"],
+    ["기라티나", "Giratina"],
+    ["아르세우스", "Arceus"],
+    ["다크라이", "Darkrai"],
+    ["애버라스", "Larvitar"],
+    ["마기라스", "Tyranitar"],
+    ["보만다", "Salamence"],
+    ["메타그로스", "Metagross"],
+    ["한카리아스", "Garchomp"],
+    ["리오르", "Riolu"],
+    ["루카리오", "Lucario"],
+    ["이브이", "Eevee"],
+    ["샤미드", "Vaporeon"],
+    ["쥬피썬더", "Jolteon"],
+    ["부스터", "Flareon"],
+    ["에브이", "Espeon"],
+    ["블래키", "Umbreon"],
+    ["리피아", "Leafeon"],
+    ["글레이시아", "Glaceon"],
+    ["님피아", "Sylveon"],
+    ["개구마르", "Froakie"],
+    ["개굴반장", "Frogadier"],
+    ["개굴닌자", "Greninja"],
+    ["코라이돈", "Koraidon"],
+    ["미라이돈", "Miraidon"],
+    ["테라파고스", "Terapagos"],
+    ["오거폰", "Ogerpon"],
+    ["따라큐", "Mimikyu"],
+    ["토게피", "Togepi"],
+    ["토게키스", "Togekiss"],
+    ["마릴", "Marill"],
+    ["팽도리", "Piplup"],
+    ["찌르꼬", "Starly"],
+    ["찌르호크", "Staraptor"],
+    ["맘모꾸리", "Mamoswine"],
+    ["글라이온", "Gliscor"],
+    ["치코리타", "Chikorita"],
+    ["브케인", "Cyndaquil"],
+    ["리아코", "Totodile"],
+    ["나무지기", "Treecko"],
+    ["아차모", "Torchic"],
+    ["물짱이", "Mudkip"],
+    ["모부기", "Turtwig"],
+    ["불꽃숭이", "Chimchar"],
+    ["냐오불", "Litten"],
+    ["흥나숭", "Grookey"],
+    ["염버니", "Scorbunny"],
+    ["울머기", "Sobble"],
+    ["캥카", "Kangaskhan"],
+    ["해피너스", "Blissey"],
+    ["코뿔도", "Rhydon"],
+    ["니드킹", "Nidoking"],
+    ["니드퀸", "Nidoqueen"]
+  ];
+  var KO_EN = {};
+  (function () {
+    for (var i = 0; i < KO_EN_PAIRS.length; i++) {
+      var ko = KO_EN_PAIRS[i][0];
+      if (!KO_EN[ko]) KO_EN[ko] = KO_EN_PAIRS[i][1];
+    }
+  })();
+  var KO_EN_KEYS = Object.keys(KO_EN).sort(function (a, b) { return b.length - a.length; });
+  /* 조사(의·은·는·이·가·을·를·와·과·로·에·도)는 검색어에 남기지 않는다. */
+  var KO_SUFFIX = "의은는이가을를와과로에도";
+  function hasHangul(text) { return /[\uac00-\ud7a3]/.test(String(text || "")); }
+  /* 한글 검색어를 사전 기준으로 영문으로 바꾼다(모르는 글자는 그대로 둔다). */
+  function marketEnglishQuery(raw) {
+    var text = String(raw || "").trim();
+    if (!text) return "";
+    var out = "";
+    var i = 0;
+    while (i < text.length) {
+      var matched = "";
+      for (var k = 0; k < KO_EN_KEYS.length; k++) {
+        var key = KO_EN_KEYS[k];
+        if (text.substr(i, key.length) === key) { matched = key; break; }
+      }
+      if (matched) {
+        out += KO_EN[matched];
+        i += matched.length;
+        var next = text.charAt(i);
+        if (next && KO_SUFFIX.indexOf(next) >= 0) i += 1;
+      } else {
+        out += text.charAt(i);
+        i += 1;
+      }
+    }
+    return out.replace(/[ \t]+/g, " ").trim();
+  }
   var MARKET_LINKS = {
-    psaApr: function (q) {
-      return q
-        ? "https://www.psacard.com/auctionprices/search?q=" + encodeURIComponent(q)
-        : "https://www.psacard.com/auctionprices";
+    /* 크림은 한글 검색어를 그대로 넘긴다. */
+    kream: function (ko) {
+      /* 검색어가 없으면 크림 첫 화면, 있으면 그 검색어로 바로 검색한다. */
+      return ko ? "https://kream.co.kr/search?keyword=" + encodeURIComponent(ko) : "https://kream.co.kr/";
     },
-    ebaySold: function (q) {
-      return "https://www.ebay.com/sch/i.html?_nkw=" + encodeURIComponent((q || "포켓몬카드") + " PSA") +
+    /* 아래 해외 사이트는 자동 변환된 영문 검색어를 쓴다. */
+    snkrdunk: function (en) {
+      return "https://snkrdunk.com/en/search?keywords=" + encodeURIComponent(en || "pokemon card");
+    },
+    p130point: function (en) {
+      return "https://130point.com/sales/?q=" + encodeURIComponent((en ? en + " " : "") + "pokemon");
+    },
+    pricecharting: function (en) {
+      return "https://www.pricecharting.com/search-products?q=" + encodeURIComponent((en ? en + " " : "") + "pokemon") +
+        "&type=prices";
+    },
+    ebaySold: function (en) {
+      return "https://www.ebay.com/sch/i.html?_nkw=" + encodeURIComponent((en ? en + " " : "") + "pokemon psa") +
         "&LH_Sold=1&LH_Complete=1";
     },
-    ebayBin: function (q) {
-      return "https://www.ebay.com/sch/i.html?_nkw=" + encodeURIComponent((q || "포켓몬카드") + " PSA") +
+    ebayBin: function (en) {
+      return "https://www.ebay.com/sch/i.html?_nkw=" + encodeURIComponent((en ? en + " " : "") + "pokemon psa") +
         "&LH_BIN=1&_sop=15";
     },
-    snkrdunk: function () {
-      /* 카드 목록 바로가기는 고정 — 검색은 아래 '스니커덩크 검색' 링크가 맡는다 */
-      return "https://snkrdunk.com/en/brands/pokemon/trading-cards";
-    },
-    snkrdunkSearch: function (q) {
-      return "https://snkrdunk.com/en/search?keywords=" + encodeURIComponent(q || "pokemon card");
+    psaApr: function (en) {
+      return en
+        ? "https://www.psacard.com/auctionprices/search?q=" + encodeURIComponent(en)
+        : "https://www.psacard.com/auctionprices";
     }
   };
+  /* 어떤 링크에 어떤 검색어를 넘기는지(크림만 한글). */
+  var MARKET_QUERY_KIND = { kream: "ko", snkrdunk: "en", p130point: "en", pricecharting: "en", ebaySold: "en", ebayBin: "en", psaApr: "en" };
   function marketQueryText() {
     return String((marketQueryEl && marketQueryEl.value) || "").trim();
   }
+  /* 카드명·세트명 → {ko, en, converted, unknown}. converted: 사전으로 한 글자라도 바뀌었는지 */
+  function marketQueryPair(raw) {
+    var ko = String(raw == null ? "" : raw).trim();
+    var en = marketEnglishQuery(ko);
+    var converted = hasHangul(ko) && !hasHangul(en);
+    return { ko: ko, en: en, converted: converted, korean: hasHangul(ko) };
+  }
   function updateMarketLinks() {
-    var q = marketQueryText();
+    var pair = marketQueryPair(marketQueryText());
     $$("#marketTools [data-market]").forEach(function (a) {
       var key = a.getAttribute("data-market");
       var build = MARKET_LINKS[key];
       if (!build) return;
-      a.setAttribute("href", build(q));
-      a.classList.toggle("is-empty", !q && (key === "psaApr" || key === "snkrdunk"));
+      var value = MARKET_QUERY_KIND[key] === "ko" ? pair.ko : pair.en;
+      a.setAttribute("href", build(value));
+      a.classList.toggle("is-empty", !pair.ko);
     });
-    if (marketHintEl) {
-      marketHintEl.innerHTML = q
-        ? '<b>\u201c' + escapeHtml(q) + '\u201d</b> 로 아래 5개 링크를 엽니다. PSA 경매 낙찰가는 무료 계정 로그인을 요구할 수 있습니다.'
-        : "검색어 없이 누르면 각 사이트의 기본 조회 화면이 열립니다. 카드명을 넣으면 그 이름으로 5개 링크가 함께 바뀝니다.";
+    if (!marketHintEl) return;
+    if (!pair.ko) {
+      marketHintEl.innerHTML = "검색어 없이 누르면 각 사이트의 기본 조회 화면이 열립니다. 한글로 넣으면 크림은 한글 그대로, 해외 사이트는 영문으로 자동 변환해 검색합니다.";
+      return;
     }
+    if (pair.korean && pair.converted) {
+      marketHintEl.innerHTML = '한글 → 영문 자동 변환: <b>“' + escapeHtml(pair.en) + '”</b> (크림은 “' +
+        escapeHtml(pair.ko) + '” 그대로 검색)';
+      return;
+    }
+    if (pair.korean) {
+      marketHintEl.innerHTML = '사전에 없는 한글 단어가 있어 영문 변환이 일부만 됐어요. <b>영문 카드명을 함께 입력하면 해외 시세 검색이 더 정확합니다.</b> (크림은 “' +
+        escapeHtml(pair.ko) + '” 그대로 검색)';
+      return;
+    }
+    marketHintEl.innerHTML = '<b>“' + escapeHtml(pair.ko) +
+      '”</b> 로 아래 7개 링크를 엽니다. PSA 경매 낙찰가(APR)는 무료 계정 로그인을 요구합니다.';
   }
   function initMarketTools() {
     if (!marketQueryEl) return;
@@ -3021,8 +3232,9 @@
       if (e.key === "Enter") {
         e.preventDefault();
         updateMarketLinks();
-        var psa = $("#marketTools [data-market=\"psaApr\"]");
-        if (psa) { trackEvent("market_lookup", { target: "psa_apr" }); window.open(psa.href, "_blank", "noopener"); }
+        /* Enter 는 로그인 없이 바로 볼 수 있는 크림(한글 시세)으로 연다. */
+        var first = $("#marketTools [data-market=\"kream\"]");
+        if (first) { trackEvent("market_lookup", { target: "kream" }); window.open(first.href, "_blank", "noopener"); }
       }
     });
     if (marketClearEl) {
