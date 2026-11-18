@@ -11462,7 +11462,7 @@ window.PokeMoaMap = (function () {
     if (!payload) {
       popRelayStatus.textContent = relayUrl()
         ? "태블릿 중계에 팝수 조회(/api/pop?q=)를 요청했습니다."
-        : "PSA·BRG 팝수는 사이트에서 직접 읽어 올 수 없어 검색어 복사 방식으로 연결합니다. 태블릿 중계를 연결하면 이 자리에 팝수가 표시됩니다.";
+        : "PSA·BRG 팝수는 사이트에서 직접 읽어 올 수 없어 검색어를 복사해 공식 사이트에서 확인하는 방식으로 연결합니다.";
       return;
     }
     var rows = payload.items || payload.results || [];
