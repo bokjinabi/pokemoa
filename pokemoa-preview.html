@@ -2235,113 +2235,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .ms-retry:hover { border-color: #cbd5e5; }
 
-/* ---------------------------------------------- 실시간 중계(집 태블릿) 연결 */
-.relay-bar {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  flex-wrap: wrap;
-  padding: 9px 12px;
-  margin: 0 0 12px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: #fff;
-  box-shadow: var(--shadow-sm);
-}
-.relay-led { width: 9px; height: 9px; border-radius: 50%; background: #94a3b8; flex: none; }
-.relay-bar[data-state="online"] .relay-led { background: #0f9d63; box-shadow: 0 0 0 3px rgba(15, 157, 99, 0.16); }
-.relay-bar[data-state="checking"] .relay-led { background: #2f6df6; animation: pm-pulse 1.1s ease-in-out infinite; }
-.relay-bar[data-state="error"] .relay-led { background: #d97706; box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.16); }
-.relay-copy { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
-.relay-copy b { font-size: 12px; color: var(--ink); letter-spacing: -0.01em; }
-.relay-copy span {
-  font-size: 11.5px;
-  color: var(--muted);
-  line-height: 1.4;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.relay-action {
-  flex: none;
-  border: 1.5px solid var(--navy);
-  background: var(--navy);
-  color: #fff;
-  border-radius: 999px;
-  padding: 6px 12px;
-  font-size: 11.5px;
-  font-weight: 700;
-  cursor: pointer;
-}
-.relay-action:hover { background: var(--navy-2); }
-.relay-action.is-quiet { background: #fff; color: var(--navy); border-color: var(--line); }
-.relay-action.is-quiet:hover { border-color: var(--navy); }
-
-.relay-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 260;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  background: rgba(10, 18, 34, 0.52);
-  backdrop-filter: blur(2px);
-}
-.relay-modal[hidden] { display: none; }
-.rm-box {
-  width: 100%;
-  max-width: 480px;
-  background: #fff;
-  border-radius: 18px 18px 0 0;
-  padding: 18px 18px calc(18px + env(safe-area-inset-bottom, 0px));
-  box-shadow: 0 -12px 40px rgba(10, 18, 34, 0.28);
-  max-height: 92vh;
-  overflow: auto;
-}
-.rm-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
-.rm-head h3 { margin: 0; font-size: 16px; color: var(--ink); }
-.rm-close {
-  border: 0;
-  background: none;
-  font-size: 22px;
-  line-height: 1;
-  color: var(--muted);
-  cursor: pointer;
-  padding: 2px 6px;
-}
-.rm-desc { margin: 0 0 10px; font-size: 13px; line-height: 1.6; color: var(--ink-2); }
-.rm-steps { margin: 0 0 14px; padding-left: 18px; font-size: 12px; line-height: 1.75; color: var(--muted); }
-.rm-steps code,
-.rm-help code {
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: 5px;
-  padding: 1px 5px;
-  font-size: 11.5px;
-  color: var(--ink);
-}
-.rm-label { display: block; font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
-.rm-input {
-  width: 100%;
-  padding: 11px 12px;
-  border: 1.5px solid var(--line);
-  border-radius: 10px;
-  font-size: 14px;
-  font-family: inherit;
-  color: var(--ink);
-  background: #fff;
-}
-.rm-input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(47, 109, 246, 0.12); }
-.rm-msg { min-height: 17px; margin: 8px 0 12px; font-size: 12px; line-height: 1.5; color: var(--muted); }
-.rm-msg.is-ok { color: #0f7a4a; font-weight: 600; }
-.rm-msg.is-warn { color: #b45309; font-weight: 600; }
-.rm-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-.rm-help { margin: 12px 0 0; font-size: 11.5px; line-height: 1.6; color: var(--muted-2); }
-@media (min-width: 720px) {
-  .relay-modal { align-items: center; }
-  .rm-box { border-radius: 20px; padding: 22px; }
-}
-
 .chip.chip-relay { background: #e6f7ef; border: 1px solid #b9e6d2; color: #0b7a4b; font-weight: 700; }
 .pm-pill.is-relay { box-shadow: 0 3px 10px rgba(15, 157, 99, 0.28); }
 
@@ -2535,7 +2428,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
  * v3.2 — PokeConv 스타일: 라이트 지도 · 말풍선 마커 · 개소별 보유 카드 중심
  * ========================================================================= */
 
-/* 편의점 4사 재고 조회 진행률 (매장 탐색 0~40% → 중계 재고 조회 40~100%) */
+/* 편의점 4사 재고 조회 진행률 (매장 탐색 0~40% → 실시간 재고 조회 40~100%) */
 .brand-progress {
   display: grid;
   gap: 7px;
@@ -3590,27 +3483,6 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
   .header-date { display: none; }
 }
 
-/* 집 태블릿 중계 프리셋 (모달) */
-.rm-preset-box {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px;
-  margin: 12px 0 4px; padding: 10px 12px;
-  border: 1px solid #f2dfa5; border-radius: 12px;
-  background: var(--yellow-soft);
-}
-.rm-preset-label { font-size: 11px; font-weight: 800; color: #7a5a00; }
-.rm-preset-url {
-  flex: 1 1 100%; order: 3;
-  font-size: 10.5px; color: #6b5200; word-break: break-all;
-  background: rgba(255, 255, 255, 0.65); border-radius: 6px; padding: 4px 6px;
-}
-.rm-preset-actions { display: inline-flex; gap: 6px; margin-left: auto; }
-.rm-preset-actions .btn { padding: 6px 10px; font-size: 11.5px; border-radius: 8px; }
-@media (max-width: 679px) {
-  .rm-preset-actions { margin-left: 0; }
-  .rm-preset-actions .btn { flex: 1; }
-  .rm-preset-actions { width: 100%; }
-}
-
 /* KREAM 체결표 — 모바일에서는 카드 칼럼 안에 요약해 가로 스크롤을 없앰 */
 .kream-m-only { display: none; }
 @media (max-width: 679px) {
@@ -3748,8 +3620,106 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
   .set-search { padding: 12px; }
 }
 
+/* ============================================================
+   도감·시세 상단 — 실시간 환율 위젯 · 시세·거래가 조회
+   ============================================================ */
+.fx-widget {
+  margin: 14px 0 10px;
+  padding: 14px 15px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: linear-gradient(180deg, #fff 0%, #f7faff 100%);
+  box-shadow: var(--shadow-sm);
+}
+.fx-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.fx-title { font-size: 12px; font-weight: 900; letter-spacing: 0.02em; color: var(--ink); }
+.fx-src { font-size: 10.5px; font-weight: 700; color: var(--muted-2); }
+.fx-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.fx-card {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--line-2);
+  border-radius: 12px;
+  background: #fff;
+}
+.fx-cur { font-size: 10.5px; font-weight: 900; color: var(--muted); letter-spacing: 0.04em; }
+.fx-cur small { font-weight: 700; color: var(--muted-2); margin-left: 2px; }
+.fx-line { display: flex; align-items: baseline; gap: 5px; flex-wrap: wrap; }
+.fx-cap { font-size: 11px; font-weight: 700; color: var(--muted-2); }
+.fx-val { font-size: 17px; font-weight: 900; letter-spacing: -0.02em; color: var(--ink); font-variant-numeric: tabular-nums; }
+.fx-card.is-error .fx-val { font-size: 12.5px; color: var(--grey); }
+.fx-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; }
+.fx-note { font-size: 10.5px; line-height: 1.5; color: var(--muted); }
+.fx-note.is-warn { color: #b45309; font-weight: 700; }
+.fx-refresh {
+  flex: none; border: 1px solid var(--line); background: #fff; color: var(--ink-2);
+  border-radius: 999px; padding: 5px 11px; font-size: 11px; font-weight: 800; cursor: pointer;
+  font-family: inherit;
+}
+.fx-refresh:hover { border-color: var(--navy); color: var(--navy); }
+
+.market-tools {
+  margin: 12px 0 14px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+}
+.mt-head .eyebrow { display: block; margin-bottom: 4px; }
+.mt-title { margin: 0 0 6px; font-size: 17px; letter-spacing: -0.02em; color: var(--ink); }
+.mt-lead { margin: 0; font-size: 12.5px; line-height: 1.65; color: var(--muted); }
+.mt-search { margin-top: 12px; }
+.mt-label { display: block; margin-bottom: 6px; font-size: 11.5px; font-weight: 800; color: var(--muted); }
+.mt-row { display: flex; gap: 8px; }
+.mt-input {
+  flex: 1; min-width: 0; padding: 11px 12px;
+  border: 1.5px solid var(--line); border-radius: 12px;
+  background: var(--paper); color: var(--ink); font-family: inherit; font-size: 14px;
+}
+.mt-input:focus { outline: none; border-color: var(--navy); background: #fff; box-shadow: 0 0 0 3px rgba(16, 31, 60, 0.08); }
+.mt-clear {
+  flex: none; border: 1px solid var(--line); background: #fff; color: var(--ink-2);
+  border-radius: 12px; padding: 0 12px; font-size: 12px; font-weight: 800; cursor: pointer; font-family: inherit;
+}
+.mt-clear:hover { border-color: var(--navy); color: var(--navy); }
+.mt-hint { margin: 7px 0 0; font-size: 11px; line-height: 1.55; color: var(--muted-2); }
+.mt-hint b { color: var(--ink-2); }
+.mt-groups { display: grid; gap: 12px; margin-top: 14px; }
+.mt-group-title { display: block; margin-bottom: 6px; font-size: 11px; font-weight: 900; color: var(--muted); letter-spacing: 0.01em; }
+.mt-links { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mt-link {
+  display: flex; align-items: center; gap: 8px;
+  padding: 11px 12px;
+  border: 1px solid var(--line); border-radius: 13px;
+  background: var(--paper); color: var(--ink); text-decoration: none;
+  transition: border-color 0.12s, background 0.12s, transform 0.12s;
+}
+.mt-link:hover { border-color: var(--navy); background: #fff; transform: translateY(-1px); }
+.mt-link-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mt-link-body strong { font-size: 12.5px; font-weight: 900; letter-spacing: -0.01em; }
+.mt-link-body small { font-size: 10.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mt-go { margin-left: auto; color: var(--muted-2); font-size: 12px; }
+.mt-link.is-empty .mt-link-body small { color: var(--amber); }
+.mt-note { margin: 12px 0 0; font-size: 10.5px; line-height: 1.55; color: var(--muted-2); }
+
+.pop-cross {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin: 12px 0 4px; padding: 12px 14px;
+  border: 1px solid var(--line); border-radius: 14px;
+  background: var(--paper);
+}
+.pop-cross-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.pop-cross-copy b { font-size: 12.5px; color: var(--ink); }
+.pop-cross-copy span { font-size: 11.5px; line-height: 1.5; color: var(--muted); }
+.pop-cross .btn { flex: none; }
+
+@media (max-width: 420px) {
+  .mt-links { grid-template-columns: 1fr; }
+  .fx-cards { grid-template-columns: 1fr; }
+}
+
 </style>
-<!-- 단일 파일 미리보기: index.html + assets/css/style.css + data.js/map.js/app.js 를 인라인으로 합친 파일입니다. 지도는 카카오맵 SDK+카카오 장소 검색(CDN·공개 API)을 그대로 사용합니다. -->
 <!-- 카카오맵 JavaScript SDK — autoload=false로 불러 두고 map.js가 kakao.maps.load()로 초기화합니다.
      JavaScript 키 도메인에는 https://moa-kr.github.io 만 등록되어 있어, 그 밖의 주소(미등록 프리뷰)에서는
      지도 대신 내장 좌표 스냅샷 안내가 표시됩니다. -->
@@ -3786,7 +3756,7 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
         {
           "@type": "Question",
           "name": "포켓몬카드모아에 보이는 재고는 실제인가요?",
-          "acceptedAnswer": { "@type": "Answer", "text": "지도의 매장 위치와 이름은 카카오맵 실제 장소 데이터이고, 실시간 조회가 지연되면 내장된 실제 좌표로 대체합니다. 매장별 포켓몬카드 재고는 집 태블릿 중계 서버가 편의점 앱에서 조회한 실제 수량만 표시하고, 수량을 받지 못한 매장은 「매장 확인 필요」로 표시합니다(샘플·추정 수량 없음). 방문 전 각 편의점 공식 앱과 매장 전화로 확인하세요." }
+          "acceptedAnswer": { "@type": "Answer", "text": "지도의 매장 위치와 이름은 카카오맵 실제 장소 데이터이고, 실시간 조회가 지연되면 내장된 실제 좌표로 대체합니다. 매장별 포켓몬카드 재고는 편의점 앱에서 실시간으로 조회한 실제 수량만 표시하고, 재고가 0으로 확인되면 「없음」, 수량을 받지 못한 매장은 「미조회」로 표시합니다(샘플·추정 수량 없음). 방문 전 각 편의점 공식 앱과 매장 전화로 확인하세요." }
         },
         {
           "@type": "Question",
@@ -4240,23 +4210,13 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
     <div class="map-page-head">
       <span class="eyebrow" data-copy="mapEyebrow">동네에서 찾기 · 첫 화면</span>
       <h1 id="map-title" data-copy="mapTitle">내 주변 편의점과 오프라인 판매처, 어떤 카드가 있는지 한눈에</h1>
-      <p data-copy-html="mapLead">카카오맵 실제 지도 위에 주변 <b>편의점 4사(GS25·CU·세븐일레븐·이마트24)</b>와 <b>오프라인 판매처(대형마트·아트박스·공식 자판기·공인 카드샵)</b>를 함께 표시합니다. 마트·아트박스는 카카오 장소 검색으로 실시간 조회하고, 공식 자판기(전국 176곳)와 공인 카드샵(전국 16곳)은 포켓몬코리아 공식 목록에서 가져와 반경 안에 들어오면 지도에 올립니다. 지도 말풍선과 매장 카드는 집 태블릿 중계 서버가 편의점 앱에서 <b>실제로 확인한 재고 상품·수량</b>만 표시하고, 확인되지 않은 매장은 <b>「매장 확인 필요」</b>로 둡니다. <b>전국 17개 시·도</b>에서 시·군·구를 고르거나 동네 이름으로 검색하고, <b>'내 위치로 찾기'</b>를 누르면 그 반경의 매장을 새로 조회합니다.</p>
+      <p data-copy-html="mapLead">카카오맵 실제 지도 위에 주변 <b>편의점 4사(GS25·CU·세븐일레븐·이마트24)</b>와 <b>오프라인 판매처(대형마트·아트박스·공식 자판기·공인 카드샵)</b>를 함께 표시합니다. 마트·아트박스는 카카오 장소 검색으로 실시간 조회하고, 공식 자판기(전국 176곳)와 공인 카드샵(전국 16곳)은 포켓몬코리아 공식 목록에서 가져와 반경 안에 들어오면 지도에 올립니다. 지도 말풍선과 매장 카드는 편의점 앱에서 실시간으로 <b>확인한 재고 상품·수량</b>만 표시하고, 재고가 0으로 확인되면 <b>「없음」</b>, 확인되지 않은 매장은 <b>「미조회」</b>로 둡니다. <b>전국 17개 시·도</b>에서 시·군·구를 고르거나 동네 이름으로 검색하고, <b>'내 위치로 찾기'</b>를 누르면 그 반경의 매장을 새로 조회합니다.</p>
     </div>
 
     <div class="demo-notice">
       <span class="demo-icon" aria-hidden="true">i</span>
       <div class="notice-long"><b>매장 위치·이름은 실제 카카오맵 데이터</b>이고, <b>오프라인 판매처·자판기·카드샵은 위치만 공식/실시간 데이터</b>입니다. 방문 전 공식 앱·매장 전화로 확인하세요.</div>
       <div class="notice-short"><b>매장 위치·이름은 실제 카카오맵 데이터</b>이고, 오프라인 판매처·자판기·카드샵은 <b>위치만 공식/실시간 데이터</b>입니다. 방문 전 공식 앱·매장 전화로 확인하세요.</div>
-    </div>
-
-    <div class="relay-bar" id="relayBar" data-state="off" hidden aria-hidden="true">
-      <span class="relay-led" id="relayLed" aria-hidden="true"></span>
-      <span class="relay-copy">
-        <b>실시간 중계</b>
-        <span id="relayStateText">연결 안 됨 · 지금은 매장 위치만 표시합니다(수량 미확인)</span>
-      </span>
-      <button type="button" class="relay-action" id="relayOpenBtn" aria-haspopup="dialog" aria-controls="relayModal">중계 연결</button>
-      <button type="button" class="relay-action is-quiet" id="relayRefreshBtn" hidden>재고 새로고침</button>
     </div>
 
     <div class="brand-progress" id="brandProgress" data-state="idle" role="group" aria-label="편의점 4사 재고 조회 진행률" hidden>
@@ -4379,8 +4339,8 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
         <div class="map-legend" aria-hidden="true">
           <span><i class="l-me"></i>내 위치</span>
           <span><i class="l-in"></i>재고 있음</span>
-          <span><i class="l-check"></i>확인 필요</span>
           <span><i class="l-none"></i>없음</span>
+          <span><i class="l-check"></i>미조회</span>
           <span><i class="l-offline"></i>오프라인 판매처</span>
         </div>
       </div>
@@ -4405,10 +4365,10 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
     </div>
 
     <div class="status-guide">
-      <div><b data-copy="status1Title">재고 있음</b><span data-copy="status1Desc">집 태블릿 중계가 편의점 앱에서 수량 1개 이상을 확인한 매장입니다. 조회 시점 기준이니 방문 전 매장에 확인하세요.</span></div>
-      <div><b data-copy="status2Title">매장 확인 필요</b><span data-copy="status2Desc">중계에서 수량을 받지 못한 매장입니다. 수량을 지어내지 않고 위치만 표시합니다.</span></div>
-      <div><b data-copy="status3Title">재고 없음</b><span data-copy="status3Desc">중계 조회 결과 0으로 확인된 매장입니다. 아직 입고 전일 수도 있습니다.</span></div>
-      <div><b data-copy="status4Title">보유 카드 표시</b><span data-copy="status4Desc">태그는 중계가 실제로 확인한 상품명과 수량(예: 닌자스피너 · 3개)만 붙습니다. 확인되지 않은 매장에는 상품 태그가 없습니다.</span></div>
+      <div><b data-copy="status1Title">재고 있음</b><span data-copy="status1Desc">실시간 조회에서 수량 1개 이상을 확인한 매장입니다. 조회 시점 기준이니 방문 전 매장에 확인하세요.</span></div>
+      <div><b data-copy="status3Title">없음</b><span data-copy="status3Desc">실시간 조회에서 재고 0으로 확인된 매장입니다. 아직 입고 전일 수도 있습니다.</span></div>
+      <div><b data-copy="status2Title">미조회</b><span data-copy="status2Desc">아직 실시간 조회 대상이 아니거나 수량을 받지 못한 매장입니다. 수량을 지어내지 않고 위치만 표시합니다.</span></div>
+      <div><b data-copy="status4Title">보유 카드 표시</b><span data-copy="status4Desc">태그는 실시간 조회에서 확인한 상품명과 수량(예: 닌자스피너 · 3개)만 붙습니다. 확인되지 않은 매장에는 상품 태그가 없습니다.</span></div>
       <div><b data-copy="status5Title">오프라인 판매처</b><span data-copy="status5Desc">대형마트·아트박스는 카카오 장소 검색으로 위치만 표시하고, 공식 자판기(포켓몬코리아 자판기 안내, 176곳)·공인 카드샵(16곳)은 공식 목록의 설치 장소를 옮겨 온 것입니다.</span></div>
     </div>
 
@@ -4431,7 +4391,7 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
       <span class="ad-desc">map-bottom · 반응형</span>
     </div>
 
-    <p class="src-note">지도·주변 매장: <a href="https://apis.map.kakao.com/" target="_blank" rel="noopener">카카오맵</a> JavaScript SDK + 카카오 장소 검색(Places, 편의점 카테고리 CS2 · 키워드 보충 조회, 지연 시 내장 실제 좌표 스냅샷 2026-11-17). 매장 위치·이름은 카카오맵 실제 장소 데이터이고, <b>재고 수량은 집 태블릿 중계가 편의점 앱에서 조회한 실제 값만</b> 쓰고, 받지 못한 매장은 「매장 확인 필요」로 표시합니다(샘플 수량 없음). <b>오프라인 판매처</b>는 마트·아트박스는 카카오 장소 검색(2026-11-18), 공식 자판기는 <a href="https://www.pokemonkorea.co.kr/card_vending_machine" target="_blank" rel="noopener">포켓몬코리아 자판기 안내</a>의 공식 목록(176곳), 공인 카드샵은 <a href="https://www.pokemonkorea.co.kr/pokemon_cardshop" target="_blank" rel="noopener">포켓몬코리아 카드샵 목록</a>(16곳)을 기준으로 했고, <b>재고는 표시하지 않습니다</b>.</p>
+    <p class="src-note">지도·주변 매장: <a href="https://apis.map.kakao.com/" target="_blank" rel="noopener">카카오맵</a> JavaScript SDK + 카카오 장소 검색(Places, 편의점 카테고리 CS2 · 키워드 보충 조회, 지연 시 내장 실제 좌표 스냅샷 2026-11-17). 매장 위치·이름은 카카오맵 실제 장소 데이터이고, <b>재고 수량은 편의점 앱에서 실시간으로 조회한 실제 값만</b> 쓰고, 재고 0으로 확인되면 「없음」, 받지 못한 매장은 「미조회」로 표시합니다(샘플 수량 없음). <b>오프라인 판매처</b>는 마트·아트박스는 카카오 장소 검색(2026-11-18), 공식 자판기는 <a href="https://www.pokemonkorea.co.kr/card_vending_machine" target="_blank" rel="noopener">포켓몬코리아 자판기 안내</a>의 공식 목록(176곳), 공인 카드샵은 <a href="https://www.pokemonkorea.co.kr/pokemon_cardshop" target="_blank" rel="noopener">포켓몬코리아 카드샵 목록</a>(16곳)을 기준으로 했고, <b>재고는 표시하지 않습니다</b>.</p>
   </div>
 </section>
 
@@ -4602,8 +4562,81 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
     <div class="map-page-head">
       <span class="eyebrow" data-copy="guideEyebrow">도감 · 시세</span>
       <h1 id="guide-title" data-copy="guideTitle">세트별 정가와 리셀 시세 검색</h1>
-      <p data-copy-html="guideLead">세트·박스 이름으로 검색하면 그 세트의 <b>공식 정가(팩·박스)</b>와 <b>리셀 시세 검색 바로가기(KREAM · 번개장터 · PriceCharting)</b>가 함께 나옵니다. 아래 세트 칩으로 골라 수록 카드 도감과 정가·리셀 비교표를 볼 수도 있습니다.</p>
+      <p data-copy-html="guideLead">세트·박스 이름으로 검색하면 그 세트의 <b>공식 정가(팩·박스)</b>와 <b>리셀 시세 검색 바로가기(KREAM · 번개장터 · PriceCharting)</b>가 함께 나옵니다. 위의 <b>시세·거래가 조회</b>에서는 PSA 경매 낙찰가·eBay 즉구가·스니커덩크까지 한 번에 열 수 있습니다. 아래 세트 칩으로 골라 수록 카드 도감과 정가·리셀 비교표를 볼 수도 있습니다.</p>
     </div>
+
+    <!-- 실시간 환율 (USD · JPY) — 무료 공개 API 실시간 호출 -->
+    <section class="fx-widget" id="fxWidget" aria-labelledby="fxTitle">
+      <div class="fx-head">
+        <span class="fx-title" id="fxTitle">오늘의 환율</span>
+        <span class="fx-src" id="fxSrc">불러오는 중…</span>
+      </div>
+      <div class="fx-cards">
+        <div class="fx-card">
+          <span class="fx-cur">USD <small>달러</small></span>
+          <span class="fx-line"><span class="fx-cap">1 USD =</span><strong class="fx-val" id="fxUsd">—</strong></span>
+        </div>
+        <div class="fx-card">
+          <span class="fx-cur">JPY <small>엔화</small></span>
+          <span class="fx-line"><span class="fx-cap">100 JPY =</span><strong class="fx-val" id="fxJpy">—</strong></span>
+        </div>
+      </div>
+      <div class="fx-foot">
+        <span class="fx-note" id="fxNote">해외 시세(PSA·eBay·SNKRDUNK)를 원화로 환산할 때 참고하세요.</span>
+        <button type="button" class="fx-refresh" id="fxRefresh">새로고침</button>
+      </div>
+    </section>
+
+    <!-- PSA 거래 내역 (경매 낙찰가 · 즉구가) · SNKRDUNK 조회 -->
+    <section class="market-tools" id="marketTools" aria-labelledby="marketToolsTitle">
+      <div class="mt-head">
+        <span class="eyebrow">시세 · 거래가 조회</span>
+        <h2 class="mt-title" id="marketToolsTitle">PSA 거래 내역 조회 (경매가·즉구가)</h2>
+        <p class="mt-lead">카드명·세트·키워드를 넣으면 아래 조회 링크가 그 검색어로 바뀝니다. <b>PSA 공식 경매 낙찰가(APR)</b>과 <b>eBay 경매 완료가</b>로 낙찰가를, <b>eBay 즉구(Buy It Now)</b>와 <b>스니커덩크(SNKRDUNK)</b>로 지금 사는 가격을 비교하세요.</p>
+      </div>
+      <div class="mt-search">
+        <label class="mt-label" for="marketQuery">카드명 · 세트 · 키워드</label>
+        <div class="mt-row">
+          <input type="search" id="marketQuery" class="mt-input" placeholder="예: 뮤 ex / 30th CELEBRATION / 블랙볼트"
+                 autocomplete="off" spellcheck="false" enterkeyhint="search">
+          <button type="button" class="mt-clear" id="marketClear">지우기</button>
+        </div>
+        <p class="mt-hint" id="marketHint">검색어 없이 누르면 각 사이트의 기본 조회 화면이 열립니다.</p>
+      </div>
+      <div class="mt-groups">
+        <div class="mt-group">
+          <span class="mt-group-title">경매 낙찰가 (거래 완료)</span>
+          <div class="mt-links">
+            <a class="mt-link" data-market="psaApr" href="https://www.psacard.com/auctionprices" target="_blank" rel="noopener">
+              <span class="mt-link-body"><strong>PSA 경매 낙찰가</strong><small>Auction Prices Realized</small></span>
+              <span class="mt-go" aria-hidden="true">↗</span>
+            </a>
+            <a class="mt-link" data-market="ebaySold" href="https://www.ebay.com/sch/i.html?_nkw=%ED%8F%AC%EC%BC%93%EB%AA%AC%EC%B9%B4%EB%93%9C%20PSA&amp;LH_Sold=1&amp;LH_Complete=1" target="_blank" rel="noopener">
+              <span class="mt-link-body"><strong>eBay 낙찰가</strong><small>경매 완료 (Sold)</small></span>
+              <span class="mt-go" aria-hidden="true">↗</span>
+            </a>
+          </div>
+        </div>
+        <div class="mt-group">
+          <span class="mt-group-title">지금 사는 가격 (즉구)</span>
+          <div class="mt-links">
+            <a class="mt-link" data-market="ebayBin" href="https://www.ebay.com/sch/i.html?_nkw=%ED%8F%AC%EC%BC%93%EB%AA%AC%EC%B9%B4%EB%93%9C%20PSA&amp;LH_BIN=1&amp;_sop=15" target="_blank" rel="noopener">
+              <span class="mt-link-body"><strong>eBay 즉구가</strong><small>Buy It Now</small></span>
+              <span class="mt-go" aria-hidden="true">↗</span>
+            </a>
+            <a class="mt-link" data-market="snkrdunk" href="https://snkrdunk.com/en/brands/pokemon/trading-cards" target="_blank" rel="noopener">
+              <span class="mt-link-body"><strong>스니커덩크 카드</strong><small>SNKRDUNK 포켓몬</small></span>
+              <span class="mt-go" aria-hidden="true">↗</span>
+            </a>
+            <a class="mt-link" data-market="snkrdunkSearch" href="https://snkrdunk.com/en/search?keywords=" target="_blank" rel="noopener">
+              <span class="mt-link-body"><strong>스니커덩크 검색</strong><small>SNKRDUNK 검색어 연동</small></span>
+              <span class="mt-go" aria-hidden="true">↗</span>
+            </a>
+          </div>
+        </div>
+      </div>
+      <p class="mt-note">해외 사이트는 영문·일본어 표기와 배송비·관세가 붙을 수 있습니다. PSA 경매 낙찰가 검색은 무료 PSA 계정 로그인을 요구할 수 있고, 이 사이트는 어떤 결제 화면도 열지 않습니다.</p>
+    </section>
 
     <form class="set-search" id="setSearchForm" role="search" aria-label="세트·박스 이름 검색">
       <label class="set-search-label" for="setSearch">세트·박스 이름 검색</label>
@@ -4743,7 +4776,7 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
         </details>
         <details class="faq-item">
           <summary><span class="q-mark">Q</span>포켓몬카드모아에 보이는 재고는 실제인가요?<span class="plus">+</span></summary>
-          <div class="faq-answer"><p>나뉩니다. 지도의 매장 위치·이름은 카카오맵 장소 검색(카카오맵 JavaScript SDK)으로 조회해 표시하고, 실시간 조회가 지연되면 내장된 실제 좌표로 대체합니다. 매장별 포켓몬카드 재고는 집 태블릿 중계 서버가 편의점 앱에서 조회한 실제 수량만 표시하고, 수량을 받지 못한 매장은 「매장 확인 필요」로 표시합니다(샘플·추정 수량 없음). 방문 전에는 각 편의점 공식 앱과 매장 전화로 확인하세요.</p></div>
+          <div class="faq-answer"><p>나뉩니다. 지도의 매장 위치·이름은 카카오맵 장소 검색(카카오맵 JavaScript SDK)으로 조회해 표시하고, 실시간 조회가 지연되면 내장된 실제 좌표로 대체합니다. 매장별 포켓몬카드 재고는 편의점 앱에서 실시간으로 조회한 실제 수량만 표시하고, 재고가 0으로 확인되면 「없음」, 수량을 받지 못한 매장은 「미조회」로 표시합니다(샘플·추정 수량 없음). 방문 전에는 각 편의점 공식 앱과 매장 전화로 확인하세요.</p></div>
         </details>
         <details class="faq-item">
           <summary><span class="q-mark">Q</span>포켓몬스토어 추첨에 당첨되면 자동 결제되나요?<span class="plus">+</span></summary>
@@ -4815,6 +4848,13 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
       <span class="eyebrow" data-copy="trendsEyebrow">팝수 조회</span>
       <h1 id="trends-title" data-copy="trendsTitle">등급 회사를 고르고 인증서·카드 번호로 조회</h1>
       <p data-copy-html="trendsLead"><b>PSA · CGC · BRG · BGS</b> 가운데 회사를 먼저 고른 뒤 등급카드 넘버(인증서 번호 또는 카드 번호)를 넣으면, 번호를 복사해 그 회사의 팝 리포트·인증서 조회 페이지로 바로 넘겨 줍니다. 팝수는 회사별로 따로 집계되므로 보고 싶은 회사를 먼저 골라야 합니다.</p>
+      <div class="pop-cross">
+        <div class="pop-cross-copy">
+          <b>PSA 거래 내역(경매 낙찰가·즉구가)도 바로 볼 수 있습니다.</b>
+          <span>도감·시세 탭의 <b>PSA 거래 내역 조회</b>에서 카드명을 넣고 PSA 경매 낙찰가·eBay·스니덩을 한 번에 엽니다.</span>
+        </div>
+        <button type="button" class="btn btn-dark btn-sm" id="popToMarket">PSA 거래 내역 조회 →</button>
+      </div>
     </div>
 
     <section class="section" id="popSection" aria-labelledby="pop-title" data-section="pop">
@@ -4909,7 +4949,7 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
 
     <div class="footer-note">
       <p data-copy="footerNote1">포켓몬카드모아는 포켓몬·포켓몬코리아와 무관한 비공식 정보 사이트입니다. ‘포켓몬’, ‘포켓몬 카드 게임’ 및 관련 명칭·이미지의 권리는 각 권리자에게 있습니다. 본 사이트는 공식 로고와 카드 이미지를 사용하지 않으며, 카드 정보는 공개된 상품 정보를 정리한 것입니다.</p>
-      <p data-copy="footerNote2">지도에 표시된 매장 위치·이름은 카카오맵 실제 장소 데이터이며, 매장별 재고는 집 태블릿 중계가 편의점 앱에서 조회한 실제 수량만 표시하고 확인되지 않은 매장은 「매장 확인 필요」로 둡니다. 구매 판단과 그 결과는 이용자 본인에게 있습니다.</p>
+      <p data-copy="footerNote2">지도에 표시된 매장 위치·이름은 카카오맵 실제 장소 데이터이며, 매장별 재고는 편의점 앱에서 실시간으로 조회한 실제 수량만 표시하고, 확인되지 않은 매장은 「미조회」로 둡니다. 구매 판단과 그 결과는 이용자 본인에게 있습니다.</p>
       <p data-copy="footerNote3">광고·제휴 고지: 본 사이트는 Google AdSense 광고와 쿠팡 파트너스 활동을 통해 수수료를 받을 수 있습니다. 제휴 링크를 통한 구매 시 사이트에 일정액의 수수료가 지급될 수 있으며, 이용자 가격에는 영향이 없습니다.</p>
     </div>
 
@@ -4931,34 +4971,6 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-
-<!-- ================================================ 실시간 중계 연결 모달 -->
-<div class="relay-modal" id="relayModal" hidden>
-  <div class="rm-box" role="dialog" aria-modal="true" aria-labelledby="relayModalTitle">
-    <div class="rm-head">
-      <h3 id="relayModalTitle">집 태블릿 실재고 중계</h3>
-      <button type="button" class="rm-close" id="relayModalClose" aria-label="닫기">×</button>
-    </div>
-    <div class="rm-body">
-      <p class="rm-desc">집 태블릿에서 켜 둔 중계 서버 주소를 넣으면, 이 지도가 <b>매장별 실제 재고</b>를 그 앱에서 직접 조회해 보여 줍니다.</p>
-      <ol class="rm-steps">
-        <li>태블릿 Termux에서 <code>node server.js</code> 실행</li>
-        <li>같은 터미널에서 <code>cloudflared tunnel --url http://127.0.0.1:3100</code></li>
-        <li>출력된 <code>https://….trycloudflare.com</code> 주소를 아래에 붙여 넣기</li>
-      </ol>
-      <div class="rm-preset-box" id="relayPresetBox" hidden></div>
-      <label class="rm-label" for="relayUrlInput">중계 서버 주소</label>
-      <input type="url" id="relayUrlInput" class="rm-input" inputmode="url" autocomplete="off" spellcheck="false"
-             placeholder="https://example.trycloudflare.com">
-      <p class="rm-msg" id="relayModalMsg" role="status" aria-live="polite"></p>
-      <div class="rm-actions">
-        <button type="button" class="btn btn-dark btn-sm" id="relayConnectBtn">연결 확인</button>
-        <button type="button" class="btn btn-ghost btn-sm" id="relayDisconnectBtn">연결 해제</button>
-      </div>
-      <p class="rm-help">최근에 열린 터널 주소는 위에 미리 채워 두었습니다. 주소는 이 브라우저(localStorage)에만 저장됩니다. 한 번 저장하면 <code>?relay=주소</code> 링크로 열어도 자동 연결됩니다. 주소가 비어 있으면 data.js 의 최근 터널 주소로 <b>방문 시 자동 연결</b>됩니다. 연결이 끊기면 지도는 매장 위치만 표시하고 수량은 「매장 확인 필요」로 둡니다.</p>
-    </div>
-  </div>
-</div>
 
 <!-- =============================================================== 모달 -->
 <div class="modal-backdrop" id="modalBackdrop" hidden>
@@ -4986,7 +4998,7 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
     </ul>
 
     <h4>데이터에 대해</h4>
-    <p>가격과 일정은 공개된 공식 상품 정보와 보도를 2026-11-17 기준으로 정리했습니다. 지도의 매장 위치·이름은 카카오맵 실제 장소 데이터이고, <strong>매장별 재고는 집 태블릿 중계가 편의점 앱에서 조회한 실제 수량만</strong> 표시하고, 확인되지 않은 매장은 「매장 확인 필요」로 둡니다(샘플·추정 수량 없음).</p>
+    <p>가격과 일정은 공개된 공식 상품 정보와 보도를 2026-11-17 기준으로 정리했습니다. 지도의 매장 위치·이름은 카카오맵 실제 장소 데이터이고, <strong>매장별 재고는 편의점 앱에서 실시간으로 조회한 실제 수량만</strong> 표시하고, 확인되지 않은 매장은 「미조회」로 둡니다(샘플·추정 수량 없음).</p>
 
     <h4>운영 원칙</h4>
     <p>정가보다 비싼 구매를 부추기지 않습니다. 리셀 시세를 단정하지 않고, 정가라는 기준선과 계산 방법을 제공하는 데 집중합니다. 광고와 제휴 링크가 있는 경우 본문과 구분해 표시합니다.</p>
@@ -5050,7 +5062,7 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
     <h4>3. 정보의 정확성과 한계</h4>
     <ul>
       <li>가격·일정·재고는 공개 자료를 정리한 것으로, 판매처 사정에 따라 달라질 수 있습니다.</li>
-      <li>지도의 매장 위치·이름은 카카오맵 실제 장소 데이터이고, 매장별 재고는 집 태블릿 중계가 편의점 앱에서 조회한 실제 수량만 표시합니다(확인되지 않은 매장은 「매장 확인 필요」).</li>
+      <li>지도의 매장 위치·이름은 카카오맵 실제 장소 데이터이고, 매장별 재고는 편의점 앱에서 실시간으로 조회한 실제 수량만 표시합니다(확인되지 않은 매장은 「미조회」).</li>
       <li>리셀 시세는 KREAM 등 공개 시세를 관측일과 함께 참고 값으로 표시하며, 거래 시점·상태에 따라 달라질 수 있고 특정 가격을 보장하지 않습니다.</li>
       <li>구매·응모·투자 등 모든 판단과 결과의 책임은 이용자에게 있습니다.</li>
     </ul>
@@ -5118,7 +5130,7 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
  * 모든 가격·일정은 2026-11-17 기준 공개 자료를 정리한 값입니다.
  * 지도 매장 위치는 카카오맵 장소 검색(Places) 결과를 쓰고, 실시간 조회가 막힐 때만
  * 예전에 수집해 둔 실제 좌표 스냅샷(OpenStreetMap, 2026-11-17)으로 대체합니다.
- * 재고 수량은 집 태블릿 중계가 편의점 앱에서 조회한 실제 값만 쓰고, 확인되지 않은 매장은 「매장 확인 필요」입니다.
+ * 재고 수량은 편의점 앱에서 실시간으로 조회한 실제 값만 쓰고, 재고 0은 「없음」, 확인되지 않은 매장은 「미조회」입니다.
  * ========================================================================= */
 window.POKEMOA_DATA = (function () {
   "use strict";
@@ -5129,7 +5141,7 @@ window.POKEMOA_DATA = (function () {
     tagline: "포켓몬 카드의 정가·입고·재고를 한 곳에 모아",
     dataDate: "2026-11-17",
     dataTime: "11:00",
-    siteUrl: "https://moa-kr.github.io/pokemoa"
+    siteUrl: "https://pokemoa.example"
   };
 
   /* ---------------------------------------------------------------- 세트 */
@@ -6851,7 +6863,7 @@ window.POKEMOA_DATA = (function () {
   ];
 
   /* ------------------------------------- 편의점 4사 취급 카드 상품 (필터) */
-  /* 카드 상품 이름 목록 — 매장 카드에는 중계가 실제로 확인한 상품만 붙는다(샘플 배정 없음). */
+  /* 카드 상품 이름 목록 — 매장 카드에는 실시간 조회로 확인한 상품만 붙는다(샘플 배정 없음). */
   var cardProducts = [
     { id: "celebration30", name: "MEGA 확장팩 30th CELEBRATION", short: "30th CELEBRATION", unit: "낱팩" },
     { id: "battle-partners", name: "스칼렛&바이올렛 배틀 파트너즈", short: "배틀 파트너즈", unit: "낱팩" },
@@ -6885,7 +6897,7 @@ window.POKEMOA_DATA = (function () {
     },
     {
       q: "포켓몬카드모아에 보이는 재고는 실제인가요?",
-      a: "매장 위치·이름은 카카오맵 실제 장소 데이터입니다. 재고는 집 태블릿 중계 서버가 편의점 앱(이마트24·CU·세븐일레븐)에서 조회한 실제 수량만 표시하고, 수량을 받지 못한 매장은 「매장 확인 필요」로 표시합니다. 샘플·추정 수량은 쓰지 않습니다. 조회 시점 기준이므로 방문 전에는 각 편의점 공식 앱과 매장 전화로 확인하세요."
+      a: "매장 위치·이름은 카카오맵 실제 장소 데이터입니다. 재고는 편의점 앱(이마트24·CU·세븐일레븐)에서 실시간으로 조회한 실제 수량만 표시하고, 재고가 0으로 확인되면 「없음」, 수량을 받지 못한 매장은 「미조회」로 표시합니다. 샘플·추정 수량은 쓰지 않습니다. 조회 시점 기준이므로 방문 전에는 각 편의점 공식 앱과 매장 전화로 확인하세요."
     },
     {
       q: "포켓몬스토어 추첨에 당첨되면 자동 결제되나요?",
@@ -7471,10 +7483,10 @@ window.POKEMOA_DATA = (function () {
     }
   ];
 
-  /* ---------------------------------------------- 집 태블릿 중계 프리셋 */
+  /* ------------------------------------------- 실시간 재고 조회 서버 프리셋 */
   /* 2026-11-18 열린 임시 터널 주소입니다. 태블릿에서 cloudflared 터널을 다시 열면
-     주소가 바뀌므로, 그때는 이 값만 고치면 사이트 전체(중계 모달 기본값)에 반영됩니다.
-     주의: 이 페이지는 공개 사이트라 주소도 함께 공개됩니다. 중계 서버는 조회 전용입니다. */
+     주소가 바뀌면 이 값만 고치면 사이트 전체가 새 주소로 조회합니다.
+     주의: 이 페이지는 공개 사이트라 주소도 함께 공개됩니다. 조회 서버는 읽기 전용입니다. */
   var relayPreset = {
     label: "home-tablet v1.3",
     url: "https://nyc-rocks-epic-journalists.trycloudflare.com",
@@ -7483,7 +7495,7 @@ window.POKEMOA_DATA = (function () {
 
   /* ------------------------------------------------------ 팝수 조회 도구 */
   var popTools = {
-    note: "PSA Pop Report와 BRG 팝 리포트는 로그인·CORS·자동화 차단 때문에 이 사이트 안에서 표를 직접 읽어 오지 못합니다. 검색어를 복사해 공식 사이트에서 확인하는 방식이고, 태블릿 중계(/api/pop?q=)가 연결되면 같은 화면에서 결과를 받아 표시합니다.",
+    note: "PSA Pop Report와 BRG 팝 리포트는 로그인·CORS·자동화 차단 때문에 이 사이트 안에서 표를 직접 읽어 오지 못합니다. 검색어를 복사해 공식 사이트에서 확인하는 방식이고, 실시간 조회(/api/pop?q=)가 연결되면 같은 화면에서 결과를 받아 표시합니다.",
     psa: { label: "PSA Pop Report", url: "https://www.psacard.com/Pop/Search", home: "https://www.psacard.com/pop" },
     brg: { label: "BRG 팝 리포트", url: "https://break.co.kr/pop-report", global: "https://www.breakgrading.com" },
     kream: "https://kream.co.kr/search?keyword=",
@@ -7553,8 +7565,8 @@ window.POKEMOA_DATA = (function () {
  *   스냅샷으로 부드럽게 대체하고 배지에 상태를 표기한다. 카카오 SDK는 등록된
  *   도메인(https://moa-kr.github.io)에서만 지도를 그리므로, 그 밖의 주소
  *   (file://·미등록 프리뷰)에서는 안내 문구와 함께 스냅샷 목록으로 동작한다.
- * · 재고 수량은 집 태블릿 중계(relay)가 편의점 앱에서 조회한 실제 값만 쓰고,
- *   받지 못한 매장은 「매장 확인 필요」로 표시한다(샘플·추정 수량 없음).
+ * · 재고 수량은 편의점 앱에서 실시간으로 조회한 실제 값만 쓰고,
+ *   받지 못한 매장은 「미조회」로 표시한다(샘플·추정 수량 없음).
  * ========================================================================= */
 window.PokeMoaMap = (function () {
   "use strict";
@@ -7576,7 +7588,7 @@ window.PokeMoaMap = (function () {
   var BRAND_QUERY = { gs25: "GS25", cu: "CU", seven: "세븐일레븐", emart24: "이마트24" };
   var BRAND_ORDER_LIST = ["gs25", "cu", "seven", "emart24"];
   /* 오프라인 판매처(마트·아트박스·공식 자판기·공인 카드샵) — 편의점 4사와 함께 지도에 올린다.
-     재고 공개 데이터가 없어 모두 '확인 필요' 또는 '공식 설치 지점'으로만 표시한다. */
+     재고 공개 데이터가 없어 모두 '매장 확인' 또는 '공식 설치 지점'으로만 표시한다. */
   var OFFLINE_IDS = ["mart", "artbox", "vending", "cardshop"];
   var OFFLINE_LABEL = { mart: "대형마트", artbox: "아트박스", vending: "공식 자판기", cardshop: "공인 카드샵" };
   var OFFLINE_CAP = 26;      /* 마트·아트박스 실시간 검색 결과 상한(편의점 마커를 밀어내지 않게) */
@@ -7622,7 +7634,8 @@ window.PokeMoaMap = (function () {
     badgeWasSnapshot: false,
     metro: false,
     allow20: true,
-    relay: null,        /* 집 태블릿 중계에서 받은 실재고 요약 { ok, sources, at, count } */
+    relay: null,        /* 실시간 재고 조회 요약 { ok, sources, at, count } */
+    relayPayload: null, /* 마지막 조회 응답 — 지도 매장을 새로 그린 뒤에도 다시 얹는다 */
     relayAt: "",
     started: false      /* 첫 자동 조회를 했는지 — 첫 화면은 진행률 패널을 띄우지 않는다 */
   };
@@ -7684,9 +7697,9 @@ window.PokeMoaMap = (function () {
     return (h >>> 0);
   }
 
-  /* 매장 재고 상태: 편의점 앱 API 를 대신 조회해 주는 집 태블릿 중계(relay)에서
+  /* 매장 재고 상태: 편의점 앱 API 를 대신 조회해 주는 실시간 조회(relay)에서
      실제 수량을 받은 매장만 「재고 있음/없음」으로 표시하고, 받지 못한 매장은
-     수량을 지어내지 않고 「매장 확인 필요」로 둔다. (샘플 재고는 쓰지 않는다) */
+     수량을 지어내지 않고 「미조회」로 둔다. (샘플 재고는 쓰지 않는다) */
   function unknownStatus() {
     return "check";
   }
@@ -7736,7 +7749,7 @@ window.PokeMoaMap = (function () {
       lng: o.lng,
       street: o.street || "",
       distance: 0,
-      status: unknownStatus(), /* 중계 실재고를 받기 전에는 수량 미확인 */
+      status: unknownStatus(), /* 실시간 재고를 받기 전에는 수량 미확인 */
       observed: "",
       unit: "",
       note: o.note || "",
@@ -7757,7 +7770,7 @@ window.PokeMoaMap = (function () {
       s.source = source;
       s.distance = meters(center, s);
       /* 매장 위치만 받은 상태 — 취급 상품·수량은 지어내지 않는다.
-         집 태블릿 중계가 그 매장의 실재고를 주면 그때 실제 상품만 붙는다. */
+         실시간 재고 조회가 그 매장의 실재고를 주면 그때 실제 상품만 붙는다. */
       s.products = [];
       out.push(s);
     }
@@ -7888,19 +7901,29 @@ window.PokeMoaMap = (function () {
         ? '<span class="pm-pill is-chip status-in" style="--brand:' + b.color + '">' + b.short + "</span>"
         : '<span class="pm-pill is-dot status-' + s.status + '"></span>';
     } else if (s.status === "in" && s.relay) {
+      /* 실제 조회에서 수량 1개 이상 확인 — 초록 강조 */
       var q = s.relayQty || 0;
       html = '<span class="pm-pill status-in is-relay" style="--brand:' + b.color + '">' +
-        "<b>" + b.short + "</b><span>" + (q ? q + "개" : "재고") + "</span></span>";
+        "<b>" + b.short + "</b><span>재고 있음" + (q ? " · " + q + "개" : "") + "</span></span>";
     } else if (s.status === "in") {
       var n = stockProductCount(s);
       html = '<span class="pm-pill status-in" style="--brand:' + b.color + '">' +
-        "<b>" + b.short + "</b><span>" + (n ? "입고 " + n + "종" : "재고 있음") + "</span></span>";
-    } else {
-      var txt = s.official ? "공식" : (s.status === "check" ? "확인" : (s.relay ? "실시간 0개" : "없음"));
-      if (s.brand === "mart" || s.brand === "artbox") txt = "확인";
-      html = '<span class="pm-pill status-' + s.status + (s.offline ? ' is-offline' : '') + '" style="--brand:' + b.color + '">' +
+        "<b>" + b.short + "</b><span>재고 있음" + (n ? " · " + n + "종" : "") + "</span></span>";
+    } else if (s.offline && (s.brand === "mart" || s.brand === "artbox")) {
+      /* 오프라인 판매처는 재고 조회 대상이 아니다 — 방문 확인 */
+      html = '<span class="pm-pill status-' + s.status + ' is-offline" style="--brand:' + b.color + '">' +
         '<i class="pm-dot" style="background:' + b.color + '"></i>' +
-        "<span>" + b.short + " · " + txt + "</span></span>";
+        "<span>" + b.short + " · 매장확인</span></span>";
+    } else if (s.relay) {
+      /* 실제 조회가 성공했고 재고 0으로 확인 — 차분한 회색 '없음' */
+      html = '<span class="pm-pill status-none is-relay-none" style="--brand:' + b.color + '">' +
+        '<i class="pm-dot" style="background:#9aa7b8"></i>' +
+        "<span>" + b.short + " · 없음</span></span>";
+    } else {
+      /* 아직 재고 조회가 닿지 않은 브랜드 — '미조회' (모호한 '확인' 금지) */
+      html = '<span class="pm-pill status-check is-unchecked" style="--brand:' + b.color + '">' +
+        '<i class="pm-dot" style="background:#c3ccda"></i>' +
+        "<span>" + b.short + " · 미조회</span></span>";
     }
     return html;
   }
@@ -8108,7 +8131,9 @@ window.PokeMoaMap = (function () {
   function placeLabel(s) {
     if (s.brand === "vending") return "공식 설치 지점";
     if (s.brand === "cardshop") return "공인 카드샵";
-    if (s.brand === "mart" || s.brand === "artbox") return "확인 필요 (방문·매장 문의)";
+    if (s.brand === "mart" || s.brand === "artbox") return "매장 확인 (방문·문의)";
+    if (s.relay) return statusLabel(s.status);
+    if (s.status === "none") return "미조회";
     return statusLabel(s.status);
   }
 
@@ -8158,7 +8183,7 @@ window.PokeMoaMap = (function () {
   }
 
   function statusLabel(s) {
-    return s === "in" ? "재고 있음" : s === "check" ? "매장 확인 필요" : "재고 없음";
+    return s === "in" ? "재고 있음" : s === "none" ? "없음" : "미조회";
   }
 
   /* 취급·재고 카드 상품명 태그 (목록·팝업 공용) */
@@ -8168,8 +8193,10 @@ window.PokeMoaMap = (function () {
     var soldout = list.some(function (p) { return p.state === "soldout"; });
     var head = "";
     if (s.status === "none") {
-      /* 품절 이력이 있으면 머리표로, 전부 미입고면 태그의 '미입고'만으로 충분하다 */
-      head = soldout ? '<span class="p-head">최근 입고 품절</span>' : "";
+      /* 실시간 조회로 0을 확인한 매장은 품절 이력이 아니라 '조회 결과 0개'로 적는다 */
+      head = soldout
+        ? '<span class="p-head">' + (s.relay ? "조회 결과 0개" : "최근 입고 품절") + '</span>'
+        : "";
     } else if (withHead) {
       head = '<span class="p-head p-head-label">보유 카드</span>';
     }
@@ -8224,8 +8251,8 @@ window.PokeMoaMap = (function () {
       (s.offline
         ? '<p class="pm-card-note">' + offlineNote(s) + "</p>"
         : (s.relay
-          ? '<p class="pm-card-note">집 태블릿 중계 서버가 편의점 앱에서 <b>조회한 실제 재고</b>입니다(조회 ' + escapeHtml(s.observed) + '). 수량은 조회 시점 기준이므로 방문 전 매장 전화로 한 번 더 확인하세요.</p>'
-          : '<p class="pm-card-note">매장 위치·상호는 카카오맵 실제 장소 데이터입니다. 이 매장은 <b>재고 수량을 받지 못해</b> 「매장 확인 필요」로 표시합니다(수량·취급 상품을 지어내지 않습니다). 집 태블릿 중계가 연결되면 실제 재고가 자동으로 채워지고, 그 전에는 방문 전 공식 앱·매장 전화로 확인하세요.</p>')) +
+          ? '<p class="pm-card-note">편의점 앱에서 <b>실시간으로 조회한 실제 재고</b>입니다(조회 ' + escapeHtml(s.observed) + '). 수량은 조회 시점 기준이므로 방문 전 매장 전화로 한 번 더 확인하세요.</p>'
+          : '<p class="pm-card-note">매장 위치·상호는 카카오맵 실제 장소 데이터입니다. 이 매장은 <b>재고 수량을 받지 못해</b> 「미조회」로 표시합니다(수량·취급 상품을 지어내지 않습니다). 조회가 연결되면 실제 재고가 자동으로 채워지고, 그 전에는 방문 전 공식 앱·매장 전화로 확인하세요.</p>')) +
       '<a class="btn btn-sm btn-dark pm-card-link" target="_blank" rel="noopener" href="' + navLink + '">네이버 지도에서 보기</a>';
     el.card.querySelector(".pm-card-close").addEventListener("click", function (e) {
       e.stopPropagation();
@@ -8275,7 +8302,7 @@ window.PokeMoaMap = (function () {
     if (st.loading.data && !(st.relay && st.relay.count)) {
       return { kind: "busy", text: "카카오 장소 검색으로 주변 편의점 4사·오프라인 매장을 찾는 중입니다 (보통 1초 이내)", action: false };
     }
-    /* 집 태블릿 중계로 실제 재고를 받았으면 그 사실을 먼저 알린다 */
+    /* 실시간 재고 조회로 실제 수량을 받았으면 그 사실을 먼저 알린다 */
     if (st.relay && st.relay.count) {
       var names = [];
       RELAY_ORDER.forEach(function (k) {
@@ -8284,8 +8311,8 @@ window.PokeMoaMap = (function () {
       });
       return {
         kind: "relay",
-        text: "실시간 중계 · " + (names.length ? names.join("·") + " " : "") + "실제 재고 " + st.relay.count +
-          "곳 · 조회 " + relayTimeLabel(st.relayAt),
+        text: "실시간 재고 · " + (names.length ? names.join("·") + " " : "") + st.relay.count +
+          "곳 확인 · 조회 " + relayTimeLabel(st.relayAt),
         action: false
       };
     }
@@ -8751,7 +8778,10 @@ window.PokeMoaMap = (function () {
       error: st.lastError,
       late: !!liveNow && st.badgeWasSnapshot
     });
-    /* 진행률 패널용 — 매장 탐색 단계가 끝났고, 이제 중계 재고 조회 단계로 넘어간다 */
+    /* 지도 매장을 새로 그리면 이전 조회 결과가 사라지므로, 마지막 응답을 곧바로 다시 얹는다.
+       (새 조회가 오면 그 값이 이 자리를 대신한다) */
+    if (st.relayPayload) applyRelay(st.relayPayload);
+    /* 진행률 패널용 — 매장 탐색 단계가 끝났고, 이제 재고 조회 단계로 넘어간다 */
     emit("pokemoa:search-done", {
       source: st.source,
       total: st.all.length,
@@ -8763,11 +8793,11 @@ window.PokeMoaMap = (function () {
     st.badgeWasSnapshot = st.source === "snapshot";
   }
 
-  /* ------------------------------------- 집 태블릿 중계 실재고(relay) */
-  /* 중계 서버는 편의점 앱 재고를 대신 조회해 { stores: [{ brand, name, address,
+  /* ------------------------------------ 실시간 재고 조회(relay) 반영 */
+  /* 조회 서버는 편의점 앱 재고를 대신 조회해 { stores: [{ brand, name, address,
      lat, lng, distanceM, status, items:[{name,qty,code}], updatedAt }] } 로 준다.
      이 값은 실제 재고이므로 같은 자리의 지도 매장이 있으면 그 매장 카드에 얹고,
-     없으면 중계 매장을 새로 그린다. 중계가 끊기면 「매장 확인 필요」로 되돌린다. */
+     없으면 그 점포를 새로 그린다. 응답이 끊기면 「미조회」로 되돌린다. */
   var RELAY_ORDER = ["emart24", "cu", "seven"];
   var RELAY_LABEL = { emart24: "이마트24", cu: "CU", seven: "세븐일레븐" };
 
@@ -8825,21 +8855,82 @@ window.PokeMoaMap = (function () {
     };
   }
 
+  /* 브랜드 이름 표기 흔들림(emart24 / 이마트24 / 7-ELEVEN …)을 하나로 맞춘다 */
+  function normBrandKey(b) {
+    var k = String(b || "").toLowerCase().replace(/[\s_-]/g, "");
+    if (k === "emart24" || k === "emart" || k === "이마트24") return "emart24";
+    if (k === "seven" || k === "7eleven" || k === "7-eleven" || k === "세븐일레븐") return "seven";
+    if (k === "gs25" || k === "지에스25") return "gs25";
+    if (k === "cu") return "cu";
+    return k;
+  }
+
+  /* 점포명 비교용 — 브랜드 접두어·공백·괄호·'점' 꼬리를 떼고 같으면 같은 매장으로 본다.
+     ("이마트24 포항양덕공원점" ↔ "포항양덕공원점") */
+  function normStoreName(name) {
+    return String(name || "")
+      .toLowerCase()
+      .replace(/[\s\-_.,()\[\]{}·'"`]/g, "")
+      .replace(/^(이마트24|emart24|세븐일레븐|7 ?eleven|seven ?eleven|gs25|지에스25|cu)/, "")
+      .replace(/(지점|점)$/, "");
+  }
+
+  /* 카카오맵 매장과 조회 응답 점포를 잇는다.
+     ① 80m 안의 같은 브랜드 ② 점포명이 같거나 한쪽이 다른 쪽을 포함(같은 반경 안)
+     ③ 같은 브랜드 300m 안에서 가장 가까운 매장 — 앱 좌표와 지도 좌표가 조금 어긋나도 붙는다. */
+  function findTwin(base, r) {
+    var i, b, d;
+    var rName = normStoreName(r.name);
+    for (i = 0; i < base.length; i++) {
+      b = base[i];
+      if (b.relay || normBrandKey(b.brand) !== normBrandKey(r.brand)) continue;
+      if (meters(b, r) < 80) return b;
+    }
+    if (rName && rName.length >= 2) {
+      var nameHit = null, nameDist = Infinity;
+      for (i = 0; i < base.length; i++) {
+        b = base[i];
+        if (b.relay || normBrandKey(b.brand) !== normBrandKey(r.brand)) continue;
+        var bName = normStoreName(b.name);
+        if (!bName || bName.length < 2) continue;
+        if (bName === rName || bName.indexOf(rName) >= 0 || rName.indexOf(bName) >= 0) {
+          d = meters(b, r);
+          if (d < nameDist) { nameDist = d; nameHit = b; }
+        }
+      }
+      if (nameHit && nameDist <= Math.max(2500, st.radius || 0)) return nameHit;
+    }
+    var near = null, nearDist = Infinity;
+    for (i = 0; i < base.length; i++) {
+      b = base[i];
+      if (b.relay || normBrandKey(b.brand) !== normBrandKey(r.brand)) continue;
+      d = meters(b, r);
+      if (d <= 300 && d < nearDist) { nearDist = d; near = b; }
+    }
+    return near;
+  }
+
   function applyRelay(payload) {
     if (!st.center) return 0;
-    var list = ((payload && payload.stores) || []).map(toRelayStore).filter(Boolean);
-    /* 이전 중계 결과는 원래 상태로 되돌리고 새로 얹는다 */
+    st.relayPayload = payload || null;
+    var raw = ((payload && payload.stores) || []).map(toRelayStore).filter(Boolean);
+    /* 같은 점포가 두 번 실려 오면 하나만 남긴다 */
+    var seen = {};
+    var list = [];
+    raw.forEach(function (r) {
+      var k = normBrandKey(r.brand) + ":" + normStoreName(r.name);
+      if (seen[k]) return;
+      seen[k] = 1;
+      list.push(r);
+    });
+    /* 이전 조회 결과는 원래 상태로 되돌리고 새로 얹는다 */
     restoreRelayBase();
     var base = st.all;
     list.forEach(function (r) {
       r.distance = meters(st.center, r);
-      var twin = null;
-      for (var i = 0; i < base.length; i++) {
-        var b = base[i];
-        if (b.brand === r.brand && meters(b, r) < 80) { twin = b; break; }
-      }
+      var twin = findTwin(base, r);
       if (twin && !twin.relay) {
-        /* 지도로 그려둔 같은 매장 — 원래 값을 저장해 두고 중계 값으로 잠시 바꿔 쓴다 */
+        /* 지도로 그려둔 같은 매장 — 원래 값을 저장해 두고 조회 값으로 잠시 바꿔 쓴다 */
         twin.relayBase = {
           name: twin.name, status: twin.status, observed: twin.observed,
           products: twin.products, street: twin.street, source: twin.source, relayQty: null
@@ -8884,13 +8975,14 @@ window.PokeMoaMap = (function () {
         delete s.relayBase;
         return true;
       }
-      return !s.relay;   /* 순수 중계 매장은 빼고 지도·스냅샷 매장만 남깁니다 */
+      return !s.relay;   /* 조회로만 추가된 매장은 빼고 지도·스냅샷 매장만 남깁니다 */
     });
   }
 
   function clearRelay() {
     if (!st.relay) return;
     restoreRelayBase();
+    st.relayPayload = null;
     st.relay = null;
     st.relayAt = "";
     if (st.selectedId && !st.all.some(function (s) { return s.id === st.selectedId; })) closeCard();
@@ -9318,7 +9410,7 @@ window.PokeMoaMap = (function () {
     radius: 3000
   };
 
-  var statusText = { in: "재고 있음", check: "매장 확인 필요", none: "재고 없음" };
+  var statusText = { in: "재고 있음", check: "미조회", none: "없음" };
 
   function ensureMap() {
     if (mapReady || !window.PokeMoaMap || !mapShell) return;
@@ -9371,11 +9463,11 @@ window.PokeMoaMap = (function () {
   }
 
   /* ------------------------------------- 편의점 4사 조회 진행률 패널 */
-  /* 매장 탐색(카카오 장소 검색) 0→40%, 중계 재고 조회 40→100% 를 4사별로 보여 준다.
+  /* 매장 탐색(카카오 장소 검색) 0→40%, 실시간 재고 조회 40→100% 를 4사별로 보여 준다.
      퍼센트는 실제 응답으로만 올라간다 — 장소 검색은 페이지가 도착할 때마다(map.js 의
-     pokemoa:search-progress), 재고는 중계 sources 가 도착할 때(relayRefresh 의
+     pokemoa:search-progress), 재고는 조회 응답(sources)이 도착할 때(relayRefresh 의
      bpRelayDone) 올린다.
-     중계가 없으면 100%로 닫으면서 「중계 미연결 · 위치만」처럼 상태를 분명히 적는다. */
+     응답이 없으면 100%로 닫으면서 「미연동 · 매장 위치만」처럼 상태를 분명히 적는다. */
   var bpEl = $("#brandProgress");
   var bpRowsEl = $("#bpRows");
   var bpOverallEl = $("#bpOverall");
@@ -9384,13 +9476,14 @@ window.PokeMoaMap = (function () {
   var bpToggleEl = $("#bpToggle");
   var bpTitleEl = $("#bpTitle");
   var BP_BRANDS = ["gs25", "cu", "seven", "emart24"];
-  var BP_RELAY = { cu: 1, seven: 1, emart24: 1 };   /* GS25는 중계 서버가 재고를 주지 않는다 */
+  var BP_RELAY = { cu: 1, seven: 1, emart24: 1 };   /* GS25는 재고 조회 대상이 아니다 */
   var bp = {
     rows: {},
     stage: 0,        /* 0 대기 · 1 매장 탐색 · 2 재고 조회 · 3 완료 */
     active: false,
     quiet: true,     /* 첫 자동 조회 때는 패널을 띄우지 않는다 */
     expanded: true,
+    userCollapsed: false,
     searchDone: false,
     counts: null,
     sourceLabel: "",
@@ -9454,7 +9547,7 @@ window.PokeMoaMap = (function () {
 
   function bpStartTicker() {
     if (bp.ticker) return;
-    /* 중계 응답은 한 번에 오므로, 기다리는 동안만 40%→88% 사이를 부드럽게 올린다.
+    /* 조회 응답은 한 번에 오므로, 기다리는 동안만 40%→88% 사이를 부드럽게 올린다.
        100% 는 실제 응답이 왔을 때만 쓴다. */
     bp.ticker = setInterval(function () {
       var moved = false;
@@ -9501,12 +9594,18 @@ window.PokeMoaMap = (function () {
 
   function bpFinish() {
     bp.stage = 3;
-    if (bpEl) bpEl.setAttribute("data-state", "done");
+    if (bpEl) {
+      bpEl.hidden = false;
+      bpEl.setAttribute("data-state", "done");
+    }
+    bp.quiet = false;
+    bp.active = true;
     if (bpTitleEl) bpTitleEl.textContent = "재고 조회 완료";
     bpRenderSummary();
     clearTimeout(bp.collapseTimer);
-    /* 끝난 뒤에는 지도·브랜드 카드를 가리지 않도록 한 줄 요약으로 접어 둔다 */
-    bp.collapseTimer = setTimeout(function () { bpCollapse(true); }, 2200);
+    /* 끝난 뒤에도 4사 % 막대와 결과 문구를 그대로 남긴다(자동으로 접지 않는다).
+       사용자가 직접 '접기'를 누른 경우에만 접힌 상태를 지킨다. */
+    bpCollapse(!!bp.userCollapsed);
   }
 
   function bpShow(force) {
@@ -9518,7 +9617,7 @@ window.PokeMoaMap = (function () {
     bpEl.hidden = false;
     bpEl.setAttribute("data-state", bp.stage === 3 ? "done" : "running");
     if (bpTitleEl) bpTitleEl.textContent = bp.stage === 3 ? "재고 조회 완료" : "편의점 4사 재고 조회";
-    bpCollapse(bp.stage === 3);
+    bpCollapse(bp.stage === 3 && !!bp.userCollapsed);
   }
 
   function bpLabel(regionId) {
@@ -9531,6 +9630,7 @@ window.PokeMoaMap = (function () {
   function bpReset(regionId) {
     clearTimeout(bp.collapseTimer);
     bp.stage = 1;
+    bp.userCollapsed = false;
     bp.searchDone = false;
     bp.counts = null;
     bp.sourceLabel = "";
@@ -9544,18 +9644,39 @@ window.PokeMoaMap = (function () {
     return (typeof relay !== "undefined" && relay && relay.state) || "off";
   }
 
-  function bpRelayDone(sources) {
+  function bpRelayDone(sources, stores) {
     if (!bp.searchDone) return;
     var src = sources || {};
+    /* 응답에 실린 점포·수량으로 브랜드별 결과를 센다 — sources.count 만 믿지 않는다 */
+    var byBrand = {};
+    (stores || []).forEach(function (st) {
+      var b = st && st.brand;
+      if (!b) return;
+      var qty = 0;
+      (st.items || []).forEach(function (it) { qty += Number(it.qty) || 0; });
+      var row = byBrand[b] || (byBrand[b] = { stores: 0, qty: 0 });
+      row.stores += 1;
+      row.qty += qty;
+    });
     BP_BRANDS.forEach(function (id) {
-      if (!BP_RELAY[id]) return;
+      if (!BP_RELAY[id]) {
+        /* 재고 조회 대상이 아닌 브랜드 — 매장 위치만 보여 준다 */
+        bpSet(id, 100, "미연동 · 매장 위치만", "off");
+        return;
+      }
       var s = src[id];
-      if (!s) { bpSet(id, 100, "중계 미지원 · 위치만", "off"); return; }
+      if (!s) { bpSet(id, 100, "미연동 · 매장 위치만", "off"); return; }
       if (s.ok) {
-        var n = Number(s.count) || 0;
-        bpSet(id, 100, n ? n + "곳 확인" : "0곳 · 수량 미확인", "done");
+        var row = byBrand[id] || { stores: 0, qty: 0 };
+        var n = Number(s.count);
+        if (!isFinite(n)) n = row.stores;
+        if (!n) {
+          bpSet(id, 100, "조회 완료 · 0곳 확인", "done");
+          return;
+        }
+        bpSet(id, 100, "조회 완료 · " + n + "곳 확인(재고 " + row.qty + ")", "done");
       } else {
-        bpSet(id, 100, "응답 없음" + (s.upstream ? " (HTTP " + s.upstream + ")" : ""), "err");
+        bpSet(id, 100, "응답 없음 · 매장 위치만" + (s.upstream ? " (HTTP " + s.upstream + ")" : ""), "err");
       }
     });
     bpRenderOverall();
@@ -9565,8 +9686,8 @@ window.PokeMoaMap = (function () {
     if (bp.stage === 1) return;       /* 아직 매장 탐색 중 — search-done 이 이어받는다 */
     if (bp.stage === 0) {
       bp.searchDone = true;
-      bp.sourceLabel = "중계 재고 새로고침";
-      bpSet("gs25", 100, "위치 확인 완료 · 재고 중계 없음", "done");
+      bp.sourceLabel = "재고 새로고침";
+      bpSet("gs25", 100, "미연동 · 매장 위치만", "off");
     }
     bp.stage = 2;
     if (bpEl) bpEl.setAttribute("data-state", "running");
@@ -9585,7 +9706,7 @@ window.PokeMoaMap = (function () {
     if (!bp.searchDone) return;
     BP_BRANDS.forEach(function (id) {
       if (!BP_RELAY[id]) return;
-      bpSet(id, 100, "응답 없음 · 위치만", "err");
+      bpSet(id, 100, "응답 없음 · 매장 위치만", "err");
     });
     bpRenderOverall();
   }
@@ -9594,13 +9715,14 @@ window.PokeMoaMap = (function () {
     if (!bp.searchDone) return;
     BP_BRANDS.forEach(function (id) {
       if (!BP_RELAY[id]) return;
-      bpSet(id, 100, why === "error" ? "중계 응답 없음 · 위치만" : "중계 미연결 · 위치만", why === "error" ? "err" : "off");
+      bpSet(id, 100, why === "error" ? "응답 없음 · 매장 위치만" : "미연동 · 매장 위치만", why === "error" ? "err" : "off");
     });
     bpRenderOverall();
   }
 
   if (bpToggleEl) {
     bpToggleEl.addEventListener("click", function () {
+      bp.userCollapsed = bp.expanded;   /* 펼쳐져 있으면 → 접기 */
       bpCollapse(bp.expanded);
     });
   }
@@ -9631,19 +9753,19 @@ window.PokeMoaMap = (function () {
     if (d.source !== "live") {
       /* 카카오맵을 못 그리는 주소·검색 제한 — 내장 좌표로 표시했음을 그대로 적는다 */
       bp.sourceLabel = "내장 좌표로 표시";
-      BP_BRANDS.forEach(function (id) { bpSet(id, 100, "내장 좌표·위치만", "off"); });
+      BP_BRANDS.forEach(function (id) { bpSet(id, 100, "미연동 · 매장 위치만", "off"); });
       bpRenderOverall();
       return;
     }
     bp.sourceLabel = "실시간 조회 완료";
     bp.stage = 2;
-    /* GS25는 중계 서버가 재고를 주지 않는다 — 매장 위치만 확인하고 끝난다 */
-    bpSet("gs25", 100, "위치 확인 완료 · 재고 중계 없음", "done");
+    /* GS25는 재고 조회 대상이 아니다 — 매장 위치만 확인하고 끝난다 */
+    bpSet("gs25", 100, "미연동 · 매장 위치만", "off");
     var rs = relayStateNow();
     if (rs === "online" || rs === "checking") {
       BP_BRANDS.forEach(function (id) {
         if (!BP_RELAY[id]) return;
-        bpSet(id, 40, rs === "online" ? "재고 조회 중" : "중계 연결 확인 중", "run");
+        bpSet(id, 40, rs === "online" ? "재고 조회 중" : "연결 확인 중", "run");
       });
       bpStartTicker();
     } else {
@@ -9669,7 +9791,7 @@ window.PokeMoaMap = (function () {
     if (!list.length) return "";
     var soldout = list.some(function (p) { return p.state === "soldout"; });
     var head = s.status === "none" && soldout
-      ? '<span class="p-head">최근 입고 품절</span>'
+      ? '<span class="p-head">' + (s.relay ? "조회 결과 0개" : "최근 입고 품절") + '</span>'
       : "";
     var tags = list.map(function (p) {
       return '<span class="p-tag is-' + p.state + '" title="' + p.name + " · " + p.stateLabel + '">' +
@@ -9678,7 +9800,7 @@ window.PokeMoaMap = (function () {
     return '<span class="s-products">' + head + tags + "</span>";
   }
 
-  /* 정렬: 재고 우선(재고 있음 → 확인 필요 → 없음, 각각 가까운 순) / 가까운 거리순 */
+  /* 정렬: 재고 우선(재고 있음 → 미조회 → 없음, 각각 가까운 순) / 가까운 거리순 */
   var STATUS_RANK = { in: 0, check: 1, none: 2 };
   function sortStores(list) {
     var arr = (list || []).slice();
@@ -9711,7 +9833,7 @@ window.PokeMoaMap = (function () {
     if (mapCountEl) {
       mapCountEl.innerHTML = "표시 중 <b>" + list.length + "</b>곳" +
         (offlineN ? " · 오프라인 " + offlineN + "곳" : "") +
-        " · 재고 " + counts.in + " · 확인 " + (counts.check - offlineN) + " · 없음 " + counts.none;
+        " · 재고 " + counts.in + " · 미조회 " + (counts.check - offlineN) + " · 없음 " + counts.none;
     }
     if (sideSummary) {
       sideSummary.textContent = list.length
@@ -9738,8 +9860,8 @@ window.PokeMoaMap = (function () {
       var b = D.brandMeta[s.brand] || { label: s.brand, short: "?", color: "#1b2a4a" };
       var dist = s.distance < 1000 ? Math.round(s.distance) + "m" : (s.distance / 1000).toFixed(1) + "km";
       var sLabel = s.offline
-        ? (s.brand === "vending" ? "공식 설치 지점" : s.brand === "cardshop" ? "공인 카드샵" : "확인 필요")
-        : statusText[s.status];
+        ? (s.brand === "vending" ? "공식 설치 지점" : s.brand === "cardshop" ? "공인 카드샵" : "매장 확인")
+        : (!s.relay && s.status === "none" ? "미조회" : statusText[s.status]);
       var item = document.createElement("li");
       var btn = document.createElement("button");
       btn.type = "button";
@@ -9757,7 +9879,7 @@ window.PokeMoaMap = (function () {
           ? '<span class="chip chip-offline">재고 미확인</span>'
           : (s.relay
             ? '<span class="chip chip-relay">실시간 ' + (s.relayQty || 0) + '개</span>'
-            : '<span class="chip chip-check">수량 미확인</span>')) +
+            : '<span class="chip chip-check">미조회</span>')) +
         (s.street ? "<small>" + escapeHtml(s.street) + "</small>" : "") +
         "</span>" +
         productTagsHtml(s);
@@ -9919,32 +10041,25 @@ window.PokeMoaMap = (function () {
     $$(".store-item").forEach(function (b) { b.classList.remove("is-active"); });
   });
 
-  /* ------------------------------------------- 집 태블릿 실시간 중계 연결 */
-  /* 태블릿(Termux)에서 켜 둔 relay/server.js 주소를 저장하고, 연결된 동안에는
-     주변 매장 조회마다 중계 서버의 실제 재고를 받아 지도·매장 카드에 반영한다.
-     연결이 없거나 응답이 없으면 카카오맵 실제 위치만 보여 주고 수량은 「매장 확인 필요」로 둔다. */
+  /* --------------------------------------- 편의점 실시간 재고 조회 연결(내부) */
+  /* 태블릿(Termux)에서 켜 둔 재고 조회 서버 주소를 기억하고, 연결된 동안에는
+     주변 매장 조회마다 실제 재고를 받아 지도·매장 카드에 반영한다.
+     연결이 없거나 응답이 없으면 카카오맵 실제 위치만 보여 주고 수량은 「미조회」로 둔다. */
   var RELAY_KEY = "pokemoa.relayUrl";
   var RELAY_PRESET_KEY = "pokemoa.relayPresetUrl"; /* 프리셋으로 자동 저장된 주소 표시 */
-  var relayBar = $("#relayBar");
-  var relayStateText = $("#relayStateText");
-  var relayOpenBtn = $("#relayOpenBtn");
-  var relayRefreshBtn = $("#relayRefreshBtn");
-  var relayModal = $("#relayModal");
-  var relayModalMsg = $("#relayModalMsg");
-  var relayUrlInput = $("#relayUrlInput");
-  var relayConnectBtn = $("#relayConnectBtn");
-  var relayDisconnectBtn = $("#relayDisconnectBtn");
-  var relayModalClose = $("#relayModalClose");
-  var relayPresetBox = $("#relayPresetBox");
   var RELAY_PRESET = D.relayPreset || null;
 
+  /* 이 연결은 화면에 표시하지 않는다(배지·상태바·모달 없음).
+     태블릿에서 켜 둔 재고 조회 서버에 조용히 붙어, 주변 매장의 실제 재고만
+     지도 말풍선·매장 카드에 반영한다. 응답이 없으면 매장 위치만 남고
+     수량은 「미조회」로 표시된다. */
   var relay = {
     url: "",
     state: "off",        /* off | checking | online | error */
     busy: false,
+    pending: false,      /* 응답을 기다리는 동안 들어온 새 요청 */
     lastCount: 0,
     lastKey: "",
-    noticeShown: "",
     timer: null
   };
 
@@ -9963,77 +10078,10 @@ window.PokeMoaMap = (function () {
   function relaySave(url) {
     try { if (url) localStorage.setItem(RELAY_KEY, url); else localStorage.removeItem(RELAY_KEY); } catch (e) {}
   }
-  function relayHost() {
-    return relay.url ? relay.url.replace(/^https?:\/\//, "") : "";
-  }
-
-  function relayMsg(text, kind) {
-    if (!relayModalMsg) return;
-    relayModalMsg.textContent = text || "";
-    relayModalMsg.className = "rm-msg" + (kind ? " is-" + kind : "");
-  }
 
   function relayRender() {
-    if (relayBar) {
-      /* 프리셋(최근 태블릿 터널)이 있으면 자동 연결을 시도하므로 상태 바를 보여 준다 —
-         방문자는 '연결됨 · 실재고 N곳' 또는 '응답 없음(매장 확인 필요)'을 바로 본다. */
-      var showBar = relay.state !== "off" || !!(RELAY_PRESET && RELAY_PRESET.url);
-      relayBar.hidden = !showBar;
-      relayBar.setAttribute("aria-hidden", showBar ? "false" : "true");
-      relayBar.setAttribute("data-state", relay.state);
-    }
-    if (relayStateText) {
-      if (relay.state === "online") {
-        relayStateText.textContent = "연결됨 · " + relayHost() +
-          (relay.lastCount ? " · 실제 재고 " + relay.lastCount + "곳" : " · 실재고 확인 중");
-      } else if (relay.state === "checking") {
-        relayStateText.textContent = "연결 확인 중… (" + relayHost() + ")";
-      } else if (relay.state === "error") {
-        relayStateText.textContent = "중계 응답 없음 · " + relayHost() + " · 매장 위치만 표시(수량 미확인)";
-      } else {
-        relayStateText.textContent = "연결 안 됨 · 지금은 매장 위치만 표시합니다(수량 미확인)";
-      }
-    }
-    if (relayOpenBtn) relayOpenBtn.textContent = relay.state === "online" ? "설정" : relay.state === "error" ? "다시 연결" : "중계 연결";
-    if (relayRefreshBtn) relayRefreshBtn.hidden = relay.state !== "online";
-    /* 진행률 패널이 중계 상태 변화(연결·실패·해제)를 바로 반영하도록 알린다 */
+    /* 진행률 패널이 연결 상태 변화를 바로 반영하도록 알린다(화면 문구는 없다) */
     document.dispatchEvent(new CustomEvent("pokemoa:relay-state", { detail: { state: relay.state } }));
-  }
-
-  function relayOpen() {
-    if (!relayModal) return;
-    /* 저장된 주소가 없으면 최근에 열린 집 태블릿 터널 주소를 미리 채워 둡니다.
-       (자동 연결은 하지 않고, 사용자가 '연결 확인'을 누를 때만 요청을 보냅니다.) */
-    relayUrlInput.value = relay.url || relayMigrateSaved() || (RELAY_PRESET && RELAY_PRESET.url) || "";
-    relayMsg("");
-    relayRenderPreset();
-    relayModal.hidden = false;
-    setTimeout(function () { try { relayUrlInput.focus(); } catch (e) {} }, 40);
-  }
-
-  function relayRenderPreset() {
-    if (!relayPresetBox) return;
-    if (!RELAY_PRESET || !RELAY_PRESET.url) { relayPresetBox.hidden = true; return; }
-    relayPresetBox.hidden = false;
-    relayPresetBox.innerHTML =
-      '<span class="rm-preset-label">최근 열린 터널' + (RELAY_PRESET.label ? ' · ' + escapeHtml(RELAY_PRESET.label) : '') + '</span>' +
-      '<code class="rm-preset-url">' + escapeHtml(RELAY_PRESET.url.replace(/^https?:\/\//, '')) + '</code>' +
-      '<span class="rm-preset-actions">' +
-        '<button type="button" class="btn btn-ghost btn-sm" id="relayPresetFill">주소 넣기</button>' +
-        '<button type="button" class="btn btn-dark btn-sm" id="relayPresetConnect">바로 연결</button>' +
-      '</span>';
-    var fill = document.getElementById("relayPresetFill");
-    var go = document.getElementById("relayPresetConnect");
-    if (fill) fill.addEventListener("click", function () {
-      relayUrlInput.value = RELAY_PRESET.url;
-      relayUrlInput.focus();
-      relayMsg("주소를 넣었습니다. '연결 확인'을 누르면 연결합니다.");
-    });
-    if (go) go.addEventListener("click", function () { relayConnect(RELAY_PRESET.url); });
-  }
-
-  function relayClose() {
-    if (relayModal) relayModal.hidden = true;
   }
 
   function relayCheck(url) {
@@ -10045,7 +10093,7 @@ window.PokeMoaMap = (function () {
         return res.json();
       })
       .then(function (d) {
-        if (!d || d.service !== "pokemoa-relay") throw new Error("중계 서버 응답이 아닙니다");
+        if (!d || d.service !== "pokemoa-relay") throw new Error("unexpected-response");
         return d;
       })
       .finally(function () { clearTimeout(timer); });
@@ -10054,72 +10102,48 @@ window.PokeMoaMap = (function () {
   function relayConnect(raw, opts) {
     opts = opts || {};
     var target = relayNormalize(raw);
-    if (!target) {
-      relayMsg("주소 형식을 확인해 주세요. 예: https://example.trycloudflare.com", "warn");
-      return;
-    }
+    if (!target) return;
     relay.url = target;
     relay.state = "checking";
-    relay.lastCount = 0;
     relayRender();
-    if (!opts.silent) relayMsg("연결을 확인하는 중입니다…");
     relayCheck(target).then(function () {
       relaySave(target);
-      /* 프리셋(사이트에 실린 최근 태블릿 터널)으로 붙은 경우를 기억해 두었다가,
-         터널 주소가 새로 바뀌면 저장된 옛 주소 대신 새 프리셋으로 갈아탄다. */
+      /* 프리셋으로 붙은 경우를 기억해 두었다가, 터널 주소가 새로 바뀌면 저장된 옛 주소 대신 새 프리셋으로 갈아탄다. */
       try {
         if (opts.fromPreset) localStorage.setItem(RELAY_PRESET_KEY, target);
         else localStorage.removeItem(RELAY_PRESET_KEY);
       } catch (e) {}
       relay.state = "online";
       relayRender();
-      if (!opts.silent) {
-        relayMsg("연결됐습니다. 실재고를 불러오는 중…", "ok");
-        toast("실시간 중계에 연결했습니다. 실제 재고를 불러옵니다.");
-      }
       trackEvent("relay_connect", { status: "online", auto: opts.silent ? 1 : 0 });
-      if (!opts.keepOpen) relayClose();
-      relayRefresh(!opts.silent);
+      relayRefresh(!!opts.manual);
     }).catch(function (err) {
       relay.state = "error";
       relayRender();
-      var reason = err && err.name === "AbortError"
-        ? "응답 시간 초과(6.5초)"
-        : (err && err.message) || "응답 없음";
-      if (!opts.silent) relayMsg("연결하지 못했습니다 — " + reason +
-        ". 태블릿의 server.js·터널 주소를 확인해 주세요.", "warn");
       trackEvent("relay_connect", { status: "error", auto: opts.silent ? 1 : 0 });
+      bpRelayFail();
     });
-  }
-
-  function relayDisconnect() {
-    relaySave("");
-    relay.url = "";
-    relay.state = "off";
-    relay.lastCount = 0;
-    relay.noticeShown = "";
-    relayRender();
-    if (mapReady && window.PokeMoaMap) window.PokeMoaMap.clearRelay();
-    relayMsg("연결을 해제했습니다. 이제 매장 위치만 표시합니다(수량 미확인).", "ok");
-    toast("실시간 중계 연결을 해제했습니다.");
   }
 
   function relayRefresh(manual) {
     if (relay.state !== "online" || !relay.url || !mapReady || !window.PokeMoaMap) return;
     var mstate = window.PokeMoaMap.getState();
     if (!mstate || !mstate.center) return;
+    /* 응답을 기다리는 중이면 요청을 버리지 않고, 끝난 뒤 한 번 더 최신 위치로 조회한다
+       (버리면 새로 그린 매장에 재고가 붙지 않아 전부 미조회로 보인다). */
+    if (relay.busy) { relay.pending = true; return; }
     var lat = Number(mstate.center.lat).toFixed(4);
     var lng = Number(mstate.center.lng).toFixed(4);
     var key = lat + "," + lng;
-    if (relay.busy) return;
     relay.busy = true;
+    relay.lastKey = key;
     bpRelayStart(!!manual);
     var ctrl = new AbortController();
     var timer = setTimeout(function () { ctrl.abort(); }, 18000);
     /* 검색어는 '포켓몬카드' — '포켓몬'으로 넣으면 CU가 과자(빼빼로)만 잡아 카드 상품이 0건이 된다. */
-    var radiusKm = mstate && mstate.radius ? Math.round(mstate.radius) : 3000;
+    var radiusM = mstate && mstate.radius ? Math.round(mstate.radius) : 3000;
     var url = relay.url + "/api/nearby?lat=" + lat + "&lng=" + lng +
-      "&keyword=" + encodeURIComponent("포켓몬카드") + "&radius=" + radiusKm;
+      "&keyword=" + encodeURIComponent("포켓몬카드") + "&radius=" + radiusM;
     fetch(url, { signal: ctrl.signal, mode: "cors", cache: "no-store" })
       .then(function (res) {
         if (!res.ok) throw new Error("HTTP " + res.status);
@@ -10128,18 +10152,10 @@ window.PokeMoaMap = (function () {
       .then(function (payload) {
         var n = window.PokeMoaMap.applyRelay(payload);
         relay.lastCount = n;
-        relay.lastKey = key;
+        relay.state = "online";
         relayRender();
-        bpRelayDone(payload && payload.sources);
-        if (!n) {
-          if (relay.noticeShown !== "empty:" + key) {
-            relay.noticeShown = "empty:" + key;
-            toast("중계는 연결됐지만 이 지역에서 받은 실재고가 없습니다 · 매장 확인 필요로 표시합니다.");
-          }
-        } else if (manual || relay.noticeShown !== key) {
-          relay.noticeShown = key;
-          toast("실제 재고 " + n + "곳을 지도에 반영했습니다.");
-        }
+        bpRelayDone(payload && payload.sources, payload && payload.stores);
+        if (manual && n) toast("실제 재고 " + n + "곳을 지도에 반영했습니다.");
       })
       .catch(function () {
         relay.state = "error";
@@ -10147,11 +10163,19 @@ window.PokeMoaMap = (function () {
         relayRender();
         bpRelayFail();
         if (window.PokeMoaMap) window.PokeMoaMap.clearRelay();
-        toast("중계 서버 응답이 없습니다 · 매장 확인 필요로 표시합니다.");
       })
       .finally(function () {
         clearTimeout(timer);
         relay.busy = false;
+        if (relay.pending) {
+          relay.pending = false;
+          if (relay.state === "error") {
+            /* 한 번 끊기면 조용히 한 번만 다시 확인한다 */
+            relayConnect(relay.url, { silent: true });
+          } else {
+            setTimeout(function () { relayRefresh(false); }, 250);
+          }
+        }
       });
   }
 
@@ -10161,35 +10185,14 @@ window.PokeMoaMap = (function () {
     relay.timer = setTimeout(function () { relayRefresh(false); }, 900);
   }
 
-  if (relayOpenBtn) relayOpenBtn.addEventListener("click", relayOpen);
-  if (relayRefreshBtn) relayRefreshBtn.addEventListener("click", function () { relayRefresh(true); });
-  if (relayModalClose) relayModalClose.addEventListener("click", relayClose);
-  if (relayConnectBtn) {
-    relayConnectBtn.addEventListener("click", function () { relayConnect(relayUrlInput.value); });
-  }
-  if (relayUrlInput) {
-    relayUrlInput.addEventListener("keydown", function (e) {
-      if (e.key === "Enter") { e.preventDefault(); relayConnect(relayUrlInput.value); }
-    });
-  }
-  if (relayDisconnectBtn) relayDisconnectBtn.addEventListener("click", relayDisconnect);
-  if (relayModal) {
-    relayModal.addEventListener("click", function (e) {
-      if (e.target === relayModal) relayClose();
-    });
-    document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape" && !relayModal.hidden) relayClose();
-    });
-  }
-
-  /* 지도가 새로 조회를 끝낼 때마다(지역 변경·내 위치) 중계도 같이 새로 받는다 */
+  /* 지도가 새로 조회를 끝낼 때마다(지역 변경·내 위치) 실재고도 같이 새로 받는다 */
   document.addEventListener("pokemoa:loaded", relayScheduleRefresh);
   document.addEventListener("pokemoa:geo-done", relayScheduleRefresh);
 
   /* ?relay=https://… 로 열면 그 주소를 저장하고 바로 연결한다.
      주소가 없으면 data.js 의 relayPreset(최근 태블릿 터널)으로 조용히 자동 연결한다 —
      방문자가 모달에서 '연결 확인'을 누르지 않아도 실재고가 바로 뜬다. */
-  /* 저장된 중계 주소가 예전 태블릿 터널(*.trycloudflare.com)이면 지금 프리셋 주소로
+  /* 저장된 조회 서버 주소가 예전 태블릿 터널(*.trycloudflare.com)이면 지금 프리셋 주소로
      갈아탄다 — 터널은 다시 열 때마다 주소가 바뀌므로 예전 주소는 늘 응답이 없다.
      사용자가 직접 넣은 비-trycloudflare 주소(개인 도메인 등)는 그대로 둔다. */
   function relayMigrateSaved() {
@@ -10251,7 +10254,7 @@ window.PokeMoaMap = (function () {
   }
 
   /* 선택 지역 찾기 — 지금 고른 시·도/시·군·구(또는 동네 검색어의 결과)로
-     카카오 매장 검색 + 중계 재고 조회를 바로 실행한다. */
+     카카오 매장 검색 + 실시간 재고 조회를 바로 실행한다. */
   var regionBtnTimer = null;
   function regionFromQuery() {
     var q = regionSearch ? String(regionSearch.value || "").trim() : "";
@@ -10607,14 +10610,15 @@ window.PokeMoaMap = (function () {
     var html = '<button type="button" class="bs-card bs-all' + (activeBrand === "all" ? " is-active" : "") + '" data-brand="all">' +
       '<span class="bs-head"><span class="bs-name">전체</span></span>' +
       '<strong class="bs-count">' + all.total + '<small>곳</small></strong>' +
-      '<span class="bs-sub">재고 ' + all.in + " · 확인 " + all.check + " · 없음 " + all.none + "</span></button>";
+      '<span class="bs-sub">재고 ' + all.in + " · 없음 " + all.none + " · 미조회 " + all.check + "</span></button>";
     BRAND_ORDER.forEach(function (id) {
       var meta = D.brandMeta[id] || { label: id, short: id, color: "#1b2a4a" };
       var c = counts[id] || { total: 0, in: 0, check: 0, none: 0 };
       html += '<button type="button" class="bs-card' + (activeBrand === id ? " is-active" : "") + '" data-brand="' + id + '" style="--brand:' + meta.color + '">' +
         '<span class="bs-head"><i class="bs-dot"></i><span class="bs-name">' + meta.label + "</span></span>" +
         '<strong class="bs-count">' + c.total + "<small>곳</small></strong>" +
-        '<span class="bs-sub">' + (c.in ? "재고 " + c.in + "곳" : "재고 없음") + "</span></button>";
+        '<span class="bs-sub">' + (c.in ? "재고 " + c.in + "곳" : "없음 " + c.none + "곳") +
+          (c.check ? " · 미조회 " + c.check + "곳" : "") + "</span></button>";
     });
     brandSummary.innerHTML = html;
   }
@@ -10691,7 +10695,7 @@ window.PokeMoaMap = (function () {
       filterState.stockOnly = stockToggle.checked;
       resetStoreList();
       if (mapReady) window.PokeMoaMap.setStockOnly(filterState.stockOnly);
-      toast(stockToggle.checked ? "재고 있는 매장만 보여 드립니다." : "확인 필요·없음 매장도 함께 표시합니다.");
+      toast(stockToggle.checked ? "재고 있는 매장만 보여 드립니다." : "미조회·없음 매장도 함께 표시합니다.");
     });
   }
 
@@ -11581,10 +11585,10 @@ window.PokeMoaMap = (function () {
   /* =========================================================================
    * 시세·이슈·신규팩·팝수 (v4.9)
    * - 시세: data.js 의 kreamMovers(2026-11-18 KREAM 확인값)를 그대로 그립니다.
-   *   태블릿 중계({relay}/api/kream-movers)가 연결되면 같은 자리를 실시간 값으로
+   *   실시간 조회 응답({relay}/api/kream-movers)이 오면 같은 자리를 그 값으로
    *   바꾸고, 응답이 없거나 형식이 다르면 정적 값으로 남겨 둡니다.
    * - 팝수: 도감·번호 인덱스에서 찾아 기본 정보와 바로가기를 보여 주고,
-   *   중계의 /api/pop?q= 가 응답하면 팝수를 함께 표시합니다.
+   *   실시간 /api/pop?q= 응답이 오면 팝수를 함께 표시합니다.
    * ========================================================================= */
   var KC = D.KREAM_CHECKED || {};
   var MOVERS = (D.kreamMovers || []).slice();
@@ -11757,7 +11761,7 @@ window.PokeMoaMap = (function () {
     renderKreamTable(list);
     renderKreamNote(list);
     if (kreamRelayBadge) {
-      kreamRelayBadge.textContent = source === "relay" ? "중계 실시간" : "정적 데이터";
+      kreamRelayBadge.textContent = source === "relay" ? "실시간 확인" : "정적 데이터";
       kreamRelayBadge.className = "chip " + (source === "relay" ? "chip-yellow" : "chip-line");
     }
   }
@@ -11780,10 +11784,10 @@ window.PokeMoaMap = (function () {
       .then(function (payload) {
         if (payload && payload.ok && payload.items && payload.items.length) {
           applyMovers(payload.items, "relay");
-          toast("중계에서 KREAM 시세 " + payload.items.length + "장을 받았습니다.");
+          toast("KREAM 시세 " + payload.items.length + "장을 실시간으로 받았습니다.");
         }
       })
-      .catch(function () { /* 중계가 없으면 정적 값 그대로 */ })
+      .catch(function () { /* 응답이 없으면 정적 값 그대로 */ })
       .finally(function () { clearTimeout(timer); });
   }
 
@@ -12051,16 +12055,16 @@ window.PokeMoaMap = (function () {
     if (!popRelayStatus) return;
     if (!payload) {
       popRelayStatus.textContent = relayUrl()
-        ? "태블릿 중계(/api/pop)에 팝수 조회를 요청할 수 있습니다."
+        ? "실시간 팝수 조회를 요청할 수 있습니다."
         : "팝수는 공식 사이트만 공개합니다. 번호를 복사해 선택한 회사의 조회 페이지에서 확인하세요.";
       return;
     }
     var rows = payload.items || payload.results || [];
     if (!payload.ok || !rows.length) {
-      popRelayStatus.textContent = "중계에 팝수가 없습니다. 공식 조회 페이지로 확인해 주세요.";
+      popRelayStatus.textContent = "실시간 팝수 응답이 없습니다. 공식 조회 페이지로 확인해 주세요.";
       return;
     }
-    popRelayStatus.innerHTML = '<span class="pop-relay-title">중계 팝수 · ' + escapeHtml(context.query) + '</span>' +
+    popRelayStatus.innerHTML = '<span class="pop-relay-title">실시간 팝수 · ' + escapeHtml(context.query) + '</span>' +
       rows.map(function (r) {
         return '<span class="pop-relay-row"><b>' + escapeHtml(r.name || r.label || "") + '</b> ' +
           (r.psa10 != null ? 'PSA 10 ' + r.psa10 + '장' : '') +
@@ -12124,6 +12128,201 @@ window.PokeMoaMap = (function () {
     renderPopRelay(null, { query: "" });
   }
 
+  /* --------------------------------------- 실시간 환율 위젯 (USD · JPY) */
+  /* 무료 공개 환율 API 를 그대로 호출한다. 값을 지어내지 않고, 실패하면 실패했다고 적는다.
+     ① open.er-api.com (CORS 허용) ② 실패하면 jsDelivr currency-api 로 한 번 더 시도. */
+  var fxUsdEl = $("#fxUsd");
+  var fxJpyEl = $("#fxJpy");
+  var fxSrcEl = $("#fxSrc");
+  var fxNoteEl = $("#fxNote");
+  var fxRefreshEl = $("#fxRefresh");
+  var fxCardEls = $$("#fxWidget .fx-card");
+  var FX_CACHE_KEY = "pokemoa.fx.v1";
+  var FX_TTL = 10 * 60 * 1000;   /* 10분 캐시 — 새로고침을 누르면 즉시 다시 받는다 */
+
+  function fxNum(n, digits) {
+    if (!isFinite(n)) return "-";
+    var fixed = Math.abs(n) >= 100 ? n.toFixed(digits == null ? 2 : digits) : n.toFixed(2);
+    var parts = fixed.split(".");
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return parts.join(".");
+  }
+  function fxClock(ms) {
+    var d = new Date(ms);
+    if (isNaN(d.getTime())) return "";
+    var p = function (v) { return String(v).padStart(2, "0"); };
+    return p(d.getMonth() + 1) + "-" + p(d.getDate()) + " " + p(d.getHours()) + ":" + p(d.getMinutes());
+  }
+  function fxPaint(data) {
+    var usd = data && Number(data.usdKrw);
+    var jpy100 = data && Number(data.jpy100);
+    if (!isFinite(usd) || !isFinite(jpy100) || usd <= 0 || jpy100 <= 0) { fxFail(); return; }
+    if (fxUsdEl) fxUsdEl.textContent = fxNum(usd, 2) + "원";
+    if (fxJpyEl) fxJpyEl.textContent = fxNum(jpy100, 1) + "원";
+    fxCardEls.forEach(function (c) { c.classList.remove("is-error"); });
+    if (fxSrcEl) fxSrcEl.textContent = "기준 " + fxClock(data.at) + " · " + (data.source || "공개 환율 API");
+    if (fxNoteEl) {
+      fxNoteEl.classList.remove("is-warn");
+      fxNoteEl.textContent = "해외 시세(PSA·eBay·SNKRDUNK)를 원화로 환산할 때 참고하세요. 10분마다 새로 받습니다.";
+    }
+  }
+  function fxFail(msg) {
+    if (fxUsdEl) fxUsdEl.textContent = "불러오지 못함";
+    if (fxJpyEl) fxJpyEl.textContent = "불러오지 못함";
+    fxCardEls.forEach(function (c) { c.classList.add("is-error"); });
+    if (fxSrcEl) fxSrcEl.textContent = "환율 조회 실패";
+    if (fxNoteEl) {
+      fxNoteEl.classList.add("is-warn");
+      fxNoteEl.textContent = msg || "환율을 불러오지 못했습니다. 잠시 후 '새로고침'을 눌러 주세요.";
+    }
+  }
+  function fxFromCache(force) {
+    if (force) return null;
+    try {
+      var raw = sessionStorage.getItem(FX_CACHE_KEY);
+      if (!raw) return null;
+      var d = JSON.parse(raw);
+      if (!d || !d.at || Date.now() - d.at > FX_TTL) return null;
+      return d;
+    } catch (e) { return null; }
+  }
+  function fxSave(data) {
+    try { sessionStorage.setItem(FX_CACHE_KEY, JSON.stringify(data)); } catch (e) {}
+  }
+  function fxFetch(force) {
+    var cached = fxFromCache(force);
+    if (cached) { fxPaint(cached); return; }
+    if (fxSrcEl) fxSrcEl.textContent = "불러오는 중…";
+    var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 9000) : null;
+    var opts = { cache: "no-store" };
+    if (ctrl) opts.signal = ctrl.signal;
+    fetch("https://open.er-api.com/v6/latest/USD", opts)
+      .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+      .then(function (d) {
+        var rates = (d && d.rates) || {};
+        var usd = Number(rates.KRW);
+        var jpy = Number(rates.JPY);
+        if (!isFinite(usd) || !isFinite(jpy) || jpy <= 0) throw new Error("rates-missing");
+        var at = Number(d && d.time_last_update_unix) ? Number(d.time_last_update_unix) * 1000 : Date.now();
+        var data = { usdKrw: usd, jpy100: (usd / jpy) * 100, at: at, source: "open.er-api.com" };
+        fxSave(data);
+        fxPaint(data);
+      })
+      .catch(function () {
+        if (timer) clearTimeout(timer);
+        /* 대체 소스 — jsDelivr currency-api */
+        return fetch("https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json", { cache: "no-store" })
+          .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+          .then(function (d) {
+            var u = (d && d.usd) || {};
+            var usd = Number(u.krw);
+            var jpy = Number(u.jpy);
+            if (!isFinite(usd) || !isFinite(jpy) || jpy <= 0) throw new Error("rates-missing");
+            var at = d && d.date ? new Date(d.date + "T00:00:00Z").getTime() : Date.now();
+            var data = { usdKrw: usd, jpy100: (usd / jpy) * 100, at: at, source: "currency-api" };
+            fxSave(data);
+            fxPaint(data);
+          });
+      })
+      .catch(function () { fxFail(); })
+      .finally(function () { if (timer) clearTimeout(timer); });
+  }
+  function initFx() {
+    if (!fxUsdEl && !fxJpyEl) return;
+    fxFetch(false);
+    if (fxRefreshEl) {
+      fxRefreshEl.addEventListener("click", function () {
+        fxRefreshEl.disabled = true;
+        fxFetch(true);
+        setTimeout(function () { fxRefreshEl.disabled = false; }, 1200);
+      });
+    }
+  }
+
+  /* --------------------------- 시세·거래가 조회 (PSA · eBay · 스니커덩크) */
+  /* 입력한 카드명·세트·키워드를 그대로 검색어로 넘긴다. 결제 화면은 열지 않는다. */
+  var marketQueryEl = $("#marketQuery");
+  var marketHintEl = $("#marketHint");
+  var marketClearEl = $("#marketClear");
+  var MARKET_LINKS = {
+    psaApr: function (q) {
+      return q
+        ? "https://www.psacard.com/auctionprices/search?q=" + encodeURIComponent(q)
+        : "https://www.psacard.com/auctionprices";
+    },
+    ebaySold: function (q) {
+      return "https://www.ebay.com/sch/i.html?_nkw=" + encodeURIComponent((q || "포켓몬카드") + " PSA") +
+        "&LH_Sold=1&LH_Complete=1";
+    },
+    ebayBin: function (q) {
+      return "https://www.ebay.com/sch/i.html?_nkw=" + encodeURIComponent((q || "포켓몬카드") + " PSA") +
+        "&LH_BIN=1&_sop=15";
+    },
+    snkrdunk: function (q) {
+      return q
+        ? "https://snkrdunk.com/en/search?keywords=" + encodeURIComponent(q)
+        : "https://snkrdunk.com/en/brands/pokemon/trading-cards";
+    },
+    snkrdunkSearch: function (q) {
+      return "https://snkrdunk.com/en/search?keywords=" + encodeURIComponent(q || "pokemon card");
+    }
+  };
+  function marketQueryText() {
+    return String((marketQueryEl && marketQueryEl.value) || "").trim();
+  }
+  function updateMarketLinks() {
+    var q = marketQueryText();
+    $$("#marketTools [data-market]").forEach(function (a) {
+      var key = a.getAttribute("data-market");
+      var build = MARKET_LINKS[key];
+      if (!build) return;
+      a.setAttribute("href", build(q));
+      a.classList.toggle("is-empty", !q && (key === "psaApr" || key === "snkrdunk"));
+    });
+    if (marketHintEl) {
+      marketHintEl.innerHTML = q
+        ? '<b>\u201c' + escapeHtml(q) + '\u201d</b> 로 아래 5개 링크를 엽니다. PSA 경매 낙찰가는 무료 계정 로그인을 요구할 수 있습니다.'
+        : "검색어 없이 누르면 각 사이트의 기본 조회 화면이 열립니다. 카드명을 넣으면 그 이름으로 5개 링크가 함께 바뀝니다.";
+    }
+  }
+  function initMarketTools() {
+    if (!marketQueryEl) return;
+    marketQueryEl.addEventListener("input", updateMarketLinks);
+    marketQueryEl.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        updateMarketLinks();
+        var psa = $("#marketTools [data-market=\"psaApr\"]");
+        if (psa) { trackEvent("market_lookup", { target: "psa_apr" }); window.open(psa.href, "_blank", "noopener"); }
+      }
+    });
+    if (marketClearEl) {
+      marketClearEl.addEventListener("click", function () {
+        marketQueryEl.value = "";
+        updateMarketLinks();
+        marketQueryEl.focus();
+      });
+    }
+    $$("#marketTools [data-market]").forEach(function (a) {
+      a.addEventListener("click", function () { trackEvent("market_lookup", { target: a.getAttribute("data-market") }); });
+    });
+    updateMarketLinks();
+  }
+  function jumpToMarket() {
+    var navBtn = document.querySelector('.main-nav [data-tab="guide"]') || document.querySelector('[data-tab="guide"]');
+    if (navBtn) navBtn.click();
+    var target = document.getElementById("marketTools");
+    if (target) {
+      setTimeout(function () {
+        target.scrollIntoView({ block: "start", behavior: "smooth" });
+        if (marketQueryEl) { try { marketQueryEl.focus({ preventScroll: true }); } catch (e) {} }
+      }, 120);
+    }
+  }
+  var popToMarketEl = $("#popToMarket");
+  if (popToMarketEl) popToMarketEl.addEventListener("click", jumpToMarket);
+
   /* ------------------------------------------- 세트별 정가·리셀 검색 */
   var setSearchForm = $("#setSearchForm");
   var setSearchEl = $("#setSearch");
@@ -12184,6 +12383,11 @@ window.PokeMoaMap = (function () {
     setSearchForm.addEventListener("submit", function (e) {
       e.preventDefault();
       renderSetSearch(setSearchEl ? setSearchEl.value : "");
+      /* 같은 검색어로 PSA·eBay·스니덩까지 이어 볼 수 있게 시세·거래가 조회 칸에도 넣는다 */
+      if (marketQueryEl && setSearchEl && String(setSearchEl.value || "").trim()) {
+        marketQueryEl.value = String(setSearchEl.value).trim();
+        updateMarketLinks();
+      }
       trackEvent("set_search", { q_len: (setSearchEl && setSearchEl.value || "").trim().length });
     });
   }
@@ -12225,6 +12429,8 @@ window.PokeMoaMap = (function () {
   initPop();
   initSetSearch();
   initSubTabs();
+  initFx();
+  initMarketTools();
 
   /* #stores·#boxStores는 「정가 구매처」 탭의 짧은 주소로 같이 받아 줍니다. */
   function tabOfHash(h) {
@@ -12259,7 +12465,7 @@ window.PokeMoaMap = (function () {
 </script>
 <!-- 모아 어드민(moa-kr/moa-admin)이 커밋하는 assets/config/site-config.json 을 화면에 적용합니다.
      공지 바·팝업·탭/섹션 순서와 노출·문구가 이 파일 값으로 바뀝니다. -->
-<script src="assets/js/site-config-loader.js" defer
+<script src="assets/js/site-config-loader.js?v=84" defer
         data-config="assets/config/site-config.json"
         data-tab-container=".main-nav"
         data-banner-host=".site-header"></script>

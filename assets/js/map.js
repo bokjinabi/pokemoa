@@ -15,8 +15,8 @@
  *   스냅샷으로 부드럽게 대체하고 배지에 상태를 표기한다. 카카오 SDK는 등록된
  *   도메인(https://moa-kr.github.io)에서만 지도를 그리므로, 그 밖의 주소
  *   (file://·미등록 프리뷰)에서는 안내 문구와 함께 스냅샷 목록으로 동작한다.
- * · 재고 수량은 집 태블릿 중계(relay)가 편의점 앱에서 조회한 실제 값만 쓰고,
- *   받지 못한 매장은 「매장 확인 필요」로 표시한다(샘플·추정 수량 없음).
+ * · 재고 수량은 편의점 앱에서 실시간으로 조회한 실제 값만 쓰고,
+ *   받지 못한 매장은 「미조회」로 표시한다(샘플·추정 수량 없음).
  * ========================================================================= */
 window.PokeMoaMap = (function () {
   "use strict";
@@ -38,7 +38,7 @@ window.PokeMoaMap = (function () {
   var BRAND_QUERY = { gs25: "GS25", cu: "CU", seven: "세븐일레븐", emart24: "이마트24" };
   var BRAND_ORDER_LIST = ["gs25", "cu", "seven", "emart24"];
   /* 오프라인 판매처(마트·아트박스·공식 자판기·공인 카드샵) — 편의점 4사와 함께 지도에 올린다.
-     재고 공개 데이터가 없어 모두 '확인 필요' 또는 '공식 설치 지점'으로만 표시한다. */
+     재고 공개 데이터가 없어 모두 '매장 확인' 또는 '공식 설치 지점'으로만 표시한다. */
   var OFFLINE_IDS = ["mart", "artbox", "vending", "cardshop"];
   var OFFLINE_LABEL = { mart: "대형마트", artbox: "아트박스", vending: "공식 자판기", cardshop: "공인 카드샵" };
   var OFFLINE_CAP = 26;      /* 마트·아트박스 실시간 검색 결과 상한(편의점 마커를 밀어내지 않게) */
@@ -84,7 +84,8 @@ window.PokeMoaMap = (function () {
     badgeWasSnapshot: false,
     metro: false,
     allow20: true,
-    relay: null,        /* 집 태블릿 중계에서 받은 실재고 요약 { ok, sources, at, count } */
+    relay: null,        /* 실시간 재고 조회 요약 { ok, sources, at, count } */
+    relayPayload: null, /* 마지막 조회 응답 — 지도 매장을 새로 그린 뒤에도 다시 얹는다 */
     relayAt: "",
     started: false      /* 첫 자동 조회를 했는지 — 첫 화면은 진행률 패널을 띄우지 않는다 */
   };
@@ -146,9 +147,9 @@ window.PokeMoaMap = (function () {
     return (h >>> 0);
   }
 
-  /* 매장 재고 상태: 편의점 앱 API 를 대신 조회해 주는 집 태블릿 중계(relay)에서
+  /* 매장 재고 상태: 편의점 앱 API 를 대신 조회해 주는 실시간 조회(relay)에서
      실제 수량을 받은 매장만 「재고 있음/없음」으로 표시하고, 받지 못한 매장은
-     수량을 지어내지 않고 「매장 확인 필요」로 둔다. (샘플 재고는 쓰지 않는다) */
+     수량을 지어내지 않고 「미조회」로 둔다. (샘플 재고는 쓰지 않는다) */
   function unknownStatus() {
     return "check";
   }
@@ -198,7 +199,7 @@ window.PokeMoaMap = (function () {
       lng: o.lng,
       street: o.street || "",
       distance: 0,
-      status: unknownStatus(), /* 중계 실재고를 받기 전에는 수량 미확인 */
+      status: unknownStatus(), /* 실시간 재고를 받기 전에는 수량 미확인 */
       observed: "",
       unit: "",
       note: o.note || "",
@@ -219,7 +220,7 @@ window.PokeMoaMap = (function () {
       s.source = source;
       s.distance = meters(center, s);
       /* 매장 위치만 받은 상태 — 취급 상품·수량은 지어내지 않는다.
-         집 태블릿 중계가 그 매장의 실재고를 주면 그때 실제 상품만 붙는다. */
+         실시간 재고 조회가 그 매장의 실재고를 주면 그때 실제 상품만 붙는다. */
       s.products = [];
       out.push(s);
     }
@@ -350,19 +351,29 @@ window.PokeMoaMap = (function () {
         ? '<span class="pm-pill is-chip status-in" style="--brand:' + b.color + '">' + b.short + "</span>"
         : '<span class="pm-pill is-dot status-' + s.status + '"></span>';
     } else if (s.status === "in" && s.relay) {
+      /* 실제 조회에서 수량 1개 이상 확인 — 초록 강조 */
       var q = s.relayQty || 0;
       html = '<span class="pm-pill status-in is-relay" style="--brand:' + b.color + '">' +
-        "<b>" + b.short + "</b><span>" + (q ? q + "개" : "재고") + "</span></span>";
+        "<b>" + b.short + "</b><span>재고 있음" + (q ? " · " + q + "개" : "") + "</span></span>";
     } else if (s.status === "in") {
       var n = stockProductCount(s);
       html = '<span class="pm-pill status-in" style="--brand:' + b.color + '">' +
-        "<b>" + b.short + "</b><span>" + (n ? "입고 " + n + "종" : "재고 있음") + "</span></span>";
-    } else {
-      var txt = s.official ? "공식" : (s.status === "check" ? "확인" : (s.relay ? "실시간 0개" : "없음"));
-      if (s.brand === "mart" || s.brand === "artbox") txt = "확인";
-      html = '<span class="pm-pill status-' + s.status + (s.offline ? ' is-offline' : '') + '" style="--brand:' + b.color + '">' +
+        "<b>" + b.short + "</b><span>재고 있음" + (n ? " · " + n + "종" : "") + "</span></span>";
+    } else if (s.offline && (s.brand === "mart" || s.brand === "artbox")) {
+      /* 오프라인 판매처는 재고 조회 대상이 아니다 — 방문 확인 */
+      html = '<span class="pm-pill status-' + s.status + ' is-offline" style="--brand:' + b.color + '">' +
         '<i class="pm-dot" style="background:' + b.color + '"></i>' +
-        "<span>" + b.short + " · " + txt + "</span></span>";
+        "<span>" + b.short + " · 매장확인</span></span>";
+    } else if (s.relay) {
+      /* 실제 조회가 성공했고 재고 0으로 확인 — 차분한 회색 '없음' */
+      html = '<span class="pm-pill status-none is-relay-none" style="--brand:' + b.color + '">' +
+        '<i class="pm-dot" style="background:#9aa7b8"></i>' +
+        "<span>" + b.short + " · 없음</span></span>";
+    } else {
+      /* 아직 재고 조회가 닿지 않은 브랜드 — '미조회' (모호한 '확인' 금지) */
+      html = '<span class="pm-pill status-check is-unchecked" style="--brand:' + b.color + '">' +
+        '<i class="pm-dot" style="background:#c3ccda"></i>' +
+        "<span>" + b.short + " · 미조회</span></span>";
     }
     return html;
   }
@@ -570,7 +581,9 @@ window.PokeMoaMap = (function () {
   function placeLabel(s) {
     if (s.brand === "vending") return "공식 설치 지점";
     if (s.brand === "cardshop") return "공인 카드샵";
-    if (s.brand === "mart" || s.brand === "artbox") return "확인 필요 (방문·매장 문의)";
+    if (s.brand === "mart" || s.brand === "artbox") return "매장 확인 (방문·문의)";
+    if (s.relay) return statusLabel(s.status);
+    if (s.status === "none") return "미조회";
     return statusLabel(s.status);
   }
 
@@ -620,7 +633,7 @@ window.PokeMoaMap = (function () {
   }
 
   function statusLabel(s) {
-    return s === "in" ? "재고 있음" : s === "check" ? "매장 확인 필요" : "재고 없음";
+    return s === "in" ? "재고 있음" : s === "none" ? "없음" : "미조회";
   }
 
   /* 취급·재고 카드 상품명 태그 (목록·팝업 공용) */
@@ -630,8 +643,10 @@ window.PokeMoaMap = (function () {
     var soldout = list.some(function (p) { return p.state === "soldout"; });
     var head = "";
     if (s.status === "none") {
-      /* 품절 이력이 있으면 머리표로, 전부 미입고면 태그의 '미입고'만으로 충분하다 */
-      head = soldout ? '<span class="p-head">최근 입고 품절</span>' : "";
+      /* 실시간 조회로 0을 확인한 매장은 품절 이력이 아니라 '조회 결과 0개'로 적는다 */
+      head = soldout
+        ? '<span class="p-head">' + (s.relay ? "조회 결과 0개" : "최근 입고 품절") + '</span>'
+        : "";
     } else if (withHead) {
       head = '<span class="p-head p-head-label">보유 카드</span>';
     }
@@ -686,8 +701,8 @@ window.PokeMoaMap = (function () {
       (s.offline
         ? '<p class="pm-card-note">' + offlineNote(s) + "</p>"
         : (s.relay
-          ? '<p class="pm-card-note">집 태블릿 중계 서버가 편의점 앱에서 <b>조회한 실제 재고</b>입니다(조회 ' + escapeHtml(s.observed) + '). 수량은 조회 시점 기준이므로 방문 전 매장 전화로 한 번 더 확인하세요.</p>'
-          : '<p class="pm-card-note">매장 위치·상호는 카카오맵 실제 장소 데이터입니다. 이 매장은 <b>재고 수량을 받지 못해</b> 「매장 확인 필요」로 표시합니다(수량·취급 상품을 지어내지 않습니다). 집 태블릿 중계가 연결되면 실제 재고가 자동으로 채워지고, 그 전에는 방문 전 공식 앱·매장 전화로 확인하세요.</p>')) +
+          ? '<p class="pm-card-note">편의점 앱에서 <b>실시간으로 조회한 실제 재고</b>입니다(조회 ' + escapeHtml(s.observed) + '). 수량은 조회 시점 기준이므로 방문 전 매장 전화로 한 번 더 확인하세요.</p>'
+          : '<p class="pm-card-note">매장 위치·상호는 카카오맵 실제 장소 데이터입니다. 이 매장은 <b>재고 수량을 받지 못해</b> 「미조회」로 표시합니다(수량·취급 상품을 지어내지 않습니다). 조회가 연결되면 실제 재고가 자동으로 채워지고, 그 전에는 방문 전 공식 앱·매장 전화로 확인하세요.</p>')) +
       '<a class="btn btn-sm btn-dark pm-card-link" target="_blank" rel="noopener" href="' + navLink + '">네이버 지도에서 보기</a>';
     el.card.querySelector(".pm-card-close").addEventListener("click", function (e) {
       e.stopPropagation();
@@ -737,7 +752,7 @@ window.PokeMoaMap = (function () {
     if (st.loading.data && !(st.relay && st.relay.count)) {
       return { kind: "busy", text: "카카오 장소 검색으로 주변 편의점 4사·오프라인 매장을 찾는 중입니다 (보통 1초 이내)", action: false };
     }
-    /* 집 태블릿 중계로 실제 재고를 받았으면 그 사실을 먼저 알린다 */
+    /* 실시간 재고 조회로 실제 수량을 받았으면 그 사실을 먼저 알린다 */
     if (st.relay && st.relay.count) {
       var names = [];
       RELAY_ORDER.forEach(function (k) {
@@ -746,8 +761,8 @@ window.PokeMoaMap = (function () {
       });
       return {
         kind: "relay",
-        text: "실시간 중계 · " + (names.length ? names.join("·") + " " : "") + "실제 재고 " + st.relay.count +
-          "곳 · 조회 " + relayTimeLabel(st.relayAt),
+        text: "실시간 재고 · " + (names.length ? names.join("·") + " " : "") + st.relay.count +
+          "곳 확인 · 조회 " + relayTimeLabel(st.relayAt),
         action: false
       };
     }
@@ -1213,7 +1228,10 @@ window.PokeMoaMap = (function () {
       error: st.lastError,
       late: !!liveNow && st.badgeWasSnapshot
     });
-    /* 진행률 패널용 — 매장 탐색 단계가 끝났고, 이제 중계 재고 조회 단계로 넘어간다 */
+    /* 지도 매장을 새로 그리면 이전 조회 결과가 사라지므로, 마지막 응답을 곧바로 다시 얹는다.
+       (새 조회가 오면 그 값이 이 자리를 대신한다) */
+    if (st.relayPayload) applyRelay(st.relayPayload);
+    /* 진행률 패널용 — 매장 탐색 단계가 끝났고, 이제 재고 조회 단계로 넘어간다 */
     emit("pokemoa:search-done", {
       source: st.source,
       total: st.all.length,
@@ -1225,11 +1243,11 @@ window.PokeMoaMap = (function () {
     st.badgeWasSnapshot = st.source === "snapshot";
   }
 
-  /* ------------------------------------- 집 태블릿 중계 실재고(relay) */
-  /* 중계 서버는 편의점 앱 재고를 대신 조회해 { stores: [{ brand, name, address,
+  /* ------------------------------------ 실시간 재고 조회(relay) 반영 */
+  /* 조회 서버는 편의점 앱 재고를 대신 조회해 { stores: [{ brand, name, address,
      lat, lng, distanceM, status, items:[{name,qty,code}], updatedAt }] } 로 준다.
      이 값은 실제 재고이므로 같은 자리의 지도 매장이 있으면 그 매장 카드에 얹고,
-     없으면 중계 매장을 새로 그린다. 중계가 끊기면 「매장 확인 필요」로 되돌린다. */
+     없으면 그 점포를 새로 그린다. 응답이 끊기면 「미조회」로 되돌린다. */
   var RELAY_ORDER = ["emart24", "cu", "seven"];
   var RELAY_LABEL = { emart24: "이마트24", cu: "CU", seven: "세븐일레븐" };
 
@@ -1287,21 +1305,82 @@ window.PokeMoaMap = (function () {
     };
   }
 
+  /* 브랜드 이름 표기 흔들림(emart24 / 이마트24 / 7-ELEVEN …)을 하나로 맞춘다 */
+  function normBrandKey(b) {
+    var k = String(b || "").toLowerCase().replace(/[\s_-]/g, "");
+    if (k === "emart24" || k === "emart" || k === "이마트24") return "emart24";
+    if (k === "seven" || k === "7eleven" || k === "7-eleven" || k === "세븐일레븐") return "seven";
+    if (k === "gs25" || k === "지에스25") return "gs25";
+    if (k === "cu") return "cu";
+    return k;
+  }
+
+  /* 점포명 비교용 — 브랜드 접두어·공백·괄호·'점' 꼬리를 떼고 같으면 같은 매장으로 본다.
+     ("이마트24 포항양덕공원점" ↔ "포항양덕공원점") */
+  function normStoreName(name) {
+    return String(name || "")
+      .toLowerCase()
+      .replace(/[\s\-_.,()\[\]{}·'"`]/g, "")
+      .replace(/^(이마트24|emart24|세븐일레븐|7 ?eleven|seven ?eleven|gs25|지에스25|cu)/, "")
+      .replace(/(지점|점)$/, "");
+  }
+
+  /* 카카오맵 매장과 조회 응답 점포를 잇는다.
+     ① 80m 안의 같은 브랜드 ② 점포명이 같거나 한쪽이 다른 쪽을 포함(같은 반경 안)
+     ③ 같은 브랜드 300m 안에서 가장 가까운 매장 — 앱 좌표와 지도 좌표가 조금 어긋나도 붙는다. */
+  function findTwin(base, r) {
+    var i, b, d;
+    var rName = normStoreName(r.name);
+    for (i = 0; i < base.length; i++) {
+      b = base[i];
+      if (b.relay || normBrandKey(b.brand) !== normBrandKey(r.brand)) continue;
+      if (meters(b, r) < 80) return b;
+    }
+    if (rName && rName.length >= 2) {
+      var nameHit = null, nameDist = Infinity;
+      for (i = 0; i < base.length; i++) {
+        b = base[i];
+        if (b.relay || normBrandKey(b.brand) !== normBrandKey(r.brand)) continue;
+        var bName = normStoreName(b.name);
+        if (!bName || bName.length < 2) continue;
+        if (bName === rName || bName.indexOf(rName) >= 0 || rName.indexOf(bName) >= 0) {
+          d = meters(b, r);
+          if (d < nameDist) { nameDist = d; nameHit = b; }
+        }
+      }
+      if (nameHit && nameDist <= Math.max(2500, st.radius || 0)) return nameHit;
+    }
+    var near = null, nearDist = Infinity;
+    for (i = 0; i < base.length; i++) {
+      b = base[i];
+      if (b.relay || normBrandKey(b.brand) !== normBrandKey(r.brand)) continue;
+      d = meters(b, r);
+      if (d <= 300 && d < nearDist) { nearDist = d; near = b; }
+    }
+    return near;
+  }
+
   function applyRelay(payload) {
     if (!st.center) return 0;
-    var list = ((payload && payload.stores) || []).map(toRelayStore).filter(Boolean);
-    /* 이전 중계 결과는 원래 상태로 되돌리고 새로 얹는다 */
+    st.relayPayload = payload || null;
+    var raw = ((payload && payload.stores) || []).map(toRelayStore).filter(Boolean);
+    /* 같은 점포가 두 번 실려 오면 하나만 남긴다 */
+    var seen = {};
+    var list = [];
+    raw.forEach(function (r) {
+      var k = normBrandKey(r.brand) + ":" + normStoreName(r.name);
+      if (seen[k]) return;
+      seen[k] = 1;
+      list.push(r);
+    });
+    /* 이전 조회 결과는 원래 상태로 되돌리고 새로 얹는다 */
     restoreRelayBase();
     var base = st.all;
     list.forEach(function (r) {
       r.distance = meters(st.center, r);
-      var twin = null;
-      for (var i = 0; i < base.length; i++) {
-        var b = base[i];
-        if (b.brand === r.brand && meters(b, r) < 80) { twin = b; break; }
-      }
+      var twin = findTwin(base, r);
       if (twin && !twin.relay) {
-        /* 지도로 그려둔 같은 매장 — 원래 값을 저장해 두고 중계 값으로 잠시 바꿔 쓴다 */
+        /* 지도로 그려둔 같은 매장 — 원래 값을 저장해 두고 조회 값으로 잠시 바꿔 쓴다 */
         twin.relayBase = {
           name: twin.name, status: twin.status, observed: twin.observed,
           products: twin.products, street: twin.street, source: twin.source, relayQty: null
@@ -1346,13 +1425,14 @@ window.PokeMoaMap = (function () {
         delete s.relayBase;
         return true;
       }
-      return !s.relay;   /* 순수 중계 매장은 빼고 지도·스냅샷 매장만 남깁니다 */
+      return !s.relay;   /* 조회로만 추가된 매장은 빼고 지도·스냅샷 매장만 남깁니다 */
     });
   }
 
   function clearRelay() {
     if (!st.relay) return;
     restoreRelayBase();
+    st.relayPayload = null;
     st.relay = null;
     st.relayAt = "";
     if (st.selectedId && !st.all.some(function (s) { return s.id === st.selectedId; })) closeCard();

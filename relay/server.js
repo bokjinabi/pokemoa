@@ -68,7 +68,7 @@
 const http = require('node:http');
 const crypto = require('node:crypto');
 
-const VERSION = '1.3';
+const VERSION = '1.4';
 const SERVICE = 'pokemoa-relay';
 
 const PORT = Number(process.env.PORT || 3100);
@@ -511,9 +511,16 @@ async function collectEmart24(lat, lng, keyword, diag, ctx) {
 
   const out = [];
   for (const store of stores) {
-    const rows = qtyByBiz.get(store.id);
-    if (!rows || !rows.length) continue; // 취급하지 않는 점포는 결과에도 넣지 않는다
-    const items = rows.map((r) => ({ name: nameByCode[r.code] || r.code, qty: r.qty, code: r.code }));
+    const rows = qtyByBiz.get(store.id) || [];
+    /* 검색한 상품의 재고 행이 없는 점포는 '그 상품 0개'로 본다 — 점포를 빼면
+       사이트에서 미조회로 보여 실제와 다르게 읽힌다. */
+    const byCode = new Map(rows.map((r) => [r.code, r.qty]));
+    const items = products.map((p) => ({
+      name: nameByCode[p.code] || p.code,
+      qty: byCode.has(p.code) ? byCode.get(p.code) : 0,
+      code: p.code
+    }));
+    if (!items.length) continue;
     out.push(Object.assign({}, store, { brand: 'emart24', items }));
   }
   return { stores: out, products, hints: stores, note };
@@ -958,7 +965,9 @@ async function sevenRealStocksByStore(storeCd, metas, diag) {
     const qty = num(pick(f, ['stock', 'realStock', 'stokMngQty', 'stockQty', 'qty']), null);
     if (smCd && qty !== null) out.set(smCd, qty);
   }
-  return out.size ? out : null;
+  /* 200 OK + itemList: [] 는 "그 상품 재고가 없다"는 정상 응답이다.
+     빈 Map 을 그대로 돌려 주어 점포를 0(없음)으로 표시할 수 있게 한다. */
+  return out;
 }
 
 /** 점포 한 곳의 상품 하나 재고 (01 경로) — 02가 막혔을 때 쓴다 */
@@ -1062,8 +1071,9 @@ async function collectSeven(lat, lng, ctx, diag) {
       }
     }
     if (byStore) {
+      /* 응답이 왔으면 목록에 없는 상품은 0으로 본다 — 점포를 「없음」으로 남기기 위해서다. */
       for (const meta of metas) {
-        const qty = byStore.has(meta.smCd) ? byStore.get(meta.smCd) : null;
+        const qty = byStore.has(meta.smCd) ? byStore.get(meta.smCd) : 0;
         if (qty === null) continue;
         items.push({ name: nameByCode[meta.smCd] || meta.smCd, qty, code: meta.smCd });
       }
@@ -1093,8 +1103,10 @@ async function collectSeven(lat, lng, ctx, diag) {
   const out = built.filter(Boolean);
   let note = '';
   if (!out.length) {
-    note = '점포 ' + candidates.length + '곳은 찾았지만 재고 응답이 비었습니다';
+    note = '점포 ' + candidates.length + '곳은 찾았지만 재고 응답을 받지 못했습니다';
     if (mode.lastError) note += ' (' + mode.lastError + ')';
+  } else {
+    note = '점포 ' + out.length + '곳 재고 확인(응답에 없는 상품은 0)';
   }
   return { stores: out, products: metas, queries: report, note };
 }
@@ -1113,6 +1125,7 @@ function mergeStores(stores, lat, lng, nowIso) {
       continue;
     }
     const items = (s.items || []).filter((i) => Number.isFinite(Number(i.qty)));
+    /* 수량 0으로 확인된 점포도 남긴다(빈 items 만 버린다) */
     if (!items.length) continue;
     out.push({
       id: `${s.brand}-${s.id}`,
@@ -1207,6 +1220,10 @@ async function nearby(lat, lng, keyword, radius) {
   }
 
   const merged = mergeStores(stores, lat, lng, nowIso).filter((s) => s.distanceM <= radius);
+  /* sources.count 를 실제로 돌려주는 점포 수로 다시 센다(수집 단계 수와 화면 표시가 어긋나지 않게) */
+  for (const name of Object.keys(sources)) {
+    sources[name].count = merged.filter((s) => s.brand === name).length;
+  }
 
   const value = {
     ok: true,
@@ -1465,6 +1482,7 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
+function start() {
 server.listen(PORT, HOST, () => {
   console.log(`포켓몬카드모아 중계 서버 v${VERSION} — http://${HOST}:${PORT}`);
   console.log(`  상태 확인: curl http://${HOST}:${PORT}/health`);
@@ -1472,5 +1490,8 @@ server.listen(PORT, HOST, () => {
   console.log(`  진단:      curl "http://${HOST}:${PORT}/api/diag"`);
   console.log('  바깥에서 쓰려면: cloudflared tunnel --url http://' + HOST + ':' + PORT);
 });
+}
 
-module.exports = { server, nearby, diagnose, mergeStores, distanceM, looksLikeCard, areaFromStores, collectSeven, sevenStoreSearch, sevenAreaQueries };
+if (require.main === module) start();
+
+module.exports = { start, server, nearby, diagnose, mergeStores, distanceM, looksLikeCard, areaFromStores, collectSeven, sevenStoreSearch, sevenAreaQueries };
