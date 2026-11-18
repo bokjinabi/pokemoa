@@ -150,7 +150,8 @@
         "label": "70,000원에 살 수 있는 곳, 채널별 조건까지",
         "visible": true,
         "order": 2,
-        "tab": "home"
+        "tab": "home",
+        "body": "정가·배송비·팩당 단가를 한 화면에서 비교하세요. (모아 어드민 동작 확인용 임시 문구)"
       },
       {
         "id": "boxes",
@@ -177,7 +178,7 @@
         "id": "tips",
         "label": "헛걸음을 줄이는 세 가지 순서",
         "visible": true,
-        "order": 6,
+        "order": 0,
         "tab": "home"
       },
       {
@@ -255,8 +256,8 @@
     }
   ],
   "meta": {
-    "updatedBy": "moa-admin (@Acewoni)",
-    "updatedAt": "2026-11-18T22:26:47.865Z",
+    "updatedBy": "moa-admin (임시 점검)",
+    "updatedAt": "2026-11-19T07:35:00.000Z",
     "note": "모아 어드민이 관리하는 공통 설정 파일입니다. 형식: https://moa-kr.github.io/moa-admin/SCHEMA.md"
   }
 }
