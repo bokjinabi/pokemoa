@@ -3469,8 +3469,8 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
 
 /* 하단 내비게이션 5탭 (390px에서 줄바꿈·잘림 없이) */
 @media (max-width: 679px) {
-  .main-nav { grid-template-columns: repeat(5, 1fr); }
-  .nav-btn { font-size: 10.5px; padding: 7px 2px; letter-spacing: -0.02em; white-space: nowrap; }
+  .main-nav { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .nav-btn { font-size: 10.5px; padding: 7px 2px; letter-spacing: -0.02em; white-space: nowrap; min-width: 0; }
   .nav-btn .nav-ico { line-height: 1; }
   .nav-btn .nav-ico svg { width: 15px; height: 15px; }
 }
@@ -3519,7 +3519,7 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
 }
 
 /* 상단 내비게이션 5탭 — 1600px 미만에서는 날짜 표기를 접고 간격을 줄여 한 줄 유지 */
-@media (max-width: 1599px) {
+@media (min-width: 680px) and (max-width: 1599px) {
   .nav-btn { padding: 9px 11px; font-size: 13.5px; }
   .header-date { display: none; }
 }
