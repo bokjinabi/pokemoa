@@ -712,16 +712,17 @@
   <div class="wrap">
     <div class="map-page-head">
       <span class="eyebrow">일정 · 소식</span>
-      <h1 id="schedule-title">발매·재입고 일정과 카드 소식</h1>
-      <p>포켓몬스토어 추첨은 회차마다 응모·발표·결제·배송 날짜가 따로 있습니다. 아래 <b>발매·재입고 일정</b>에서 예정·종료 일정을 보고, <b>카드 뉴스·소식</b>에서 공식 공지와 신규팩 발매 소식을 함께 확인하세요.</p>
+      <h1 id="schedule-title">카드 소식과 발매·재입고 일정</h1>
+      <p>먼저 <b>카드 뉴스·소식</b>에서 공식 공지와 신규팩 발매 소식을 확인하고, <b>발매·재입고 일정</b>에서 추첨 회차별 예정·종료 일정을 보세요. 포켓몬스토어 추첨은 회차마다 응모·발표·결제·배송 날짜가 따로 있습니다.</p>
     </div>
 
+    <!-- 기본으로 열리는 서브탭은 카드 뉴스·소식(news)입니다. -->
     <div class="sub-tabs" role="tablist" aria-label="일정·소식 구분">
-      <button type="button" class="sub-tab is-active" id="subtabBtnCal" data-subtab="cal" role="tab" aria-selected="true" aria-controls="subtabCal">발매·재입고 일정</button>
-      <button type="button" class="sub-tab" id="subtabBtnNews" data-subtab="news" role="tab" aria-selected="false" aria-controls="subtabNews">카드 뉴스·소식</button>
+      <button type="button" class="sub-tab is-active" id="subtabBtnNews" data-subtab="news" role="tab" aria-selected="true" aria-controls="subtabNews">카드 뉴스·소식</button>
+      <button type="button" class="sub-tab" id="subtabBtnCal" data-subtab="cal" role="tab" aria-selected="false" aria-controls="subtabCal">발매·재입고 일정</button>
     </div>
 
-    <div class="subtab-body" id="subtabCal" role="tabpanel" aria-labelledby="subtabBtnCal">
+    <div class="subtab-body" id="subtabCal" role="tabpanel" aria-labelledby="subtabBtnCal" hidden>
 
     <div class="split-2">
       <div class="panel-card">
@@ -831,7 +832,7 @@
 
     </div>
 
-    <div class="subtab-body" id="subtabNews" role="tabpanel" aria-labelledby="subtabBtnNews" hidden>
+    <div class="subtab-body" id="subtabNews" role="tabpanel" aria-labelledby="subtabBtnNews">
 <section class="section" id="issueSection" aria-labelledby="issues-title">
       <div class="section-head">
         <div>
