@@ -350,7 +350,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   font-weight: 800;
 }
 .hero h1 em { font-style: normal; color: var(--yellow); }
-.hero-sub { margin: 12px 0 0; color: #c6d3ea; font-size: 14.5px; max-width: 520px; }
+.hero-sub { margin: 12px 0 0; color: #c6d3ea; font-size: 14.5px; max-width: 640px; }
 .price-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0 0; }
 .price-box {
   background: rgba(255, 255, 255, 0.08);
@@ -378,7 +378,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   color: #ffe9a8;
   font-size: 12.8px;
   line-height: 1.55;
-  max-width: 540px;
+  max-width: 700px;
 }
 .hero-warn b { color: #fff; }
 .hero-warn a { color: #fff; text-decoration: underline; text-underline-offset: 2px; }
@@ -386,95 +386,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
 .hero-actions .btn-ghost { color: #fff; border-color: rgba(255, 255, 255, 0.3); }
 .hero-actions .btn-ghost:hover { background: rgba(255, 255, 255, 0.08); border-color: #fff; }
-
-/* 카드 스택 비주얼 */
-.hero-cards {
-  position: relative;
-  height: 236px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.hero-card {
-  position: absolute;
-  width: 148px;
-  height: 206px;
-  border-radius: 12px;
-  padding: 9px;
-  display: flex;
-  background: linear-gradient(160deg, #fdfbf3, #f2eee2);
-  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.36);
-  border: 1px solid rgba(255, 255, 255, 0.7);
-}
-.hero-card:nth-child(1) { transform: translateX(-72px) rotate(-13deg); z-index: 1; }
-.hero-card:nth-child(2) { transform: translateX(0) rotate(-1deg) scale(1.06); z-index: 3; }
-.hero-card:nth-child(3) { transform: translateX(72px) rotate(11deg); z-index: 2; }
-.hero-card .art {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-  border-radius: 7px;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 24% 18%, rgba(255, 255, 255, 0.95), transparent 42%),
-    conic-gradient(from 210deg at 60% 40%, #ffd93d, #ff8a3d, #ff5f8a, #8b5cf6, #38bdf8, #34d399, #ffd93d);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 6px;
-  padding: 9px;
-}
-.hero-card .art::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.35) 0 2px, transparent 2px 9px);
-  mix-blend-mode: overlay;
-}
-.hero-card .art .num {
-  align-self: flex-start;
-  width: 26px; height: 26px;
-  border-radius: 50%;
-  background: rgba(16, 31, 60, 0.82);
-  color: var(--yellow);
-  font-size: 11px;
-  font-weight: 800;
-  display: grid;
-  place-items: center;
-  position: relative;
-  z-index: 1;
-}
-.hero-card .art .name {
-  position: relative;
-  z-index: 1;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 6px;
-  padding: 4px 6px;
-  font-size: 10px;
-  font-weight: 800;
-  color: var(--navy);
-  letter-spacing: -0.02em;
-  line-height: 1.3;
-}
-.hero-card .art .name small { display: block; font-size: 7.5px; font-weight: 600; color: var(--muted); letter-spacing: 0.01em; line-height: 1.35; }
-
-/* --------------------------------------------------------------- 통계 띠 */
-.stat-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 16px;
-}
-.stat {
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 14px 16px;
-  box-shadow: var(--shadow-sm);
-}
-.stat span { display: block; font-size: 11.5px; color: var(--muted); font-weight: 600; }
-.stat strong { display: block; font-size: 21px; letter-spacing: -0.02em; margin-top: 3px; }
-.stat strong small { font-size: 12px; color: var(--muted); font-weight: 600; margin-left: 3px; }
 
 /* ------------------------------------------------------------ 광고 슬롯 */
 .ad-slot {
@@ -2033,7 +1944,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .wrap { padding: 0 24px; }
   .hero { padding: 40px 36px 36px; }
   .hero h1 { font-size: 38px; }
-  .stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .channel-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .trend-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .tip-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -2050,13 +1960,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .status-guide { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .map-shell { height: 460px; }
   .stock-feed li { grid-template-columns: 84px 1fr auto; }
-}
-@media (min-width: 760px) {
-  .hero-grid { grid-template-columns: 1.1fr 0.9fr; align-items: center; }
-  .hero-cards { height: 280px; }
-  .hero-card { width: 168px; height: 234px; }
-  .hero-card:nth-child(1) { transform: translateX(-84px) rotate(-13deg); }
-  .hero-card:nth-child(3) { transform: translateX(84px) rotate(11deg); }
 }
 @media (min-width: 980px) {
   .channel-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -2115,10 +2018,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .hero h1 { font-size: 27px; }
   .price-row { display: grid; grid-template-columns: 1fr 1fr; }
   .price-row .price-box:last-child { grid-column: span 2; }
-  .hero-cards { height: 200px; margin-top: -6px; }
-  .hero-card { width: 124px; height: 172px; }
-  .hero-card:nth-child(1) { transform: translateX(-58px) rotate(-12deg); }
-  .hero-card:nth-child(3) { transform: translateX(58px) rotate(10deg); }
   .section { padding: 32px 0; }
   .section-head h2 { font-size: 22px; }
   .map-shell { height: 330px; }
@@ -2155,10 +2054,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
   box-shadow: inset 0 0 46px rgba(16, 31, 60, 0.08);
   z-index: 3;
 }
-
-/* 카드 스택: 양옆 카드는 겹쳐서 라벨이 가려지므로 이름표는 가운데 카드만 */
-.hero-card:nth-child(1) .name,
-.hero-card:nth-child(3) .name { display: none; }
 
 /* =========================================================================
  * v2 — 실제 지도(Leaflet + OpenStreetMap) · 로딩 UI · 상태 배지
@@ -3206,49 +3101,75 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .box-store-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
 .box-store-head h4 { margin: 0; font-size: 15px; letter-spacing: -0.02em; }
 .box-store-head span { font-size: 11px; color: var(--muted); }
-.box-store-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
-.store-card {
+.box-store-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.store-shortcut {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  align-items: center;
+  gap: 9px;
   min-width: 0;
-  padding: 14px;
+  min-height: 68px;
+  padding: 9px 10px;
   background: #fff;
   border: 1px solid var(--line);
-  border-radius: 14px;
-  transition: border-color 0.16s, box-shadow 0.16s;
+  border-radius: 12px;
+  color: var(--ink);
+  transition: border-color 0.16s, box-shadow 0.16s, transform 0.16s;
 }
-.store-card:hover { border-color: #d8e0ee; box-shadow: var(--shadow-sm); }
-.store-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.store-shortcut:hover { border-color: var(--navy); box-shadow: var(--shadow-sm); transform: translateY(-1px); }
+.store-shortcut:active { transform: none; }
+.store-badge {
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--brand, #e9eef7);
+  color: var(--brand-ink, #10203c);
+  font-size: 14.5px;
+  font-weight: 800;
+  letter-spacing: 0;
+  display: grid;
+  place-items: center;
+}
+.store-shortcut-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.store-shortcut-name {
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.store-sub {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.store-go { margin-left: auto; font-size: 12px; color: #aab5c8; flex: 0 0 auto; }
 .store-state {
-  margin-left: auto;
+  align-self: flex-start;
   font-size: 10.5px;
   font-weight: 800;
   border-radius: 999px;
-  padding: 3px 8px;
+  padding: 2px 7px;
   background: var(--grey-soft);
   color: var(--grey);
 }
 .store-state.out { background: #fdeaea; color: #a83232; }
 .store-state.in { background: var(--green-soft); color: var(--green); }
-.store-name { margin: 0; font-size: 14px; font-weight: 800; letter-spacing: -0.01em; line-height: 1.4; }
-.store-note { margin: 0; font-size: 12.5px; color: var(--ink-2); line-height: 1.6; flex: 1; }
-.store-link {
-  align-self: flex-start;
-  font-size: 11.5px;
-  font-weight: 800;
-  color: var(--navy);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 6px 12px;
-  background: #fff;
-}
-.store-link:hover { background: var(--paper); border-color: var(--navy); }
 
 @media (min-width: 720px) {
   .box-name { font-size: 23px; }
   .box-price { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .box-store-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .box-store-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .store-shortcut { padding: 10px 12px; gap: 10px; min-height: 56px; }
+  .store-badge { flex-basis: 32px; width: 32px; height: 32px; font-size: 15.5px; }
+  .store-shortcut-name { font-size: 13px; }
+  .store-sub { font-size: 11.5px; }
 }
 @media (max-width: 679px) {
   .box-board { padding: 15px; }
@@ -3256,6 +3177,92 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .box-price dd { font-size: 12.5px; }
   .box-picker { margin-bottom: 12px; }
 }
+
+/* =========================================================================
+ * v4.8 — 오프라인 판매처(마트·아트박스·자판기·카드샵)
+ *  · 「정가 구매처」 탭: #offlineStores 컴팩트 바로가기(모바일 2열 · 720px 이상 4열)
+ *  · 「동네에서 찾기」 지도: 오프라인 칩·토글 + 지도 마커/목록
+ * ========================================================================= */
+.store-shortcut-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+@media (min-width: 720px) {
+  .store-shortcut-grid.is-offline-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+}
+
+/* 지도 툴바의 오프라인 판매처 칩 */
+.offline-bar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 6px 10px;
+  margin: 14px 0 12px;
+}
+.offline-bar .row-label {
+  grid-column: 1;
+  grid-row: 1;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--muted-2);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.offline-chips {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.offline-chips::-webkit-scrollbar { display: none; }
+.off-chip {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-2);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 5px 10px;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.off-chip b { font-size: 11px; font-weight: 800; color: var(--muted); }
+.off-chip .off-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--brand, #1b2a4a); flex: 0 0 auto; }
+.off-chip:hover { border-color: var(--brand, var(--navy)); }
+.off-chip.is-active { background: var(--brand, var(--navy)); border-color: var(--brand, var(--navy)); color: #fff; }
+.off-chip.is-active b { color: rgba(255, 255, 255, 0.85); }
+.off-chip.is-muted { opacity: 0.45; }
+.offline-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-2);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.offline-toggle input { width: 15px; height: 15px; accent-color: var(--navy); }
+@media (min-width: 720px) {
+  .offline-bar { grid-template-columns: auto 1fr auto; }
+  .offline-bar .row-label { grid-column: 1; grid-row: 1; }
+  .offline-chips { grid-column: 2; grid-row: 1; flex-wrap: wrap; }
+  .offline-toggle { grid-column: 3; grid-row: 1; }
+}
+
+/* 지도 범례 · 배지 */
+.map-legend .l-offline { background: #7c4dff; }
+.chip-offline { background: #f0eaff; color: #5334d6; font-weight: 800; }
+.pm-pill.is-offline { border-color: rgba(16, 31, 60, 0.18); }
+.store-item.is-offline .s-name { font-weight: 700; }
 
 </style>
 <!-- 단일 파일 미리보기: index.html + assets/css/style.css + data.js/map.js/app.js 를 인라인으로 합친 파일입니다. 지도는 카카오맵 SDK+카카오 장소 검색(CDN·공개 API)을 그대로 사용합니다. -->
@@ -3402,35 +3409,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
             <button type="button" class="btn btn-ghost" data-tab="map">지도에서 재고 찾기</button>
           </div>
         </div>
-
-        <div class="hero-cards" aria-hidden="true">
-          <div class="hero-card">
-            <div class="art">
-              <span class="num">30</span>
-              <span class="name">FUR 뮤 ex<small>135/103 · YOSHIROTTEN</small></span>
-            </div>
-          </div>
-          <div class="hero-card">
-            <div class="art">
-              <span class="num">30</span>
-              <span class="name">30th CELEBRATION<small>1팩 3,500원 · 20팩 70,000원</small></span>
-            </div>
-          </div>
-          <div class="hero-card">
-            <div class="art">
-              <span class="num">30</span>
-              <span class="name">피카츄 홀로 30종<small>30 ARTISTS</small></span>
-            </div>
-          </div>
-        </div>
       </div>
-    </div>
-
-    <div class="stat-grid">
-      <div class="stat"><span>세트 전체 수록</span><strong>176종</strong></div>
-      <div class="stat"><span>피카츄 홀로 카드</span><strong>30종</strong></div>
-      <div class="stat"><span>박스 정가</span><strong>70,000<small>원</small></strong></div>
-      <div class="stat"><span>정가 구매 채널</span><strong>7곳</strong></div>
     </div>
 
     <!-- AdSense Slot: home-top-banner -->
@@ -3591,6 +3570,43 @@ button { font: inherit; color: inherit; cursor: pointer; }
       </div>
 
       <p class="src-note mt-16">출처: 포켓몬 카드 게임 공식 제품 정보(정가·구성), KREAM 한글판 1박스 즉시구매 최저가(2026-11-17), 포켓몬 스토어 · G마켓 포켓몬카드공식인증샵 · 네이버 브랜드스토어 · SSG · 티씨지박스 · 롯데ON 판매처 페이지(2026-11-18 접속 확인). 재고와 가격은 시점·판매처에 따라 달라지므로 구매 전 판매처 페이지에서 확인하세요.</p>
+    </section>
+
+    <!-- ------------------------------ 오프라인 · 자판기 정가 구매처 (v4.8) -->
+    <section class="section" id="offlineStores" aria-labelledby="offline-stores-title">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">오프라인 · 자판기</span>
+          <h2 id="offline-stores-title">마트·아트박스·자판기·카드샵에서 정가로 사는 곳</h2>
+          <p>온라인 재고가 없어도 오프라인에서 정가로 살 수 있는 채널입니다. 매장·자판기의 <b>재고는 어떤 채널도 공개하지 않아</b> 표시하지 않으니, 방문 전 매장 문의로 확인하세요.</p>
+        </div>
+        <a class="head-link" href="#map" data-tab="map">지도에서 오프라인 위치 보기 →</a>
+      </div>
+
+      <div class="store-shortcut-grid is-offline-grid">
+        <a class="store-shortcut" href="https://www.poom.co.kr" target="_blank" rel="noopener">
+          <span class="store-badge" style="--brand:#ff4d8d;--brand-ink:#ffffff">A</span>
+          <span class="store-shortcut-body"><strong class="store-shortcut-name">아트박스</strong><span class="store-sub">POOM 매장 재고 조회</span></span>
+          <span class="store-go" aria-hidden="true">↗</span>
+        </a>
+        <a class="store-shortcut" href="https://www.pokemonkorea.co.kr/pokemon_cardshop" target="_blank" rel="noopener">
+          <span class="store-badge" style="--brand:#12854a;--brand-ink:#ffffff">C</span>
+          <span class="store-shortcut-body"><strong class="store-shortcut-name">포켓몬 공인 카드샵</strong><span class="store-sub">전국 16곳 · 공식 목록</span></span>
+          <span class="store-go" aria-hidden="true">↗</span>
+        </a>
+        <a class="store-shortcut" href="https://www.pokemonkorea.co.kr/card_vending_machine" target="_blank" rel="noopener">
+          <span class="store-badge" style="--brand:#7c4dff;--brand-ink:#ffffff">V</span>
+          <span class="store-shortcut-body"><strong class="store-shortcut-name">공식 카드 자판기</strong><span class="store-sub">전국 176곳 위치 안내</span></span>
+          <span class="store-go" aria-hidden="true">↗</span>
+        </a>
+        <a class="store-shortcut" href="#map" data-tab="map">
+          <span class="store-badge" style="--brand:#1f6feb;--brand-ink:#ffffff">M</span>
+          <span class="store-shortcut-body"><strong class="store-shortcut-name">대형마트 3사</strong><span class="store-sub">이마트·롯데마트·홈플러스 · 지도</span></span>
+          <span class="store-go" aria-hidden="true">→</span>
+        </a>
+      </div>
+
+      <p class="src-note mt-16">출처: 포켓몬코리아 <a href="https://www.pokemonkorea.co.kr/card_vending_machine" target="_blank" rel="noopener">자판기 안내</a>(전국 178곳 중 좌표 확인 176곳) · <a href="https://www.pokemonkorea.co.kr/pokemon_cardshop" target="_blank" rel="noopener">공식 카드샵 목록</a>(16곳) 2026-11-18 확인, 아트박스 매장·재고 조회 <a href="https://www.poom.co.kr" target="_blank" rel="noopener">POOM</a>. 대형마트 위치는 「동네에서 찾기」 지도에서 카카오 장소 검색으로 보여 줍니다. 재고·운영 여부는 시점·매장에 따라 달라지므로 방문 전 확인하세요.</p>
     </section>
 
     <!-- AdSense Slot: home-infeed-1 -->
@@ -3756,14 +3772,14 @@ button { font: inherit; color: inherit; cursor: pointer; }
   <div class="wrap">
     <div class="map-page-head">
       <span class="eyebrow">동네에서 찾기 · 첫 화면</span>
-      <h1 id="map-title">내 주변 편의점 4사, 어떤 카드가 있는지 한눈에</h1>
-      <p>카카오맵 실제 지도 위에 주변 <b>편의점 4사(GS25·CU·세븐일레븐·이마트24)</b>만 표시합니다. 카카오 장소 검색이 매장을 1초 안팎에 찾아내고, 지도는 카카오맵 타일로 그립니다. 지도 말풍선과 매장 카드에는 그 매장이 <b>보유·취급 중인 카드 상품</b>(30th CELEBRATION·배틀 파트너즈 등)과 상태가 바로 보이도록 정리했습니다. <b>전국 17개 시·도</b>에서 시·군·구를 고르거나 동네 이름으로 검색하고, <b>'내 위치로 찾기'</b>를 누르면 그 반경의 매장을 새로 조회합니다.</p>
+      <h1 id="map-title">내 주변 편의점 4사와 오프라인 판매처, 어떤 카드가 있는지 한눈에</h1>
+      <p>카카오맵 실제 지도 위에 주변 <b>편의점 4사(GS25·CU·세븐일레븐·이마트24)</b>와 <b>오프라인 판매처(대형마트·아트박스·공식 자판기·공인 카드샵)</b>를 함께 표시합니다. 마트·아트박스는 카카오 장소 검색으로 실시간 조회하고, 공식 자판기(전국 176곳)와 공인 카드샵(전국 16곳)은 포켓몬코리아 공식 목록에서 가져와 반경 안에 들어오면 지도에 올립니다. 지도 말풍선과 매장 카드에는 그 매장이 <b>보유·취급 중인 카드 상품</b>(30th CELEBRATION·배틀 파트너즈 등)과 상태가 바로 보이도록 정리했습니다. <b>전국 17개 시·도</b>에서 시·군·구를 고르거나 동네 이름으로 검색하고, <b>'내 위치로 찾기'</b>를 누르면 그 반경의 매장을 새로 조회합니다.</p>
     </div>
 
     <div class="demo-notice">
       <span class="demo-icon" aria-hidden="true">i</span>
-      <div class="notice-long"><b>매장 위치·이름은 실제 지도 데이터(카카오맵 장소 검색)입니다.</b> 다만 각 매장의 포켓몬카드 <b>재고 상태(재고 있음 / 확인 필요 / 없음)</b>와 <b>취급 카드 상품명</b>은 편의점 앱 API가 아직 연결되지 않아 <b>제보·샘플 기반 표시</b>입니다. 위의 <b>실시간 중계</b>를 연결하면 집 태블릿이 편의점 앱 재고를 대신 조회해 실제 수량으로 바꿉니다. 방문 전에는 아래 공식 앱과 매장 전화로 확인하세요.</div>
-      <div class="notice-short"><b>매장 위치·이름은 실제 카카오맵 데이터</b>이고, <b>재고 상태·취급 카드명은 제보·샘플</b>입니다. 중계를 연결하면 실제 재고로 바뀝니다. 방문 전 공식 앱·매장 전화로 확인하세요.</div>
+      <div class="notice-long"><b>매장 위치·이름은 실제 지도 데이터(카카오맵 장소 검색)입니다.</b> 다만 각 매장의 포켓몬카드 <b>재고 상태(재고 있음 / 확인 필요 / 없음)</b>와 <b>취급 카드 상품명</b>은 편의점 앱 API가 아직 연결되지 않아 <b>제보·샘플 기반 표시</b>입니다. <b>오프라인 판매처(마트·아트박스)</b>는 카카오 장소 검색으로 위치만 찾아 표시하고, <b>공식 자판기·공인 카드샵</b>은 포켓몬코리아 공식 목록(2026-11-18 확인)의 설치·매장 위치만 옮겨 왔습니다 — 어느 쪽도 재고를 임의로 표시하지 않고 <b>확인 필요 (방문·매장 문의)</b> 또는 <b>공식 설치 지점</b>으로만 구분합니다. 위의 <b>실시간 중계</b>를 연결하면 집 태블릿이 편의점 앱 재고를 대신 조회해 실제 수량으로 바꿉니다. 방문 전에는 아래 공식 앱과 매장 전화로 확인하세요.</div>
+      <div class="notice-short"><b>매장 위치·이름은 실제 카카오맵 데이터</b>이고, <b>재고 상태·취급 카드명은 제보·샘플</b>입니다. 오프라인 판매처·자판기·카드샵은 <b>위치만 공식/실시간 데이터</b>이고 재고는 표시하지 않습니다. 중계를 연결하면 실제 재고로 바뀝니다. 방문 전 공식 앱·매장 전화로 확인하세요.</div>
     </div>
 
     <div class="relay-bar" id="relayBar" data-state="off">
@@ -3777,6 +3793,15 @@ button { font: inherit; color: inherit; cursor: pointer; }
     </div>
 
     <div class="brand-summary" id="brandSummary" role="group" aria-label="편의점 4사별 현황"></div>
+
+    <div class="offline-bar" id="offlineBar" role="group" aria-label="오프라인 판매처 표시">
+      <span class="row-label">오프라인</span>
+      <div class="offline-chips" id="offlineChips"></div>
+      <label class="offline-toggle" for="offlineToggle">
+        <input type="checkbox" id="offlineToggle" checked>
+        <span>지도에 함께 보기</span>
+      </label>
+    </div>
 
     <div class="map-toolbar">
       <div class="toolbar-row">
@@ -3873,6 +3898,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
           <span><i class="l-in"></i>재고 있음</span>
           <span><i class="l-check"></i>확인 필요</span>
           <span><i class="l-none"></i>없음</span>
+          <span><i class="l-offline"></i>오프라인 판매처</span>
         </div>
       </div>
 
@@ -3901,6 +3927,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
       <div><b>매장 확인 필요</b>수량을 받지 못했거나 전산 확인이 안 된 상태입니다. '재고 없음'과 다릅니다.</div>
       <div><b>재고 없음</b>조회 결과 0으로 확인된 상태입니다. 아직 입고 전일 수도 있습니다.</div>
       <div><b>보유 카드 표시</b>매장 카드와 지도 말풍선의 태그는 그 매장이 보유·취급한 상품명과 상태(입고·소량·확인 필요·품절·미입고)입니다. 매장별로 어떤 카드가 있는지 바로 보이도록 정리했고, 이 값도 제보·샘플 기반입니다.</div>
+      <div><b>오프라인 판매처</b>대형마트·아트박스는 카카오 장소 검색으로 위치만 표시하고, 공식 자판기(포켓몬코리아 자판기 안내, 176곳)·공인 카드샵(16곳)은 공식 목록의 설치 장소를 옮겨 온 것입니다. <b>재고는 어떤 채널도 공개하지 않아</b> 임의로 표시하지 않고 <b>확인 필요(방문·매장 문의)</b>·<b>공식 설치 지점</b>으로만 구분합니다.</div>
     </div>
 
     <h3 class="mt-24" style="font-size:15px;margin-bottom:10px;">실제 재고를 확인하는 공식 채널</h3>
@@ -3913,6 +3940,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
       <a class="shortcut" href="https://rokeshot.com/conv" target="_blank" rel="noopener"><span class="sc-dot"></span><span><strong>CardCatch · PokeConv</strong><small>두 서비스 모아보기</small></span><span class="sc-go">↗</span></a>
       <a class="shortcut" href="https://pokamap.shop/" target="_blank" rel="noopener"><span class="sc-dot"></span><span><strong>포카맵</strong><small>자판기·카드샵 지도</small></span><span class="sc-go">↗</span></a>
       <a class="shortcut" href="https://pokemonkorea.co.kr/card_vending_machine" target="_blank" rel="noopener"><span class="sc-dot"></span><span><strong>공식 자판기 지도</strong><small>포켓몬코리아 안내</small></span><span class="sc-go">↗</span></a>
+      <a class="shortcut" href="https://www.pokemonkorea.co.kr/pokemon_cardshop" target="_blank" rel="noopener"><span class="sc-dot"></span><span><strong>공식 카드샵 16곳</strong><small>포켓몬코리아 안내</small></span><span class="sc-go">↗</span></a>
     </div>
 
     <div class="ad-slot is-banner" data-ad-slot="map-bottom" aria-hidden="true">
@@ -3921,7 +3949,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
       <span class="ad-desc">map-bottom · 반응형</span>
     </div>
 
-    <p class="src-note">지도·주변 매장: <a href="https://apis.map.kakao.com/" target="_blank" rel="noopener">카카오맵</a> JavaScript SDK + 카카오 장소 검색(Places, 편의점 카테고리 CS2 · 키워드 보충 조회, 지연 시 내장 실제 좌표 스냅샷 2026-11-17). 매장 위치·이름은 카카오맵 실제 장소 데이터이고, <b>재고 상태만 제보·샘플</b>입니다. 실시간 중계를 연결하면 태블릿이 편의점 앱 재고를 대신 조회한 값(<b>실시간 재고</b> 배지)이 표시되고, 해제하면 다시 제보·샘플로 돌아갑니다. 공식 자판기 위치는 <a href="https://pokemonkorea.co.kr/card_vending_machine" target="_blank" rel="noopener">포켓몬코리아 자판기 안내</a>에서 확인하세요.</p>
+    <p class="src-note">지도·주변 매장: <a href="https://apis.map.kakao.com/" target="_blank" rel="noopener">카카오맵</a> JavaScript SDK + 카카오 장소 검색(Places, 편의점 카테고리 CS2 · 키워드 보충 조회, 지연 시 내장 실제 좌표 스냅샷 2026-11-17). 매장 위치·이름은 카카오맵 실제 장소 데이터이고, <b>편의점 재고 상태만 제보·샘플</b>입니다. <b>오프라인 판매처</b>는 마트·아트박스는 카카오 장소 검색(2026-11-18), 공식 자판기는 <a href="https://www.pokemonkorea.co.kr/card_vending_machine" target="_blank" rel="noopener">포켓몬코리아 자판기 안내</a>의 공식 목록(176곳), 공인 카드샵은 <a href="https://www.pokemonkorea.co.kr/pokemon_cardshop" target="_blank" rel="noopener">포켓몬코리아 카드샵 목록</a>(16곳)을 기준으로 했고, <b>재고는 표시하지 않습니다</b>. 실시간 중계를 연결하면 태블릿이 편의점 앱 재고를 대신 조회한 값(<b>실시간 재고</b> 배지)이 표시되고, 해제하면 다시 제보·샘플로 돌아갑니다.</p>
   </div>
 </section>
 
@@ -6240,7 +6268,11 @@ window.POKEMOA_DATA = (function () {
     gs25: { label: "GS25", short: "GS", color: "#0f7ad4", soft: "#e3f1fd" },
     cu: { label: "CU", short: "CU", color: "#5aa72c", soft: "#ecf7e6" },
     seven: { label: "세븐일레븐", short: "7", color: "#d33a2c", soft: "#fdeceb" },
-    emart24: { label: "이마트24", short: "24", color: "#f0a500", soft: "#fff5dd" }
+    emart24: { label: "이마트24", short: "24", color: "#f0a500", soft: "#fff5dd" },
+    mart: { label: "대형마트", short: "마트", color: "#1f6feb", soft: "#e6effd" },
+    artbox: { label: "아트박스", short: "아트", color: "#ff4d8d", soft: "#ffe9f1" },
+    vending: { label: "공식 자판기", short: "자판", color: "#7c4dff", soft: "#f0eaff" },
+    cardshop: { label: "공인 카드샵", short: "카드샵", color: "#12854a", soft: "#e4f5ec" }
   };
 
   var brands = [
@@ -6379,67 +6411,75 @@ window.POKEMOA_DATA = (function () {
     var list = [
       {
         id: "pokemonstore",
-        name: "포켓몬 스토어 온라인",
-        kind: "공식 스토어",
-        kindClass: "official",
+        short: "포켓몬 스토어",
+        initial: "P",
+        brand: "#ffcb05",
+        brandInk: "#3a2c00",
         state: meta.state || "",
         stateKind: meta.stateKind || "none",
         url: meta.product || POKEMONSTORE_CARD_CATEGORY,
         label: meta.product ? "이 박스 상품 페이지" : "카드 게임 카테고리",
-        note:
-          "(주)포켓몬코리아가 직접 운영하는 공식 온라인 스토어입니다. 박스 정가가 가장 먼저 공지되는 채널이지만 인기 박스는 품절(SOLD OUT) 표시가 잦습니다. 2026-11-18 확인한 어비스아이 상품은 1인 1개 구매 제한에 배송비 3,000원(5만원 이상 무료)이었습니다. 재입고·추첨 공지는 포켓몬 카드 게임 공지에서 먼저 나옵니다."
+        sub: "1인 1개 · 배송 3,000원"
       },
       {
         id: "naver",
-        name: "포켓몬 스토어 온라인 (네이버 브랜드스토어)",
-        kind: "브랜드스토어",
-        kindClass: "official",
+        short: "네이버 브랜드스토어",
+        initial: "N",
+        brand: "#03c75a",
+        brandInk: "#ffffff",
+        state: "",
+        stateKind: "none",
         url: NAVER_BRAND_CARD_CATEGORY,
         label: "카드 게임 카테고리",
-        note:
-          "포켓몬 스토어 온라인의 네이버 브랜드스토어입니다. 카드 게임 카테고리에서 박스 이름을 검색하면 되고, 네이버플러스 멤버십·쿠폰 적용가는 결제 창에서 확인됩니다."
+        sub: "카드 게임 검색"
       },
       {
         id: "gmarket",
-        name: "G마켓 포켓몬카드공식인증샵",
-        kind: "공식 인증샵",
-        kindClass: "online",
+        short: "G마켓 공식샵",
+        initial: "G",
+        brand: "#0f6ef2",
+        brandInk: "#ffffff",
         state: meta.gmarketState || "",
         stateKind: meta.gmarketKind || "none",
         url: "https://minishop.gmarket.co.kr/pokemoncard/List?keyword=" + q,
         label: "인증샵에서 이 박스 검색",
-        note:
-          "게임피아(주)가 운영하는 포켓몬 카드 공식 인증샵입니다. 정가로 판매하고, 2026-11-18 확인 시 MEGA 스타터 세트 ex 3종(이브이 ex·조로아크 ex·나오하마스카나 ex)이 17,000원(배송비 3,000원 별도)에 올라와 있습니다. 구 확장팩 박스는 입고 때만 상품이 열립니다."
+        sub: "인증샵 검색"
       },
       {
         id: "ssg",
-        name: "SSG 공식인증샵 검색",
-        kind: "온라인몰",
-        kindClass: "online",
+        short: "SSG",
+        initial: "S",
+        brand: "#1f2430",
+        brandInk: "#ffffff",
+        state: "",
+        stateKind: "none",
         url: "https://www.ssg.com/search.ssg?target=all&query=" + q,
         label: "SSG에서 이 박스 검색",
-        note:
-          "SSG에서 포켓몬 카드 게임 공식 인증샵(게임피아) 상품을 찾는 검색입니다. 박스가 없으면 0건으로 나오고, 정가 상품은 배송비 3,000원이 붙습니다."
+        sub: "공식인증샵 검색"
       },
       {
         id: "tcgbox",
-        name: "티씨지박스 (TCGBOX)",
-        kind: "전문 카드샵",
-        kindClass: "",
+        short: "티씨지박스",
+        initial: "T",
+        brand: "#7c4dff",
+        brandInk: "#ffffff",
+        state: "",
+        stateKind: "none",
         url: "https://tcgbox.co.kr/product/search.html?banner_action=&keyword=" + q,
         label: "티씨지박스에서 검색",
-        note:
-          "정가 판매를 하는 온라인 전문 카드샵입니다. 인기 박스는 예약이 열리자마자 마감되는 편이라, 품절이면 목표 카드를 싱글카드로 사는 쪽이 예산을 아낍니다."
+        sub: "전문 카드샵 검색"
       },
       {
         id: "lotteon",
-        name: "롯데ON · 토이저러스",
-        kind: "종합몰",
-        kindClass: "",
+        short: "롯데ON",
+        initial: "L",
+        brand: "#e60013",
+        brandInk: "#ffffff",
+        state: "",
+        stateKind: "none",
         url: "https://www.lotteon.com/search/search/search.ecn?render=search&q=" + q,
         label: "롯데ON에서 이 박스 검색",
-        note:
-          "롯데ON 검색에는 토이저러스·롯데마트 상품과 입점 판매자가 함께 나옵니다. 정가보다 비싼 재판매 상품이 섞여 있으므로 판매처와 박스 가격을 꼭 확인하세요."
+        sub: "토이저러스 검색"
       }
     ];
     return list;
@@ -6450,6 +6490,220 @@ window.POKEMOA_DATA = (function () {
     s.stores = buildBoxStores(s);
     s.storeMemo = (BOX_STORE_META[s.id] || {}).stateNote || "";
   });
+
+  /* ------------------------------------------- 오프라인 판매처 (지도 표시용) */
+  /* 2026-11-18 확인. 편의점 4사와 달리 **재고는 공개 데이터가 없어** 모두
+     '확인 필요(방문·매장 문의)' 또는 '공식 설치 지점'으로만 표시한다. */
+  var offlineBrands = [
+    { id: "mart", label: "대형마트", short: "마트" },
+    { id: "artbox", label: "아트박스", short: "아트" },
+    { id: "vending", label: "공식 자판기", short: "자판" },
+    { id: "cardshop", label: "공인 카드샵", short: "카드샵" }
+  ];
+  var offlineSearch = {
+    mart: ["이마트", "롯데마트", "홈플러스", "토이저러스"],
+    artbox: ["아트박스"]
+  };
+  /* 포켓몬코리아 「포켓몬 카드 게임 자판기」 페이지가 불러오는 공식 목록
+     (https://www.pokemonkorea.co.kr/card_vending_machine → venderlist.json, 178곳 중 좌표 확인 176곳 · 2026-11-18) */
+  var vendingPoints = [
+    { n: "CGV 구로점", b: "CGV", k: "cinema", a: "서울특별시 구로구 구로중앙로 152", la: 37.50147, ln: 126.882261 },
+    { n: "CGV 등촌점", b: "CGV", k: "cinema", a: "서울특별시 강서구 공항대로45길 63", la: 37.557974, ln: 126.855998 },
+    { n: "CGV 천호점", b: "CGV", k: "cinema", a: "서울특별시 강동구 양재대로 1571", la: 37.545896, ln: 127.142222 },
+    { n: "CGV 방학점", b: "CGV", k: "cinema", a: "서울특별시 도봉구 도봉로 684 8층", la: 37.665398, ln: 127.043514 },
+    { n: "CGV 고양백석점", b: "CGV", k: "cinema", a: "경기도 고양시 일산동구 중앙로 1036 고양종합터미널", la: 37.643525, ln: 126.790451 },
+    { n: "CGV 김포운양점", b: "CGV", k: "cinema", a: "경기도 김포시 운양동 김포한강11로 288-31", la: 37.654645, ln: 126.684031 },
+    { n: "CGV 김포점", b: "CGV", k: "cinema", a: "경기도 김포시 풍무동 풍무로 128", la: 37.607016, ln: 126.723227 },
+    { n: "CGV 동탄역점", b: "CGV", k: "cinema", a: "경기도 화성시 동탄구 동탄대로 537", la: 37.202285, ln: 127.098147 },
+    { n: "CGV 동탄호수공원점", b: "CGV", k: "cinema", a: "경기도 화성시 동탄대로 181", la: 37.171104, ln: 127.104922 },
+    { n: "CGV 소풍점", b: "CGV", k: "cinema", a: "경기도 부천시 송내대로 239", la: 37.504098, ln: 126.756754 },
+    { n: "CGV 야탑점", b: "CGV", k: "cinema", a: "경기도 성남시 분당구 성남대로925번길 16 테마폴리스 지하 2층", la: 37.413329, ln: 127.12761 },
+    { n: "CGV 양주옥정점", b: "CGV", k: "cinema", a: "경기도 양주시 옥정로 200", la: 37.819482, ln: 127.092096 },
+    { n: "CGV 오리점", b: "CGV", k: "cinema", a: "경기도 성남시 분당구 탄천상로151번길 20 CGV스퀘어 4층", la: 37.340803, ln: 127.106729 },
+    { n: "CGV 의정부점", b: "CGV", k: "cinema", a: "경기도 의정부시 평화로 525", la: 37.737732, ln: 127.045683 },
+    { n: "CGV 일산점", b: "CGV", k: "cinema", a: "경기도 고양시 일산동구 정발산로 24", la: 37.655285, ln: 126.772354 },
+    { n: "CGV 파주문산점", b: "CGV", k: "cinema", a: "경기도 파주시 문산읍 방촌로 1719-10", la: 37.866771, ln: 126.784117 },
+    { n: "CGV 판교점", b: "CGV", k: "cinema", a: "경기도 성남시 분당구 판교역로146번길 20 까르띠에 현대백화점 판교점 5층", la: 37.392824, ln: 127.112158 },
+    { n: "CGV 배곧점", b: "CGV", k: "cinema", a: "경기도 시흥시 서울대학로278번길 61 7층", la: 37.368573, ln: 126.730846 },
+    { n: "CGV 스타필드시티위례점", b: "CGV", k: "cinema", a: "경기도 하남시 위례대로 200", la: 37.480171, ln: 127.148231 },
+    { n: "CGV 인천연수점", b: "CGV", k: "cinema", a: "인천광역시 연수구 동춘동 청능대로 210", la: 37.406365, ln: 126.68336 },
+    { n: "CGV 인천점", b: "CGV", k: "cinema", a: "인천광역시 남동구 예술로 198", la: 37.451998, ln: 126.701866 },
+    { n: "CGV 인천학익점", b: "CGV", k: "cinema", a: "인천광역시 미추홀구 매소홀로 255", la: 37.445683, ln: 126.651762 },
+    { n: "CGV 계양점", b: "CGV", k: "cinema", a: "인천광역시 계양구 장제로 738 메트로몰 8층", la: 37.533767, ln: 126.734587 },
+    { n: "CGV 강릉점", b: "CGV", k: "cinema", a: "강원특별자치도 강릉시 경강로 2120", la: 37.755725, ln: 128.898681 },
+    { n: "CGV 춘천점", b: "CGV", k: "cinema", a: "강원특별자치도 춘천시 지석로 80", la: 37.850634, ln: 127.743684 },
+    { n: "CGV 천안터미널점", b: "CGV", k: "cinema", a: "충청남도 천안시 동남구 만남로 43 B관 5층", la: 36.819443, ln: 127.155671 },
+    { n: "CGV 천안펜타포트점", b: "CGV", k: "cinema", a: "충청남도 천안시 서북구 공원로 196", la: 36.798596, ln: 127.101007 },
+    { n: "CGV 청주(서문)점", b: "CGV", k: "cinema", a: "충청북도 청주시 상당구 상당로81번길 63", la: 36.635069, ln: 127.486923 },
+    { n: "CGV 청주지웰시티점", b: "CGV", k: "cinema", a: "충청북도 청주시 흥덕구 복대동 3381", la: 36.64315, ln: 127.429172 },
+    { n: "CGV 대전가오점", b: "CGV", k: "cinema", a: "대전광역시 동구 은어송로 72", la: 36.306998, ln: 127.45802 },
+    { n: "CGV 대전점", b: "CGV", k: "cinema", a: "대전광역시 중구 계백로 1700 6 세이백화점 7층", la: 36.321016, ln: 127.409022 },
+    { n: "CGV 대전터미널점", b: "CGV", k: "cinema", a: "대전광역시 동구 동서대로1695번길 30", la: 36.351306, ln: 127.437558 },
+    { n: "CGV 세종점", b: "CGV", k: "cinema", a: "세종특별자치시 도움1로 108", la: 36.502677, ln: 127.24764 },
+    { n: "CGV 대구스타디움점", b: "CGV", k: "cinema", a: "대구광역시 수성구 유니버시아드로 140", la: 35.832234, ln: 128.686669 },
+    { n: "CGV 대구월성점", b: "CGV", k: "cinema", a: "대구광역시 달서구 조암로 29", la: 35.824654, ln: 128.527115 },
+    { n: "CGV 동래점", b: "CGV", k: "cinema", a: "부산광역시 동래구 중앙대로 1523", la: 35.221889, ln: 129.085305 },
+    { n: "CGV 아시아드점", b: "CGV", k: "cinema", a: "부산광역시 연제구 종합운동장로 7", la: 35.191147, ln: 129.064155 },
+    { n: "CGV 센텀시티점", b: "CGV", k: "cinema", a: "부산광역시 해운대구 센텀남대로 35 신세계센텀시티 7F", la: 35.168791, ln: 129.129704 },
+    { n: "CGV 거제점", b: "CGV", k: "cinema", a: "경상남도 거제시 장평로 12", la: 34.891206, ln: 128.616556 },
+    { n: "CGV 김해점", b: "CGV", k: "cinema", a: "경상남도 김해시 내외중앙로 137", la: 35.242243, ln: 128.868609 },
+    { n: "CGV 광주첨단점", b: "CGV", k: "cinema", a: "광주광역시 광산구 임방울대로826번길 29-31", la: 35.216452, ln: 126.85031 },
+    { n: "CGV 광주하남점", b: "CGV", k: "cinema", a: "광주광역시 광산구 용아로400번길 30 테라스56피크닉몰 2층", la: 35.178249, ln: 126.806447 },
+    { n: "CGV 광주상무점", b: "CGV", k: "cinema", a: "광주광역시 서구 치평동 시청로 67", la: 35.15436, ln: 126.851114 },
+    { n: "CGV 서전주점", b: "CGV", k: "cinema", a: "전북특별자치도 전주시 완산구 홍산로 260", la: 35.816787, ln: 127.10641 },
+    { n: "CGV 전주고사점", b: "CGV", k: "cinema", a: "전북특별자치도 전주시 완산구 전주객사3길 72", la: 35.820452, ln: 127.142043 },
+    { n: "CGV 전주효자점", b: "CGV", k: "cinema", a: "전북특별자치도 전주시 완산구 용머리로 45", la: 35.806906, ln: 127.115738 },
+    { n: "CGV 순천신대점", b: "CGV", k: "cinema", a: "전라남도 순천시 해광로 199", la: 34.926134, ln: 127.552279 },
+    { n: "메가박스 강남점", b: "메가박스", k: "cinema", a: "서울특별시 서초구 서초대로77길 3 아라타워", la: 37.497976, ln: 127.026537 },
+    { n: "메가박스 마곡점", b: "메가박스", k: "cinema", a: "서울특별시 강서구 공항대로 247", la: 37.559273, ln: 126.834949 },
+    { n: "메가박스 상암월드컵경기장점", b: "메가박스", k: "cinema", a: "서울특별시 마포구 월드컵로 240", la: 37.569264, ln: 126.898345 },
+    { n: "메가박스 센트럴점", b: "메가박스", k: "cinema", a: "서울특별시 서초구 신반포로 176", la: 37.504432, ln: 127.003546 },
+    { n: "메가박스 이수점", b: "메가박스", k: "cinema", a: "서울특별시 동작구 동작대로 89", la: 37.484711, ln: 126.981611 },
+    { n: "메가박스 코엑스점", b: "메가박스", k: "cinema", a: "서울특별시 강남구 봉은사로 524", la: 37.512751, ln: 127.058674 },
+    { n: "메가박스 화곡점", b: "메가박스", k: "cinema", a: "서울특별시 강서구 화곡로 142", la: 37.540613, ln: 126.83759 },
+    { n: "메가박스 수원AK플라자점", b: "메가박스", k: "cinema", a: "경기도 수원시 팔달구 덕영대로 924", la: 37.266626, ln: 126.999935 },
+    { n: "메가박스 고양스타필드점", b: "메가박스", k: "cinema", a: "경기도 고양시 덕양구 고양대로 1955", la: 37.646805, ln: 126.892526 },
+    { n: "메가박스 김포한강신도시점", b: "메가박스", k: "cinema", a: "경기도 김포시 구래동 한강9로75번길 180", la: 37.64485, ln: 126.624294 },
+    { n: "메가박스 남양주현대아울렛스페이스원점", b: "메가박스", k: "cinema", a: "경기도 남양주시 다산순환로 50 현대프리미엄 아울렛 스페이스원 3층", la: 37.616215, ln: 127.152503 },
+    { n: "메가박스 부천스타필드시티점", b: "메가박스", k: "cinema", a: "경기도 부천시 소사구 옥길로 1", la: 37.461732, ln: 126.813819 },
+    { n: "메가박스 안성스타필드점", b: "메가박스", k: "cinema", a: "경기도 안성시 공도읍 서동대로 3930-39", la: 36.994687, ln: 127.145723 },
+    { n: "메가박스 킨텍스점", b: "메가박스", k: "cinema", a: "경기도 고양시 일산서구 호수로 817 레이킨스몰 3층", la: 37.668005, ln: 126.751743 },
+    { n: "메가박스 하남스타필드점", b: "메가박스", k: "cinema", a: "경기도 하남시 미사대로 750", la: 37.545544, ln: 127.223708 },
+    { n: "메가박스 송도점", b: "메가박스", k: "cinema", a: "인천광역시 연수구 D동 송도과학로16번길 33-4 2~4층 트리플스트리트", la: 37.378685, ln: 126.662839 },
+    { n: "메가박스 대전중앙로점", b: "메가박스", k: "cinema", a: "대전광역시 중구 중앙로 126", la: 36.327667, ln: 127.424059 },
+    { n: "메가박스 대전현대아울렛점", b: "메가박스", k: "cinema", a: "대전광역시 유성구 테크노중앙로 123", la: 36.424021, ln: 127.398658 },
+    { n: "메가박스 세종나성점", b: "메가박스", k: "cinema", a: "세종특별자치시 나성로 38", la: 36.483581, ln: 127.263804 },
+    { n: "롯데시네마 건대입구점", b: "롯데시네마", k: "cinema", a: "서울특별시 광진구 아차산로 262", la: 37.538539, ln: 127.073215 },
+    { n: "롯데시네마 김포공항점", b: "롯데시네마", k: "cinema", a: "서울특별시 강서구 하늘길 77", la: 37.56381, ln: 126.803746 },
+    { n: "롯데시네마 노원점", b: "롯데시네마", k: "cinema", a: "서울특별시 노원구 동일로 1414 롯데백화점 노원점 10층", la: 37.654871, ln: 127.061155 },
+    { n: "롯데시네마 신대방점", b: "롯데시네마", k: "cinema", a: "서울특별시 동작구 시흥대로 606", la: 37.486479, ln: 126.905151 },
+    { n: "롯데시네마 신림점", b: "롯데시네마", k: "cinema", a: "서울특별시 관악구 신림로 330", la: 37.484003, ln: 126.930287 },
+    { n: "롯데시네마 월드타워점", b: "롯데시네마", k: "cinema", a: "서울특별시 송파구 올림픽로 300", la: 37.513998, ln: 127.104864 },
+    { n: "롯데시네마 은평점", b: "롯데시네마", k: "cinema", a: "서울특별시 은평구 통일로 1050", la: 37.636774, ln: 126.917909 },
+    { n: "롯데시네마 청량리점", b: "롯데시네마", k: "cinema", a: "서울특별시 동대문구 왕산로 214", la: 37.580688, ln: 127.048712 },
+    { n: "롯데시네마 광명아울렛점", b: "롯데시네마", k: "cinema", a: "경기도 광명시 일직로 17", la: 37.424795, ln: 126.884286 },
+    { n: "롯데시네마 구리아울렛점", b: "롯데시네마", k: "cinema", a: "경기도 구리시 동구릉로136번길 47", la: 37.611902, ln: 127.140657 },
+    { n: "롯데시네마 동탄점", b: "롯데시네마", k: "cinema", a: "경기도 화성시 동탄역로 160", la: 37.200487, ln: 127.097963 },
+    { n: "롯데시네마 별내점", b: "롯데시네마", k: "cinema", a: "경기도 남양주시 별내중앙로 10", la: 37.644652, ln: 127.127602 },
+    { n: "롯데시네마 산본피트인점", b: "롯데시네마", k: "cinema", a: "경기도 군포시 번영로 485", la: 37.357896, ln: 126.930457 },
+    { n: "롯데시네마 성남중앙점", b: "롯데시네마", k: "cinema", a: "경기도 성남시 수정구 산성대로 267", la: 37.441299, ln: 127.146401 },
+    { n: "롯데시네마 수원점", b: "롯데시네마", k: "cinema", a: "경기도 수원시 권선구 세화로 134", la: 37.264451, ln: 126.997303 },
+    { n: "롯데시네마 수지점", b: "롯데시네마", k: "cinema", a: "경기도 용인시 수지구 성복2로 38", la: 37.312647, ln: 127.081806 },
+    { n: "롯데시네마 안산점", b: "롯데시네마", k: "cinema", a: "경기도 안산시 상록구 항가울로 422 롯데마트 안산점 4층", la: 37.318311, ln: 126.846263 },
+    { n: "롯데시네마 용인기흥점", b: "롯데시네마", k: "cinema", a: "경기도 용인시 기흥구 기흥역로 63", la: 37.274613, ln: 127.116636 },
+    { n: "롯데시네마 의정부민락점", b: "롯데시네마", k: "cinema", a: "경기도 의정부시 천보로 44", la: 37.744311, ln: 127.096295 },
+    { n: "롯데시네마 파주운정점", b: "롯데시네마", k: "cinema", a: "경기도 파주시 목동동 청암로17번길 17", la: 37.729567, ln: 126.736601 },
+    { n: "롯데시네마 평촌점", b: "롯데시네마", k: "cinema", a: "경기도 안양시 동안구 시민대로 180", la: 37.390226, ln: 126.950611 },
+    { n: "롯데시네마 부평점", b: "롯데시네마", k: "cinema", a: "인천광역시 부평구 대정로 66", la: 37.493637, ln: 126.726567 },
+    { n: "롯데시네마 인천아시아드점", b: "롯데시네마", k: "cinema", a: "인천광역시 서구 봉수대로 806", la: 37.546345, ln: 126.666462 },
+    { n: "롯데시네마 원주무실점", b: "롯데시네마", k: "cinema", a: "강원특별자치도 원주시 능라동길 51", la: 37.334951, ln: 127.929998 },
+    { n: "롯데시네마 제주연동점", b: "롯데시네마", k: "cinema", a: "제주특별자치도 제주시 과원로 128 B1F", la: 33.48086, ln: 126.494694 },
+    { n: "롯데시네마 아산터미널점", b: "롯데시네마", k: "cinema", a: "충청남도 아산시 번영로 225", la: 36.784929, ln: 127.015906 },
+    { n: "롯데시네마 서청주점", b: "롯데시네마", k: "cinema", a: "충청북도 청주시 흥덕구 비하동 순환로 1004", la: 36.644949, ln: 127.421249 },
+    { n: "롯데시네마 대전관저점", b: "롯데시네마", k: "cinema", a: "대전광역시 서구 봉우로8번길 23", la: 36.302404, ln: 127.333762 },
+    { n: "롯데시네마 대구상인점", b: "롯데시네마", k: "cinema", a: "대구광역시 달서구 월곡로 247", la: 35.816491, ln: 128.539222 },
+    { n: "롯데시네마 대구율하점", b: "롯데시네마", k: "cinema", a: "대구광역시 동구 안심로 80", la: 35.867873, ln: 128.694075 },
+    { n: "롯데시네마 울산점", b: "롯데시네마", k: "cinema", a: "울산광역시 남구 삼산로 282 롯데백화점 영플라자 3층", la: 35.538256, ln: 129.338149 },
+    { n: "롯데시네마 광복점", b: "롯데시네마", k: "cinema", a: "부산광역시 중구 중앙대로 2 롯데백화점 아쿠아몰 9F", la: 35.098064, ln: 129.036071 },
+    { n: "롯데시네마 동래점", b: "롯데시네마", k: "cinema", a: "부산광역시 동래구 중앙대로 1393", la: 35.211535, ln: 129.077648 },
+    { n: "롯데시네마 동부산점", b: "롯데시네마", k: "cinema", a: "부산광역시 기장군 기장해안로 147 롯데몰 3층", la: 35.192329, ln: 129.212936 },
+    { n: "롯데시네마 부산본점", b: "롯데시네마", k: "cinema", a: "부산광역시 부산진구 가야대로 772 롯데백화점부산본점 10F", la: 35.156905, ln: 129.056679 },
+    { n: "롯데시네마 진주혁신점", b: "롯데시네마", k: "cinema", a: "경상남도 진주시 충무 공동 35", la: 35.18056, ln: 128.140214 },
+    { n: "롯데시네마 광주수완점", b: "롯데시네마", k: "cinema", a: "광주광역시 광산구 장신로 98", la: 35.190367, ln: 126.820163 },
+    { n: "롯데시네마 군산몰점", b: "롯데시네마", k: "cinema", a: "전북특별자치도 군산시 조촌로 130 롯데몰 군산점 4F", la: 35.976561, ln: 126.73863 },
+    { n: "롯데시네마 전주점", b: "롯데시네마", k: "cinema", a: "전북특별자치도 전주시 완산구 온고을로 2", la: 35.83462, ln: 127.121958 },
+    { n: "롯데마트 김포공항점", b: "롯데마트", k: "mart", a: "서울특별시 강서구 하늘길 38", la: 37.563391, ln: 126.803137 },
+    { n: "롯데마트 양평점", b: "롯데마트", k: "mart", a: "경기도 양평군 양평읍 남북로 76", la: 37.489648, ln: 127.502575 },
+    { n: "롯데마트 월드타워점", b: "롯데마트", k: "mart", a: "서울특별시 송파구 올림픽로 300", la: 37.514164, ln: 127.10482 },
+    { n: "롯데마트 은평점", b: "롯데마트", k: "mart", a: "서울특별시 은평구 통일로 1050", la: 37.638256, ln: 126.917858 },
+    { n: "롯데마트 제타플렉스점", b: "롯데마트", k: "mart", a: "서울특별시 송파구 올림픽로 240", la: 37.511646, ln: 127.096254 },
+    { n: "롯데마트 중계점", b: "롯데마트", k: "mart", a: "서울특별시 노원구 노원로 330", la: 37.646814, ln: 127.07102 },
+    { n: "롯데마트 청량리점", b: "롯데마트", k: "mart", a: "서울특별시 동대문구 왕산로 214", la: 37.580537, ln: 127.048556 },
+    { n: "롯데마트 광교점", b: "롯데마트", k: "mart", a: "경기도 수원시 영통구 센트럴타운로22번길 85", la: 37.290315, ln: 127.049705 },
+    { n: "롯데마트 김포한강점", b: "롯데마트", k: "mart", a: "경기도 김포시 장기동 김포한강2로 41", la: 37.640573, ln: 126.677481 },
+    { n: "롯데마트 신갈점", b: "롯데마트", k: "mart", a: "경기 용인시 기흥구 중부대로 375 기흥역롯데캐슬스카이", la: 37.272465, ln: 127.10891 },
+    { n: "롯데마트 수원몰점", b: "롯데마트", k: "mart", a: "경기도 수원시 권선구 세화로 134", la: 37.263578, ln: 126.996088 },
+    { n: "롯데마트 수지몰점", b: "롯데마트", k: "mart", a: "경기도 용인시 수지구 성복2로 38", la: 37.312304, ln: 127.082252 },
+    { n: "롯데마트 안산점", b: "롯데마트", k: "mart", a: "경기도 안산시 상록구 항가울로 422", la: 37.318015, ln: 126.846208 },
+    { n: "롯데마트 덕소점", b: "롯데마트", k: "mart", a: "경기도 남양주시 와부읍 월문천로 33", la: 37.584765, ln: 127.214607 },
+    { n: "롯데마트 판교점", b: "롯데마트", k: "mart", a: "경기도 성남시 분당구 대왕판교로606번길 58", la: 37.395611, ln: 127.11333 },
+    { n: "롯데마트 삼산점", b: "롯데마트", k: "mart", a: "인천광역시 부평구 길주로 623", la: 37.508063, ln: 126.732067 },
+    { n: "롯데마트 송도점", b: "롯데마트", k: "mart", a: "인천광역시 연수구 컨벤시아대로 177", la: 37.388292, ln: 126.643208 },
+    { n: "롯데마트 청라국제도시점", b: "롯데마트", k: "mart", a: "인천광역시 서구 청라커낼로 252", la: 37.531391, ln: 126.648749 },
+    { n: "롯데마트 춘천점", b: "롯데마트", k: "mart", a: "강원특별자치도 춘천시 방송길 84", la: 37.868696, ln: 127.717993 },
+    { n: "롯데마트 대구율하점", b: "롯데마트", k: "mart", a: "대구광역시 동구 율하동 1117", la: 35.868882, ln: 128.692788 },
+    { n: "롯데마트 수완점", b: "롯데마트", k: "mart", a: "광주광역시 광산구 장신로 98", la: 35.190276, ln: 126.821003 },
+    { n: "롯데마트 아산터미널점", b: "롯데마트", k: "mart", a: "충청남도 아산시 모종동 번영로 225", la: 36.784662, ln: 127.016027 },
+    { n: "롯데마트 서산점", b: "롯데마트", k: "mart", a: "충청남도 서산시 충의로 27", la: 36.773401, ln: 126.439264 },
+    { n: "KTX 영등포역", b: "KTX", k: "station", a: "서울특별시 영등포구 경인로 846", la: 37.515602, ln: 126.907307 },
+    { n: "KTX 행신역", b: "KTX", k: "station", a: "경기도 고양시 덕양구 소원로 102", la: 37.612278, ln: 126.834058 },
+    { n: "KTX 서대전역", b: "KTX", k: "station", a: "대전광역시 중구 오류로 23", la: 36.322531, ln: 127.403802 },
+    { n: "KTX 부산역", b: "KTX", k: "station", a: "부산광역시 동구 초량제3동 중앙대로", la: 35.115235, ln: 129.042176 },
+    { n: "KTX 천안아산역", b: "KTX", k: "station", a: "충남 아산시 배방읍 희망로 100", la: 36.794538, ln: 127.104345 },
+    { n: "롯데월드 부스럭롯데월드몰", b: "롯데월드", k: "themepark", a: "서울특별시 송파구 올림픽로 240", la: 37.511124, ln: 127.098022 },
+    { n: "롯데월드 2층 어드벤처", b: "롯데월드", k: "themepark", a: "서울특별시 송파구 올림픽로 240 2층", la: 37.511124, ln: 127.098022 },
+    { n: "롯데월드 4층 어드벤처", b: "롯데월드", k: "themepark", a: "서울특별시 송파구 올림픽로 240 4층", la: 37.511124, ln: 127.098022 },
+    { n: "이마트 천호점", b: "이마트", k: "mart", a: "서울특별시 강동구 천호대로 1017", la: 37.538655, ln: 127.125368 },
+    { n: "이마트 하월곡점", b: "이마트", k: "mart", a: "서울특별시 성북구 종암로 167", la: 37.604839, ln: 127.030908 },
+    { n: "이마트 용산점", b: "이마트", k: "mart", a: "서울특별시 용산구 한강대로23길 55", la: 37.529563, ln: 126.965491 },
+    { n: "이마트 왕십리점", b: "이마트", k: "mart", a: "서울특별시 성동구 왕십리광장로 17", la: 37.561977, ln: 127.038223 },
+    { n: "이마트 월계점", b: "이마트", k: "mart", a: "서울특별시 노원구 마들로3길 15", la: 37.626542, ln: 127.061952 },
+    { n: "이마트 자양점", b: "이마트", k: "mart", a: "서울특별시 광진구 아차산로 272", la: 37.538458, ln: 127.072862 },
+    { n: "이마트 목동점", b: "이마트", k: "mart", a: "서울특별시 양천구 오목로 299", la: 37.525904, ln: 126.870327 },
+    { n: "이마트 구로점", b: "이마트", k: "mart", a: "서울특별시 구로구 디지털로32길 43", la: 37.484427, ln: 126.897903 },
+    { n: "이마트 마포점", b: "이마트", k: "mart", a: "서울특별시 마포구 백범로 212", la: 37.542367, ln: 126.953353 },
+    { n: "이마트 명일점", b: "이마트", k: "mart", a: "서울특별시 강동구 고덕로 276", la: 37.554784, ln: 127.156062 },
+    { n: "이마트 신도림점", b: "이마트", k: "mart", a: "서울특별시 구로구 새말로 97", la: 37.507111, ln: 126.890251 },
+    { n: "이마트 영등포점", b: "이마트", k: "mart", a: "서울특별시 영등포구 영중로 15B2F", la: 37.517156, ln: 126.90292 },
+    { n: "이마트 은평점", b: "이마트", k: "mart", a: "서울특별시 은평구 은평로 111", la: 37.600463, ln: 126.920172 },
+    { n: "이마트 TK고양점", b: "이마트", k: "mart", a: "경기도 고양시 덕양구 고양대로 1955", la: 37.648114, ln: 126.897174 },
+    { n: "이마트 TK하남점", b: "이마트", k: "mart", a: "경기도 하남시 미사대로 750", la: 37.545696, ln: 127.223911 },
+    { n: "이마트 TK안성점", b: "이마트", k: "mart", a: "경기도 안성시 공도읍 서동대로 3930-39", la: 36.994574, ln: 127.148078 },
+    { n: "이마트 하남점", b: "이마트", k: "mart", a: "경기도 하남시 덕풍서로 70 풍산지구 이마트", la: 37.55278, ln: 127.205405 },
+    { n: "이마트 죽전점", b: "이마트", k: "mart", a: "경기도 용인시 수지구 포은대로 552", la: 37.325308, ln: 127.109907 },
+    { n: "이마트 수지점", b: "이마트", k: "mart", a: "경기도 용인시 수지구 수지로 203", la: 37.319818, ln: 127.083436 },
+    { n: "이마트 이천점", b: "이마트", k: "mart", a: "경기도 이천시 이섭대천로 1440-50", la: 37.29395, ln: 127.459151 },
+    { n: "스타필드마켓 동탄점", b: "이마트", k: "mart", a: "경기도 화성시 동탄중앙로 376", la: 37.214454, ln: 127.079434 },
+    { n: "이마트 수원점", b: "이마트", k: "mart", a: "경기도 수원시 권선구 경수대로 270", la: 37.249908, ln: 127.021761 },
+    { n: "이마트 여주점", b: "이마트", k: "mart", a: "경기도 여주시 시 세종로 151", la: 37.284574, ln: 127.635438 },
+    { n: "이마트 산본점", b: "이마트", k: "mart", a: "경기도 군포시 산본로 347", la: 37.361136, ln: 126.931269 },
+    { n: "이마트 파주운정점", b: "이마트", k: "mart", a: "경기도 파주시 한울로 123", la: 37.710493, ln: 126.745055 },
+    { n: "이마트 김포한강점", b: "이마트", k: "mart", a: "경기도 김포시 김포한강7로 71", la: 37.644428, ln: 126.628343 },
+    { n: "이마트 풍산점", b: "이마트", k: "mart", a: "경기도 고양시 일산동구 하늘마을1로 25", la: 37.673968, ln: 126.787127 },
+    { n: "이마트 광명소하점", b: "이마트", k: "mart", a: "경기도 광명시 소하로 97", la: 37.446736, ln: 126.884565 },
+    { n: "이마트 부천중동점", b: "이마트", k: "mart", a: "경기도 부천시 원미구 석천로 188", la: 37.504103, ln: 126.763913 },
+    { n: "이마트 분당점", b: "이마트", k: "mart", a: "경기도 성남시 분당구 불정로 134", la: 37.358902, ln: 127.11976 },
+    { n: "이마트 의정부점", b: "이마트", k: "mart", a: "경기도 의정부시 민락로 210", la: 37.743174, ln: 127.102222 },
+    { n: "이마트 TK스타필드수원점", b: "이마트", k: "mart", a: "경기도 수원시 장안구 수성로 175", la: 37.287427, ln: 126.991937 },
+    { n: "이마트 화정점", b: "이마트", k: "mart", a: "경기도 고양시 덕양구 백양로 79", la: 37.632765, ln: 126.833388 },
+    { n: "이마트 검단점", b: "이마트", k: "mart", a: "인천광역시 서구 당하동 서곶로 754", la: 37.585619, ln: 126.677216 },
+    { n: "이마트 대전터미널점", b: "이마트", k: "mart", a: "대전광역시 동구 동서대로 1689 3층, 4층", la: 36.350232, ln: 127.436654 },
+    { n: "이마트 세종점", b: "이마트", k: "mart", a: "세종특별자치시 금송로 687", la: 36.470903, ln: 127.250562 },
+    { n: "이마트 월배점", b: "이마트", k: "mart", a: "대구광역시 달서구 진천로 92", la: 35.8173, ln: 128.523548 },
+    { n: "이마트 김해점", b: "이마트", k: "mart", a: "경상남도 김해시 김해대로 2232", la: 35.230292, ln: 128.871831 },
+    { n: "이마트 양산점", b: "이마트", k: "mart", a: "경상남도 양산시 양산역6길 12", la: 35.336882, ln: 129.02647 },
+    { n: "이마트 천안서북점", b: "이마트", k: "mart", a: "충청남도 천안시 서북구 삼성대로 20", la: 36.838695, ln: 127.122334 }
+  ];
+  /* 포켓몬코리아 「포켓몬 카드샵」 목록 16곳 (https://www.pokemonkorea.co.kr/pokemon_cardshop, 2026-11-18).
+     q = 카카오 장소 검색으로 좌표를 확인할 때 쓰는 검색어. */
+  var cardShops = [
+    { id: "용산", name: "포켓몬 카드샵 용산", addr: "서울특별시 용산구 한강대로23길 55 아이파크몰 리빙파크 8층", q: "pokemon 카드샵 용산 아이파크몰", url: "https://www.pokemonkorea.co.kr/pokemon_cardshop/menu329" },
+    { id: "역삼", name: "포켓몬 카드샵 카드냥 역삼", addr: "서울특별시 강남구 논현로77길 9 태원빌딩 4층", q: "카드냥 역삼", url: "https://www.pokemonkorea.co.kr/pokemon_cardshop/menu178" },
+    { id: "목동", name: "포켓몬 카드샵 카드 챔프 목동", addr: "서울특별시 양천구 오목로 194 정우빌딩 2층", q: "카드챔프 목동", url: "https://www.pokemonkorea.co.kr/pokemon_cardshop/menu758" },
+    { id: "인천", name: "포켓몬 카드샵 카드팝 인천", addr: "인천광역시 부평구 부평문화로66번길 21 4층", q: "카드팝 인천", url: "https://www.pokemonkorea.co.kr/pokemon_cardshop/menu211" },
+    { id: "수원", name: "포켓몬 카드샵 카드플래닛 수원", addr: "경기도 수원시 영통구 청명로 73-1 2층", q: "카드플래닛 수원", url: "https://www.pokemonkorea.co.kr/pokemon_cardshop/menu193" },
+    { id: "평택", name: "포켓몬 카드샵 카드홀릭 평택", addr: "경기도 평택시 평택2로 16 3층", q: "카드홀릭 평택", url: "https://www.pokemonkorea.co.kr/pokemon_cardshop/menu214" },
+    { id: "구리", name: "포켓몬 카드샵 TCG 라인 구리", addr: "경기도 구리시 장자대로86번길 32 2층", q: "TCG라인 구리", url: "https://www.pokemonkorea.co.kr/pokemon_cardshop/menu789" },
+    { id: "일산", name: "포켓몬 카드샵 카드필드 일산", addr: "경기도 고양시 일산서구 일중로15번길 23 2층", q: "카드필드 일산", url: "https://www.pokemonkorea.co.kr/pokemon_cardshop/menu825" },
+    { id: "원주", name: "포켓몬 카드샵 카드스페이스 원주", addr: "강원도 원주시 능라동길 42 602호", q: "카드스페이스 원주", url: "https://www.pokemonkorea.co.kr/pokemon_cardshop/menu202" },
+    { id: "강릉", name: "포켓몬 카드샵 카드웨이브 강릉", addr: "강원도 강릉시 솔올로 40 3층", q: "카드웨이브 강릉", url: "https://www.pokemonkorea.co.kr/pokemon_cardshop/menu809" },
+    { id: "천안", name: "포켓몬 카드샵 카드프라임 천안", addr: "충청남도 천안시 서북구 백석로 130 2층", q: "카드프라임 천안", url: "https://www.pokemonkorea.co.kr/pokemon_cardshop/menu776" },
+    { id: "대전", name: "포켓몬 카드샵 카드롤 대전", addr: "대전광역시 서구 둔산로 72 등오빌딩 5층", q: "카드롤 대전", url: "https://www.pokemonkorea.co.kr/pokemon_cardshop/menu749" },
+    { id: "대구", name: "포켓몬 카드샵 트레이너 스쿨 대구", addr: "대구광역시 달서구 성당동 488-1 2층", q: "트레이너 스쿨 대구", url: "https://www.pokemonkorea.co.kr/pokemon_cardshop/menu246" },
+    { id: "울산", name: "포켓몬 카드샵 TCG팩토리 울산", addr: "울산광역시 중구 번영로 454-1 1층", q: "TCG팩토리 울산", url: "https://www.pokemonkorea.co.kr/pokemon_cardshop/menu226" },
+    { id: "부산", name: "포켓몬 카드샵 카드베이스 부산", addr: "부산광역시 동래구 명륜로129번길 54 4층", q: "카드베이스 부산", url: "https://www.pokemonkorea.co.kr/pokemon_cardshop/menu661" },
+    { id: "광주", name: "포켓몬 카드샵 화성스토어TCG 광주", addr: "광주광역시 동구 중앙로160번길 22 2층", q: "화성스토어 광주", url: "https://www.pokemonkorea.co.kr/pokemon_cardshop/menu213" }
+  ];
 
   /* ------------------------------------------------------ 사실 메모(출처) */
   var facts = [
@@ -6478,6 +6732,10 @@ window.POKEMOA_DATA = (function () {
     cardProducts: cardProducts,
     brands: brands,
     brandMeta: brandMeta,
+    offlineBrands: offlineBrands,
+    offlineSearch: offlineSearch,
+    vendingPoints: vendingPoints,
+    cardShops: cardShops,
     shortcuts: shortcuts,
     faq: faq,
     facts: facts
@@ -6524,6 +6782,11 @@ window.PokeMoaMap = (function () {
   var DIRS8 = [0, 45, 90, 135, 180, 225, 270, 315];
   var BRAND_QUERY = { gs25: "GS25", cu: "CU", seven: "세븐일레븐", emart24: "이마트24" };
   var BRAND_ORDER_LIST = ["gs25", "cu", "seven", "emart24"];
+  /* 오프라인 판매처(마트·아트박스·공식 자판기·공인 카드샵) — 편의점 4사와 함께 지도에 올린다.
+     재고 공개 데이터가 없어 모두 '확인 필요' 또는 '공식 설치 지점'으로만 표시한다. */
+  var OFFLINE_IDS = ["mart", "artbox", "vending", "cardshop"];
+  var OFFLINE_LABEL = { mart: "대형마트", artbox: "아트박스", vending: "공식 자판기", cardshop: "공인 카드샵" };
+  var OFFLINE_CAP = 26;      /* 마트·아트박스 실시간 검색 결과 상한(편의점 마커를 밀어내지 않게) */
 
   /* 도심(allow20:false) 지역 좌표 — 내 위치가 이 근처면 20km를 막는다 */
   function metroRegions() {
@@ -6544,6 +6807,8 @@ window.PokeMoaMap = (function () {
     brand: "all",
     product: "all",
     stockOnly: false,
+    showOffline: true,
+    cardShopGeo: null,   /* 공인 카드샵 좌표 캐시(카카오 장소 검색으로 한 번만 확인) */
     compact: false,
     cluster: false,
     radius: 3000,
@@ -6717,24 +6982,28 @@ window.PokeMoaMap = (function () {
   /* --------------------------------------------- 장소 → 매장 객체 */
   function toStore(o) {
     var id = o.type + "-" + o.id;
+    var offline = !!o.place;
     return {
       id: id,
       name: displayName(o.name, o.brand),
       brand: o.brand,
       brandLabel: (D.brandMeta[o.brand] || {}).label || o.brand,
-      shop: o.shop,
+      shop: o.shop || (offline ? "offline" : ""),
       lat: o.lat,
       lng: o.lng,
       street: o.street || "",
       distance: 0,
-      status: sampleStatus(id),
-      observed: sampleObserved(id),
-      unit: "낱팩",
-      note: "",
+      status: offline ? "check" : sampleStatus(id),
+      observed: offline ? "" : sampleObserved(id),
+      unit: offline ? "" : "낱팩",
+      note: o.note || "",
       products: [],
       phone: o.phone || "",
       placeUrl: o.placeUrl || "",
-      source: o.source
+      source: o.source,
+      offline: offline,
+      official: !!o.official,
+      placeKind: o.place || ""
     };
   }
 
@@ -6744,7 +7013,8 @@ window.PokeMoaMap = (function () {
       var s = toStore(list[i]);
       s.source = source;
       s.distance = meters(center, s);
-      s.products = storeProducts(s.id, s.status);
+      /* 오프라인 판매처는 취급 카드·재고 샘플을 붙이지 않는다(없는 재고를 만들지 않기 위해) */
+      s.products = s.offline ? [] : storeProducts(s.id, s.status);
       out.push(s);
     }
     return out;
@@ -6882,9 +7152,11 @@ window.PokeMoaMap = (function () {
       html = '<span class="pm-pill status-in" style="--brand:' + b.color + '">' +
         "<b>" + b.short + "</b><span>" + (n ? "입고 " + n + "종" : "재고 있음") + "</span></span>";
     } else {
-      html = '<span class="pm-pill status-' + s.status + '">' +
+      var txt = s.official ? "공식" : (s.status === "check" ? "확인" : (s.relay ? "실시간 0개" : "없음"));
+      if (s.brand === "mart" || s.brand === "artbox") txt = "확인";
+      html = '<span class="pm-pill status-' + s.status + (s.offline ? ' is-offline' : '') + '" style="--brand:' + b.color + '">' +
         '<i class="pm-dot" style="background:' + b.color + '"></i>' +
-        "<span>" + (s.status === "check" ? "확인" : (s.relay ? "실시간 0개" : "없음")) + "</span></span>";
+        "<span>" + b.short + " · " + txt + "</span></span>";
     }
     return html;
   }
@@ -7035,7 +7307,7 @@ window.PokeMoaMap = (function () {
 
   /* 매장 하나 = 말풍선(알약) 또는 저줌에서는 브랜드 칩·점 */
   function drawPill(s) {
-    var label = s.name + " · " + statusLabel(s.status) +
+    var label = s.name + " · " + placeLabel(s) +
       (s.products && s.products.length
         ? " · " + s.products.map(function (p) { return p.short + " " + p.stateLabel; }).join(", ")
         : "");
@@ -7089,7 +7361,17 @@ window.PokeMoaMap = (function () {
     emit("pokemoa:visible", { stores: st.visible });
   }
 
+  function placeLabel(s) {
+    if (s.brand === "vending") return "공식 설치 지점";
+    if (s.brand === "cardshop") return "공인 카드샵";
+    if (s.brand === "mart" || s.brand === "artbox") return "확인 필요 (방문·매장 문의)";
+    return statusLabel(s.status);
+  }
+
+  function isOfflineBrand(b) { return OFFLINE_IDS.indexOf(b) >= 0; }
+
   function match(s) {
+    if (!st.showOffline && isOfflineBrand(s.brand)) return false;
     if (st.brand !== "all" && s.brand !== st.brand) return false;
     if (s.distance > st.radius) return false;
     if (st.stockOnly && s.status !== "in") return false;
@@ -7154,6 +7436,17 @@ window.PokeMoaMap = (function () {
     return '<div class="store-products ' + (cls || "") + '">' + head + tags + "</div>";
   }
 
+  function offlineNote(s) {
+    if (s.brand === "vending") {
+      return "포켓몬코리아 <b>공식 자판기 안내</b>(2026-11-18 확인)에 올라온 설치 지점입니다. 공식 안내는 설치 장소만 알려 주고 재고는 보여 주지 않으므로, 원하는 팩은 현장 화면에서 확인하세요.";
+    }
+    if (s.brand === "cardshop") {
+      return "포켓몬코리아 <b>공식 카드샵 목록</b>(2026-11-18 확인)의 공인 매장입니다. 정가 판매·재고·영업시간은 매장에 문의하세요.";
+    }
+    var label = s.brand === "artbox" ? "아트박스" : "대형마트";
+    return "카카오맵 장소 검색으로 찾은 <b>" + label + "</b>입니다. 완구코너 포켓몬 카드 정가 판매와 재고는 매장에 문의해 확인하세요.";
+  }
+
   function renderCard(s) {
     if (!el.card) return;
     var meta = D.brandMeta[s.brand] || { label: s.brand, color: "#1b2a4a", short: "?" };
@@ -7174,17 +7467,21 @@ window.PokeMoaMap = (function () {
       '<button type="button" class="pm-card-close" aria-label="닫기">×</button>' +
       "</div>" +
       '<div class="pm-card-meta">' +
-      '<span class="status-badge ' + s.status + '">' + statusLabel(s.status) + "</span>" +
-      (s.relay
-        ? '<span class="chip chip-relay">실시간 재고</span>'
-        : '<span class="chip chip-sample">샘플 재고</span>') +
-      '<span class="chip">' + s.observed + "</span>" +
+      '<span class="status-badge ' + s.status + '">' + placeLabel(s) + "</span>" +
+      (s.offline
+        ? '<span class="chip chip-offline">재고 미확인</span>'
+        : (s.relay
+          ? '<span class="chip chip-relay">실시간 재고</span>'
+          : '<span class="chip chip-sample">샘플 재고</span>')) +
+      (s.observed ? '<span class="chip">' + s.observed + "</span>" : "") +
       (s.phone ? '<span class="chip">' + escapeHtml(s.phone) + "</span>" : "") +
       "</div>" +
       productTagsHtml(s, "pm-card-products", true) +
-      (s.relay
-        ? '<p class="pm-card-note">집 태블릿 중계 서버가 편의점 앱에서 <b>조회한 실제 재고</b>입니다(조회 ' + escapeHtml(s.observed) + '). 수량은 조회 시점 기준이므로 방문 전 매장 전화로 한 번 더 확인하세요.</p>'
-        : '<p class="pm-card-note">매장 위치·상호는 카카오맵 실제 장소 데이터입니다. 재고 상태와 <b>취급 카드 상품명</b>은 편의점 앱 API 미연동으로 <b>제보·샘플 기반</b> 표시이니, 방문 전 공식 앱이나 매장 전화로 확인하세요.</p>') +
+      (s.offline
+        ? '<p class="pm-card-note">' + offlineNote(s) + "</p>"
+        : (s.relay
+          ? '<p class="pm-card-note">집 태블릿 중계 서버가 편의점 앱에서 <b>조회한 실제 재고</b>입니다(조회 ' + escapeHtml(s.observed) + '). 수량은 조회 시점 기준이므로 방문 전 매장 전화로 한 번 더 확인하세요.</p>'
+          : '<p class="pm-card-note">매장 위치·상호는 카카오맵 실제 장소 데이터입니다. 재고 상태와 <b>취급 카드 상품명</b>은 편의점 앱 API 미연동으로 <b>제보·샘플 기반</b> 표시이니, 방문 전 공식 앱이나 매장 전화로 확인하세요.</p>')) +
       '<a class="btn btn-sm btn-dark pm-card-link" target="_blank" rel="noopener" href="' + navLink + '">네이버 지도에서 보기</a>';
     el.card.querySelector(".pm-card-close").addEventListener("click", function (e) {
       e.stopPropagation();
@@ -7201,7 +7498,7 @@ window.PokeMoaMap = (function () {
       progress = 34;
     } else if (st.loading.data) {
       phase = "data";
-      msg = "주변 편의점 4사를 찾는 중... (카카오 장소 검색)";
+      msg = "주변 편의점 4사·오프라인 매장을 찾는 중... (카카오 장소 검색)";
       progress = 72;
     } else {
       phase = "done";
@@ -7232,7 +7529,7 @@ window.PokeMoaMap = (function () {
       };
     }
     if (st.loading.data && !(st.relay && st.relay.count)) {
-      return { kind: "busy", text: "카카오 장소 검색으로 주변 편의점 4사를 찾는 중입니다 (보통 1초 이내)", action: false };
+      return { kind: "busy", text: "카카오 장소 검색으로 주변 편의점 4사·오프라인 매장을 찾는 중입니다 (보통 1초 이내)", action: false };
     }
     /* 집 태블릿 중계로 실제 재고를 받았으면 그 사실을 먼저 알린다 */
     if (st.relay && st.relay.count) {
@@ -7250,9 +7547,15 @@ window.PokeMoaMap = (function () {
     }
     if (st.source === "live") {
       var cap = st.radius >= 20000 ? MAX_MARKERS_20 : st.radius >= 5000 ? MAX_MARKERS_5 : MAX_MARKERS;
+      var convN = 0, offN = 0;
+      (st.all || []).forEach(function (s) {
+        if (s.distance > st.radius) return;
+        if (isOfflineBrand(s.brand)) offN += 1; else convN += 1;
+      });
       var txt = st.all.length > cap
         ? "실시간 조회 · 카카오맵 주변 매장 " + st.all.length + "곳 중 가까운 " + cap + "곳 표시"
-        : "실시간 조회 · 카카오맵 주변 편의점 4사 " + st.all.length + "곳";
+        : "실시간 조회 · 편의점 4사 " + convN + "곳";
+      if (offN) txt += " · 오프라인 " + offN + "곳";
       return { kind: "live", text: txt, action: false };
     }
     var snapKm = Math.round(((D.osmSnapshot || {}).radius || 3000) / 1000);
@@ -7269,10 +7572,20 @@ window.PokeMoaMap = (function () {
   /* 브랜드별 현황 (반경·재고 필터를 반영한 집계) */
   function blankCount() { return { total: 0, in: 0, check: 0, none: 0 }; }
   function brandCounts() {
-    var out = { all: blankCount(), gs25: blankCount(), cu: blankCount(), seven: blankCount(), emart24: blankCount() };
+    var out = { all: blankCount(), gs25: blankCount(), cu: blankCount(), seven: blankCount(), emart24: blankCount(),
+      mart: blankCount(), artbox: blankCount(), vending: blankCount(), cardshop: blankCount() };
     (st.all || []).forEach(function (s) {
       if (s.distance > st.radius) return;
       if (st.stockOnly && s.status !== "in") return;
+      if (!st.showOffline && isOfflineBrand(s.brand)) return;
+      /* 오프라인 판매처는 자기 칩 카운트에만 넣고 편의점 '전체' 집계에는 넣지 않는다 */
+      if (isOfflineBrand(s.brand)) {
+        var orow = out[s.brand];
+        if (!orow) return;
+        orow.total += 1;
+        orow[s.status] += 1;
+        return;
+      }
       var row = out[s.brand];
       if (!row) return;
       out.all.total += 1;
@@ -7297,6 +7610,7 @@ window.PokeMoaMap = (function () {
       total: st.all.length,
       product: st.product,
       stockOnly: st.stockOnly,
+      showOffline: st.showOffline,
       brand: st.brand,
       brandCounts: brandCounts(),
       allow20: allow20(),
@@ -7373,6 +7687,150 @@ window.PokeMoaMap = (function () {
       phone: p.phone || "",
       placeUrl: p.place_url || ""
     };
+  }
+
+  /* 오프라인 판매처(마트·아트박스) 이름 분류 — 이마트24 같은 편의점은 빼고 본다 */
+  function classifyOffline(p, brandHint) {
+    var n = String(p.place_name || "");
+    var cat = String(p.category_name || "");
+    if (/이마트\s*24|emart\s*24/i.test(n)) return null;
+    if (brandHint === "artbox" || /아트박스|artbox/i.test(n)) return "artbox";
+    if (/편의점/.test(cat)) return null;
+    if (/이마트|롯데마트|홈플러스|토이저러스/i.test(n)) return "mart";
+    return null;
+  }
+
+  function offlineRowsFrom(pages, brandHint) {
+    var out = [];
+    var seen = {};
+    pages.forEach(function (pg) {
+      (pg.data || []).forEach(function (p) {
+        var brand = classifyOffline(p, brandHint);
+        if (!brand) return;
+        var lat = Number(p.y);
+        var lng = Number(p.x);
+        if (!isFinite(lat) || !isFinite(lng)) return;
+        var id = (p.id || p.place_name + ":" + lat + ":" + lng);
+        if (seen[id]) return;
+        seen[id] = 1;
+        out.push({
+          id: id,
+          type: "offline",
+          name: p.place_name || "",
+          brand: brand,
+          shop: "offline",
+          place: brand,
+          lat: lat,
+          lng: lng,
+          street: p.road_address_name || p.address_name || "",
+          phone: p.phone || "",
+          placeUrl: p.place_url || ""
+        });
+      });
+    });
+    return out;
+  }
+
+  /* 마트·아트박스는 카카오 장소 검색으로 실시간 조회한다(편의점 4사와 같이) */
+  function searchOffline(center, radius) {
+    var cfg = D.offlineSearch || {};
+    var reqs = [];
+    Object.keys(cfg).forEach(function (brand) {
+      (cfg[brand] || []).forEach(function (q) {
+        reqs.push({ brand: brand, p: keywordPage(q, center, radius, 1) });
+      });
+    });
+    if (!reqs.length) return Promise.resolve([]);
+    return Promise.all(reqs.map(function (r) { return r.p; })).then(function (pages) {
+      var rows = [];
+      var seen = {};
+      pages.forEach(function (pg, i) {
+        offlineRowsFrom([pg], reqs[i].brand).forEach(function (row) {
+          if (seen[row.id]) return;
+          seen[row.id] = 1;
+          rows.push(row);
+        });
+      });
+      rows = rows.filter(function (r) { return meters(center, r) <= radius + 1; });
+      rows.sort(function (a, b) { return meters(center, a) - meters(center, b); });
+      return rows.slice(0, OFFLINE_CAP);
+    });
+  }
+
+  /* 공식 자료로 내장한 오프라인 지점 — 자판기(좌표 포함 176곳)와 공인 카드샵 16곳 */
+  function builtinOffline(center, radius) {
+    var rows = [];
+    (D.vendingPoints || []).forEach(function (v) {
+      var row = {
+        id: "vending:" + v.n + ":" + v.la + ":" + v.ln,
+        type: "vending",
+        name: v.n,
+        brand: "vending",
+        shop: "offline",
+        place: "vending",
+        official: true,
+        lat: v.la,
+        lng: v.ln,
+        street: v.a || "",
+        placeUrl: "https://www.pokemonkorea.co.kr/card_vending_machine"
+      };
+      if (meters(center, row) <= radius + 1) rows.push(row);
+    });
+    var geo = st.cardShopGeo || {};
+    (D.cardShops || []).forEach(function (s) {
+      var g = geo[s.id];
+      if (!g) return;
+      var row = {
+        id: "cardshop:" + s.id,
+        type: "cardshop",
+        name: s.name,
+        brand: "cardshop",
+        shop: "offline",
+        place: "cardshop",
+        official: true,
+        lat: g.lat,
+        lng: g.lng,
+        street: g.street || s.addr || "",
+        phone: g.phone || "",
+        placeUrl: s.url
+      };
+      if (meters(center, row) <= radius + 1) rows.push(row);
+    });
+    /* 가까운 순으로 자판기는 최대 40곳까지만 — 넓은 반경에서 마커가 넘치지 않게 */
+    var vending = rows.filter(function (r) { return r.brand === "vending"; });
+    var shops = rows.filter(function (r) { return r.brand !== "vending"; });
+    vending.sort(function (a, b) { return meters(center, a) - meters(center, b); });
+    return shops.concat(vending.slice(0, 40));
+  }
+
+  /* 공인 카드샵 좌표를 카카오 장소 검색으로 한 번만 확인해 두는 함수 */
+  function resolveCardShops() {
+    if (st.cardShopGeo) return Promise.resolve(st.cardShopGeo);
+    var list = D.cardShops || [];
+    if (!list.length || !st.ready) return Promise.resolve({});
+    var P = window.kakao.maps.services;
+    var jobs = list.map(function (s) {
+      return new Promise(function (resolve) {
+        try {
+          placesService().keywordSearch(s.q || s.name, function (data, status) {
+            if (status !== P.Status.OK || !data || !data.length) { resolve(null); return; }
+            var hit = data[0];
+            var lat = Number(hit.y);
+            var lng = Number(hit.x);
+            if (!isFinite(lat) || !isFinite(lng)) { resolve(null); return; }
+            resolve({ id: s.id, lat: lat, lng: lng, street: hit.road_address_name || hit.address_name || s.addr || "", phone: hit.phone || "" });
+          }, { size: 3, sort: P.SortBy.ACCURACY });
+        } catch (e) {
+          resolve(null);
+        }
+      });
+    });
+    return Promise.all(jobs).then(function (res) {
+      var geo = {};
+      res.forEach(function (g) { if (g) geo[g.id] = g; });
+      st.cardShopGeo = geo;
+      return geo;
+    });
   }
 
   function rowsFrom(pages) {
@@ -7462,10 +7920,16 @@ window.PokeMoaMap = (function () {
       applySnapshot(seq, "timeout");
     }, SEARCH_TIMEOUT);
 
-    searchNearby(center, radius).then(function (rows) {
+    /* 편의점 4사(카테고리+키워드 보축) · 오프라인 마트·아트박스 · 공인 카드샵 좌표를 함께 받아 합친다 */
+    var convReq = searchNearby(center, radius);
+    var offReq = searchOffline(center, radius).catch(function () { return []; });
+    var shopReq = resolveCardShops().catch(function () { return {}; });
+
+    Promise.all([convReq, offReq, shopReq]).then(function (res) {
       clearTimeout(softTimer);
       if (seq !== st.seq) return;
-      st.all = prepare(rows, center, "live");
+      st.all = prepare(res[0].concat(res[1] || []), center, "live")
+        .concat(prepare(builtinOffline(center, radius), center, "live"));
       st.source = "live";
       st.lastError = null;
       st.pendingLive = false;
@@ -7483,7 +7947,8 @@ window.PokeMoaMap = (function () {
   function applySnapshot(seq, reason) {
     var center = st.center;
     var rows = snapshotList();
-    st.all = prepare(rows, center, "snapshot");
+    st.all = prepare(rows, center, "snapshot")
+      .concat(prepare(builtinOffline(center, st.radius), center, "snapshot"));
     st.source = "snapshot";
     st.lastError = reason;
     st.loading.data = false;
@@ -7706,6 +8171,12 @@ window.PokeMoaMap = (function () {
     pushData();
   }
 
+  function setShowOffline(on) {
+    st.showOffline = !!on;
+    renderMarkers();
+    pushData();
+  }
+
   function resetStateForNewCenter() {
     st.fetchedRadius = st.radius;
     st.fetchedBand = radiusBand(st.radius);
@@ -7904,6 +8375,7 @@ window.PokeMoaMap = (function () {
     setBrand: setBrand,
     setProduct: setProduct,
     setStockOnly: setStockOnly,
+    setShowOffline: setShowOffline,
     setRadius: setRadius,
     locate: locate,
     retry: retry,
@@ -8043,6 +8515,7 @@ window.PokeMoaMap = (function () {
     brand: "all",
     sort: "stock",
     stockOnly: false,
+    showOffline: true,
     radius: 3000
   };
 
@@ -8138,9 +8611,15 @@ window.PokeMoaMap = (function () {
     if (!storeListEl) return;
     var list = sortStores(currentStores);
     var counts = { in: 0, check: 0, none: 0 };
-    list.forEach(function (s) { counts[s.status] += 1; });
+    var offlineN = 0;
+    list.forEach(function (s) {
+      counts[s.status] += 1;
+      if (s.offline) offlineN += 1;
+    });
     if (mapCountEl) {
-      mapCountEl.innerHTML = "표시 중 <b>" + list.length + "</b>곳 · 재고 " + counts.in + " · 확인 " + counts.check + " · 없음 " + counts.none;
+      mapCountEl.innerHTML = "표시 중 <b>" + list.length + "</b>곳" +
+        (offlineN ? " · 오프라인 " + offlineN + "곳" : "") +
+        " · 재고 " + counts.in + " · 확인 " + (counts.check - offlineN) + " · 없음 " + counts.none;
     }
     if (sideSummary) {
       sideSummary.textContent = list.length
@@ -8163,10 +8642,13 @@ window.PokeMoaMap = (function () {
     shown.forEach(function (s) {
       var b = D.brandMeta[s.brand] || { label: s.brand, short: "?", color: "#1b2a4a" };
       var dist = s.distance < 1000 ? Math.round(s.distance) + "m" : (s.distance / 1000).toFixed(1) + "km";
+      var sLabel = s.offline
+        ? (s.brand === "vending" ? "공식 설치 지점" : s.brand === "cardshop" ? "공인 카드샵" : "확인 필요")
+        : statusText[s.status];
       var item = document.createElement("li");
       var btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "store-item is-" + s.status;
+      btn.className = "store-item is-" + s.status + (s.offline ? " is-offline" : "");
       btn.setAttribute("data-store", s.id);
       btn.innerHTML =
         '<span class="s-top">' +
@@ -8175,10 +8657,12 @@ window.PokeMoaMap = (function () {
         '<span class="s-dist">' + dist + "</span>" +
         "</span>" +
         '<span class="s-meta">' +
-        '<span class="status-badge ' + s.status + '">' + statusText[s.status] + "</span>" +
-        (s.relay
-          ? '<span class="chip chip-relay">실시간 ' + (s.relayQty || 0) + '개</span>'
-          : '<span class="chip chip-sample">샘플</span>') +
+        '<span class="status-badge ' + s.status + '">' + sLabel + "</span>" +
+        (s.offline
+          ? '<span class="chip chip-offline">재고 미확인</span>'
+          : (s.relay
+            ? '<span class="chip chip-relay">실시간 ' + (s.relayQty || 0) + '개</span>'
+            : '<span class="chip chip-sample">샘플</span>')) +
         (s.street ? "<small>" + escapeHtml(s.street) + "</small>" : "") +
         "</span>" +
         productTagsHtml(s);
@@ -8255,7 +8739,10 @@ window.PokeMoaMap = (function () {
       if (storeSkeleton) storeSkeleton.hidden = true;
       if (storeListEl) storeListEl.hidden = false;
     }
-    if (d.brandCounts) renderBrandSummary(d.brandCounts, d.brand || filterState.brand);
+    if (d.brandCounts) {
+      renderBrandSummary(d.brandCounts, d.brand || filterState.brand);
+      renderOfflineChips(d.brandCounts, d.brand || filterState.brand, d.showOffline);
+    }
   });
 
   document.addEventListener("pokemoa:visible", function (e) {
@@ -8852,6 +9339,51 @@ window.PokeMoaMap = (function () {
     brandSummary.innerHTML = html;
   }
 
+  /* 오프라인 판매처(마트·아트박스·자판기·카드샵) 칩 — 누르면 그 종류만, 한 번 더 누르면 전체 */
+  var offlineChips = $("#offlineChips");
+  var offlineToggle = $("#offlineToggle");
+  var offlineCounts = null;
+
+  function renderOfflineChips(counts, activeBrand, showOffline) {
+    if (!offlineChips) return;
+    if (counts) offlineCounts = counts;
+    counts = offlineCounts || {};
+    var on = showOffline !== false;
+    var list = D.offlineBrands || [];
+    offlineChips.innerHTML = list.map(function (b) {
+      var meta = D.brandMeta[b.id] || { color: "#1b2a4a" };
+      var c = counts[b.id] || { total: 0 };
+      var active = activeBrand === b.id;
+      return '<button type="button" class="off-chip' + (active ? " is-active" : "") + (on ? "" : " is-muted") +
+        '" data-offline="' + b.id + '" style="--brand:' + meta.color + '" aria-pressed="' + (active ? "true" : "false") + '">' +
+        '<i class="off-dot" aria-hidden="true"></i><span>' + b.label + "</span><b>" + c.total + "</b></button>";
+    }).join("");
+    if (offlineToggle) offlineToggle.checked = on;
+  }
+
+  if (offlineChips) {
+    offlineChips.addEventListener("click", function (e) {
+      var btn = e.target.closest(".off-chip");
+      if (!btn) return;
+      var next = btn.getAttribute("data-offline");
+      if (!next) return;
+      if (next === filterState.brand) next = "all";
+      filterState.brand = next;
+      listExpanded = false;
+      if (mapReady) window.PokeMoaMap.setBrand(next);
+      else renderOfflineChips(null, next, filterState.showOffline);
+    });
+  }
+
+  if (offlineToggle) {
+    offlineToggle.addEventListener("change", function () {
+      filterState.showOffline = offlineToggle.checked;
+      listExpanded = false;
+      if (mapReady) window.PokeMoaMap.setShowOffline(filterState.showOffline);
+      toast(filterState.showOffline ? "오프라인 판매처(마트·아트박스·자판기·카드샵)를 함께 표시합니다." : "오프라인 판매처를 지도·목록에서 숨겼습니다.");
+    });
+  }
+
   if (brandSummary) {
     brandSummary.addEventListener("click", function (e) {
       var btn = e.target.closest(".bs-card");
@@ -8905,6 +9437,7 @@ window.PokeMoaMap = (function () {
       filterState.brand = "all";
       filterState.sort = "stock";
       filterState.stockOnly = false;
+      filterState.showOffline = true;
       filterState.radius = 3000;
       listExpanded = false;
       if (sortSelect) sortSelect.value = "stock";
@@ -8915,6 +9448,7 @@ window.PokeMoaMap = (function () {
       if (mapReady) {
         window.PokeMoaMap.setBrand("all");
         window.PokeMoaMap.setStockOnly(false);
+        window.PokeMoaMap.setShowOffline(true);
         window.PokeMoaMap.setRadius(3000);
         window.PokeMoaMap.closeCard();
       }
@@ -9609,10 +10143,12 @@ window.PokeMoaMap = (function () {
 
   /* ---------------------------------------- 정가 구매처 밖으로 나가는 클릭 */
   document.addEventListener("click", function (e) {
-    var a = e.target && e.target.closest ? e.target.closest(".channel-links a[href^='http']") : null;
+    var a = e.target && e.target.closest
+      ? e.target.closest(".channel-links a[href^='http'], .store-shortcut[href^='http']")
+      : null;
     if (!a) return;
-    var card = a.closest(".channel-card");
-    var nameEl = card ? card.querySelector(".channel-name") : null;
+    var card = a.closest(".channel-card, .store-shortcut");
+    var nameEl = card ? card.querySelector(".channel-name, .store-shortcut-name") : null;
     trackEvent("store_outbound_click", {
       store_name: nameEl ? nameEl.textContent.trim() : "",
       url: a.href
@@ -9727,15 +10263,15 @@ window.PokeMoaMap = (function () {
     links.push('<button type="button" class="box-dex-btn" data-box-dex="' + s.id + '">이 박스 도감·시세 비교 →</button>');
 
     var stores = (s.stores || []).map(function (st) {
-      var state = st.state
-        ? '<span class="store-state ' + st.stateKind + '">' + escapeHtml(st.state) + "</span>"
-        : "";
-      return '<article class="store-card" data-store="' + st.id + '">' +
-        '<div class="store-top"><span class="channel-kind ' + st.kindClass + '">' + escapeHtml(st.kind) + "</span>" + state + "</div>" +
-        '<h4 class="store-name">' + escapeHtml(st.name) + "</h4>" +
-        '<p class="store-note">' + escapeHtml(st.note) + "</p>" +
-        '<a class="store-link" href="' + st.url + '" target="_blank" rel="noopener">' + escapeHtml(st.label) + " ↗</a>" +
-        "</article>";
+      var line = st.state
+        ? '<span class="store-state ' + (st.stateKind || "none") + '">' + escapeHtml(st.state) + "</span>"
+        : '<span class="store-sub">' + escapeHtml(st.sub || "검색 바로가기") + "</span>";
+      return '<a class="store-shortcut" href="' + st.url + '" target="_blank" rel="noopener" data-store="' + st.id + '"' +
+        ' aria-label="' + escapeHtml((st.short || "") + " · " + (st.label || "") + " (새 창)") + '">' +
+        '<span class="store-badge" style="--brand:' + (st.brand || "#e9eef7") + ';--brand-ink:' + (st.brandInk || "#10203c") + '">' + escapeHtml(st.initial || "") + "</span>" +
+        '<span class="store-shortcut-body"><strong class="store-shortcut-name">' + escapeHtml(st.short || "") + "</strong>" + line + "</span>" +
+        '<span class="store-go" aria-hidden="true">↗</span>' +
+        "</a>";
     }).join("");
 
     boxBoard.innerHTML =

@@ -36,6 +36,11 @@ window.PokeMoaMap = (function () {
   var DIRS8 = [0, 45, 90, 135, 180, 225, 270, 315];
   var BRAND_QUERY = { gs25: "GS25", cu: "CU", seven: "세븐일레븐", emart24: "이마트24" };
   var BRAND_ORDER_LIST = ["gs25", "cu", "seven", "emart24"];
+  /* 오프라인 판매처(마트·아트박스·공식 자판기·공인 카드샵) — 편의점 4사와 함께 지도에 올린다.
+     재고 공개 데이터가 없어 모두 '확인 필요' 또는 '공식 설치 지점'으로만 표시한다. */
+  var OFFLINE_IDS = ["mart", "artbox", "vending", "cardshop"];
+  var OFFLINE_LABEL = { mart: "대형마트", artbox: "아트박스", vending: "공식 자판기", cardshop: "공인 카드샵" };
+  var OFFLINE_CAP = 26;      /* 마트·아트박스 실시간 검색 결과 상한(편의점 마커를 밀어내지 않게) */
 
   /* 도심(allow20:false) 지역 좌표 — 내 위치가 이 근처면 20km를 막는다 */
   function metroRegions() {
@@ -56,6 +61,8 @@ window.PokeMoaMap = (function () {
     brand: "all",
     product: "all",
     stockOnly: false,
+    showOffline: true,
+    cardShopGeo: null,   /* 공인 카드샵 좌표 캐시(카카오 장소 검색으로 한 번만 확인) */
     compact: false,
     cluster: false,
     radius: 3000,
@@ -229,24 +236,28 @@ window.PokeMoaMap = (function () {
   /* --------------------------------------------- 장소 → 매장 객체 */
   function toStore(o) {
     var id = o.type + "-" + o.id;
+    var offline = !!o.place;
     return {
       id: id,
       name: displayName(o.name, o.brand),
       brand: o.brand,
       brandLabel: (D.brandMeta[o.brand] || {}).label || o.brand,
-      shop: o.shop,
+      shop: o.shop || (offline ? "offline" : ""),
       lat: o.lat,
       lng: o.lng,
       street: o.street || "",
       distance: 0,
-      status: sampleStatus(id),
-      observed: sampleObserved(id),
-      unit: "낱팩",
-      note: "",
+      status: offline ? "check" : sampleStatus(id),
+      observed: offline ? "" : sampleObserved(id),
+      unit: offline ? "" : "낱팩",
+      note: o.note || "",
       products: [],
       phone: o.phone || "",
       placeUrl: o.placeUrl || "",
-      source: o.source
+      source: o.source,
+      offline: offline,
+      official: !!o.official,
+      placeKind: o.place || ""
     };
   }
 
@@ -256,7 +267,8 @@ window.PokeMoaMap = (function () {
       var s = toStore(list[i]);
       s.source = source;
       s.distance = meters(center, s);
-      s.products = storeProducts(s.id, s.status);
+      /* 오프라인 판매처는 취급 카드·재고 샘플을 붙이지 않는다(없는 재고를 만들지 않기 위해) */
+      s.products = s.offline ? [] : storeProducts(s.id, s.status);
       out.push(s);
     }
     return out;
@@ -394,9 +406,11 @@ window.PokeMoaMap = (function () {
       html = '<span class="pm-pill status-in" style="--brand:' + b.color + '">' +
         "<b>" + b.short + "</b><span>" + (n ? "입고 " + n + "종" : "재고 있음") + "</span></span>";
     } else {
-      html = '<span class="pm-pill status-' + s.status + '">' +
+      var txt = s.official ? "공식" : (s.status === "check" ? "확인" : (s.relay ? "실시간 0개" : "없음"));
+      if (s.brand === "mart" || s.brand === "artbox") txt = "확인";
+      html = '<span class="pm-pill status-' + s.status + (s.offline ? ' is-offline' : '') + '" style="--brand:' + b.color + '">' +
         '<i class="pm-dot" style="background:' + b.color + '"></i>' +
-        "<span>" + (s.status === "check" ? "확인" : (s.relay ? "실시간 0개" : "없음")) + "</span></span>";
+        "<span>" + b.short + " · " + txt + "</span></span>";
     }
     return html;
   }
@@ -547,7 +561,7 @@ window.PokeMoaMap = (function () {
 
   /* 매장 하나 = 말풍선(알약) 또는 저줌에서는 브랜드 칩·점 */
   function drawPill(s) {
-    var label = s.name + " · " + statusLabel(s.status) +
+    var label = s.name + " · " + placeLabel(s) +
       (s.products && s.products.length
         ? " · " + s.products.map(function (p) { return p.short + " " + p.stateLabel; }).join(", ")
         : "");
@@ -601,7 +615,17 @@ window.PokeMoaMap = (function () {
     emit("pokemoa:visible", { stores: st.visible });
   }
 
+  function placeLabel(s) {
+    if (s.brand === "vending") return "공식 설치 지점";
+    if (s.brand === "cardshop") return "공인 카드샵";
+    if (s.brand === "mart" || s.brand === "artbox") return "확인 필요 (방문·매장 문의)";
+    return statusLabel(s.status);
+  }
+
+  function isOfflineBrand(b) { return OFFLINE_IDS.indexOf(b) >= 0; }
+
   function match(s) {
+    if (!st.showOffline && isOfflineBrand(s.brand)) return false;
     if (st.brand !== "all" && s.brand !== st.brand) return false;
     if (s.distance > st.radius) return false;
     if (st.stockOnly && s.status !== "in") return false;
@@ -666,6 +690,17 @@ window.PokeMoaMap = (function () {
     return '<div class="store-products ' + (cls || "") + '">' + head + tags + "</div>";
   }
 
+  function offlineNote(s) {
+    if (s.brand === "vending") {
+      return "포켓몬코리아 <b>공식 자판기 안내</b>(2026-11-18 확인)에 올라온 설치 지점입니다. 공식 안내는 설치 장소만 알려 주고 재고는 보여 주지 않으므로, 원하는 팩은 현장 화면에서 확인하세요.";
+    }
+    if (s.brand === "cardshop") {
+      return "포켓몬코리아 <b>공식 카드샵 목록</b>(2026-11-18 확인)의 공인 매장입니다. 정가 판매·재고·영업시간은 매장에 문의하세요.";
+    }
+    var label = s.brand === "artbox" ? "아트박스" : "대형마트";
+    return "카카오맵 장소 검색으로 찾은 <b>" + label + "</b>입니다. 완구코너 포켓몬 카드 정가 판매와 재고는 매장에 문의해 확인하세요.";
+  }
+
   function renderCard(s) {
     if (!el.card) return;
     var meta = D.brandMeta[s.brand] || { label: s.brand, color: "#1b2a4a", short: "?" };
@@ -686,17 +721,21 @@ window.PokeMoaMap = (function () {
       '<button type="button" class="pm-card-close" aria-label="닫기">×</button>' +
       "</div>" +
       '<div class="pm-card-meta">' +
-      '<span class="status-badge ' + s.status + '">' + statusLabel(s.status) + "</span>" +
-      (s.relay
-        ? '<span class="chip chip-relay">실시간 재고</span>'
-        : '<span class="chip chip-sample">샘플 재고</span>') +
-      '<span class="chip">' + s.observed + "</span>" +
+      '<span class="status-badge ' + s.status + '">' + placeLabel(s) + "</span>" +
+      (s.offline
+        ? '<span class="chip chip-offline">재고 미확인</span>'
+        : (s.relay
+          ? '<span class="chip chip-relay">실시간 재고</span>'
+          : '<span class="chip chip-sample">샘플 재고</span>')) +
+      (s.observed ? '<span class="chip">' + s.observed + "</span>" : "") +
       (s.phone ? '<span class="chip">' + escapeHtml(s.phone) + "</span>" : "") +
       "</div>" +
       productTagsHtml(s, "pm-card-products", true) +
-      (s.relay
-        ? '<p class="pm-card-note">집 태블릿 중계 서버가 편의점 앱에서 <b>조회한 실제 재고</b>입니다(조회 ' + escapeHtml(s.observed) + '). 수량은 조회 시점 기준이므로 방문 전 매장 전화로 한 번 더 확인하세요.</p>'
-        : '<p class="pm-card-note">매장 위치·상호는 카카오맵 실제 장소 데이터입니다. 재고 상태와 <b>취급 카드 상품명</b>은 편의점 앱 API 미연동으로 <b>제보·샘플 기반</b> 표시이니, 방문 전 공식 앱이나 매장 전화로 확인하세요.</p>') +
+      (s.offline
+        ? '<p class="pm-card-note">' + offlineNote(s) + "</p>"
+        : (s.relay
+          ? '<p class="pm-card-note">집 태블릿 중계 서버가 편의점 앱에서 <b>조회한 실제 재고</b>입니다(조회 ' + escapeHtml(s.observed) + '). 수량은 조회 시점 기준이므로 방문 전 매장 전화로 한 번 더 확인하세요.</p>'
+          : '<p class="pm-card-note">매장 위치·상호는 카카오맵 실제 장소 데이터입니다. 재고 상태와 <b>취급 카드 상품명</b>은 편의점 앱 API 미연동으로 <b>제보·샘플 기반</b> 표시이니, 방문 전 공식 앱이나 매장 전화로 확인하세요.</p>')) +
       '<a class="btn btn-sm btn-dark pm-card-link" target="_blank" rel="noopener" href="' + navLink + '">네이버 지도에서 보기</a>';
     el.card.querySelector(".pm-card-close").addEventListener("click", function (e) {
       e.stopPropagation();
@@ -713,7 +752,7 @@ window.PokeMoaMap = (function () {
       progress = 34;
     } else if (st.loading.data) {
       phase = "data";
-      msg = "주변 편의점 4사를 찾는 중... (카카오 장소 검색)";
+      msg = "주변 편의점 4사·오프라인 매장을 찾는 중... (카카오 장소 검색)";
       progress = 72;
     } else {
       phase = "done";
@@ -744,7 +783,7 @@ window.PokeMoaMap = (function () {
       };
     }
     if (st.loading.data && !(st.relay && st.relay.count)) {
-      return { kind: "busy", text: "카카오 장소 검색으로 주변 편의점 4사를 찾는 중입니다 (보통 1초 이내)", action: false };
+      return { kind: "busy", text: "카카오 장소 검색으로 주변 편의점 4사·오프라인 매장을 찾는 중입니다 (보통 1초 이내)", action: false };
     }
     /* 집 태블릿 중계로 실제 재고를 받았으면 그 사실을 먼저 알린다 */
     if (st.relay && st.relay.count) {
@@ -762,9 +801,15 @@ window.PokeMoaMap = (function () {
     }
     if (st.source === "live") {
       var cap = st.radius >= 20000 ? MAX_MARKERS_20 : st.radius >= 5000 ? MAX_MARKERS_5 : MAX_MARKERS;
+      var convN = 0, offN = 0;
+      (st.all || []).forEach(function (s) {
+        if (s.distance > st.radius) return;
+        if (isOfflineBrand(s.brand)) offN += 1; else convN += 1;
+      });
       var txt = st.all.length > cap
         ? "실시간 조회 · 카카오맵 주변 매장 " + st.all.length + "곳 중 가까운 " + cap + "곳 표시"
-        : "실시간 조회 · 카카오맵 주변 편의점 4사 " + st.all.length + "곳";
+        : "실시간 조회 · 편의점 4사 " + convN + "곳";
+      if (offN) txt += " · 오프라인 " + offN + "곳";
       return { kind: "live", text: txt, action: false };
     }
     var snapKm = Math.round(((D.osmSnapshot || {}).radius || 3000) / 1000);
@@ -781,10 +826,20 @@ window.PokeMoaMap = (function () {
   /* 브랜드별 현황 (반경·재고 필터를 반영한 집계) */
   function blankCount() { return { total: 0, in: 0, check: 0, none: 0 }; }
   function brandCounts() {
-    var out = { all: blankCount(), gs25: blankCount(), cu: blankCount(), seven: blankCount(), emart24: blankCount() };
+    var out = { all: blankCount(), gs25: blankCount(), cu: blankCount(), seven: blankCount(), emart24: blankCount(),
+      mart: blankCount(), artbox: blankCount(), vending: blankCount(), cardshop: blankCount() };
     (st.all || []).forEach(function (s) {
       if (s.distance > st.radius) return;
       if (st.stockOnly && s.status !== "in") return;
+      if (!st.showOffline && isOfflineBrand(s.brand)) return;
+      /* 오프라인 판매처는 자기 칩 카운트에만 넣고 편의점 '전체' 집계에는 넣지 않는다 */
+      if (isOfflineBrand(s.brand)) {
+        var orow = out[s.brand];
+        if (!orow) return;
+        orow.total += 1;
+        orow[s.status] += 1;
+        return;
+      }
       var row = out[s.brand];
       if (!row) return;
       out.all.total += 1;
@@ -809,6 +864,7 @@ window.PokeMoaMap = (function () {
       total: st.all.length,
       product: st.product,
       stockOnly: st.stockOnly,
+      showOffline: st.showOffline,
       brand: st.brand,
       brandCounts: brandCounts(),
       allow20: allow20(),
@@ -885,6 +941,150 @@ window.PokeMoaMap = (function () {
       phone: p.phone || "",
       placeUrl: p.place_url || ""
     };
+  }
+
+  /* 오프라인 판매처(마트·아트박스) 이름 분류 — 이마트24 같은 편의점은 빼고 본다 */
+  function classifyOffline(p, brandHint) {
+    var n = String(p.place_name || "");
+    var cat = String(p.category_name || "");
+    if (/이마트\s*24|emart\s*24/i.test(n)) return null;
+    if (brandHint === "artbox" || /아트박스|artbox/i.test(n)) return "artbox";
+    if (/편의점/.test(cat)) return null;
+    if (/이마트|롯데마트|홈플러스|토이저러스/i.test(n)) return "mart";
+    return null;
+  }
+
+  function offlineRowsFrom(pages, brandHint) {
+    var out = [];
+    var seen = {};
+    pages.forEach(function (pg) {
+      (pg.data || []).forEach(function (p) {
+        var brand = classifyOffline(p, brandHint);
+        if (!brand) return;
+        var lat = Number(p.y);
+        var lng = Number(p.x);
+        if (!isFinite(lat) || !isFinite(lng)) return;
+        var id = (p.id || p.place_name + ":" + lat + ":" + lng);
+        if (seen[id]) return;
+        seen[id] = 1;
+        out.push({
+          id: id,
+          type: "offline",
+          name: p.place_name || "",
+          brand: brand,
+          shop: "offline",
+          place: brand,
+          lat: lat,
+          lng: lng,
+          street: p.road_address_name || p.address_name || "",
+          phone: p.phone || "",
+          placeUrl: p.place_url || ""
+        });
+      });
+    });
+    return out;
+  }
+
+  /* 마트·아트박스는 카카오 장소 검색으로 실시간 조회한다(편의점 4사와 같이) */
+  function searchOffline(center, radius) {
+    var cfg = D.offlineSearch || {};
+    var reqs = [];
+    Object.keys(cfg).forEach(function (brand) {
+      (cfg[brand] || []).forEach(function (q) {
+        reqs.push({ brand: brand, p: keywordPage(q, center, radius, 1) });
+      });
+    });
+    if (!reqs.length) return Promise.resolve([]);
+    return Promise.all(reqs.map(function (r) { return r.p; })).then(function (pages) {
+      var rows = [];
+      var seen = {};
+      pages.forEach(function (pg, i) {
+        offlineRowsFrom([pg], reqs[i].brand).forEach(function (row) {
+          if (seen[row.id]) return;
+          seen[row.id] = 1;
+          rows.push(row);
+        });
+      });
+      rows = rows.filter(function (r) { return meters(center, r) <= radius + 1; });
+      rows.sort(function (a, b) { return meters(center, a) - meters(center, b); });
+      return rows.slice(0, OFFLINE_CAP);
+    });
+  }
+
+  /* 공식 자료로 내장한 오프라인 지점 — 자판기(좌표 포함 176곳)와 공인 카드샵 16곳 */
+  function builtinOffline(center, radius) {
+    var rows = [];
+    (D.vendingPoints || []).forEach(function (v) {
+      var row = {
+        id: "vending:" + v.n + ":" + v.la + ":" + v.ln,
+        type: "vending",
+        name: v.n,
+        brand: "vending",
+        shop: "offline",
+        place: "vending",
+        official: true,
+        lat: v.la,
+        lng: v.ln,
+        street: v.a || "",
+        placeUrl: "https://www.pokemonkorea.co.kr/card_vending_machine"
+      };
+      if (meters(center, row) <= radius + 1) rows.push(row);
+    });
+    var geo = st.cardShopGeo || {};
+    (D.cardShops || []).forEach(function (s) {
+      var g = geo[s.id];
+      if (!g) return;
+      var row = {
+        id: "cardshop:" + s.id,
+        type: "cardshop",
+        name: s.name,
+        brand: "cardshop",
+        shop: "offline",
+        place: "cardshop",
+        official: true,
+        lat: g.lat,
+        lng: g.lng,
+        street: g.street || s.addr || "",
+        phone: g.phone || "",
+        placeUrl: s.url
+      };
+      if (meters(center, row) <= radius + 1) rows.push(row);
+    });
+    /* 가까운 순으로 자판기는 최대 40곳까지만 — 넓은 반경에서 마커가 넘치지 않게 */
+    var vending = rows.filter(function (r) { return r.brand === "vending"; });
+    var shops = rows.filter(function (r) { return r.brand !== "vending"; });
+    vending.sort(function (a, b) { return meters(center, a) - meters(center, b); });
+    return shops.concat(vending.slice(0, 40));
+  }
+
+  /* 공인 카드샵 좌표를 카카오 장소 검색으로 한 번만 확인해 두는 함수 */
+  function resolveCardShops() {
+    if (st.cardShopGeo) return Promise.resolve(st.cardShopGeo);
+    var list = D.cardShops || [];
+    if (!list.length || !st.ready) return Promise.resolve({});
+    var P = window.kakao.maps.services;
+    var jobs = list.map(function (s) {
+      return new Promise(function (resolve) {
+        try {
+          placesService().keywordSearch(s.q || s.name, function (data, status) {
+            if (status !== P.Status.OK || !data || !data.length) { resolve(null); return; }
+            var hit = data[0];
+            var lat = Number(hit.y);
+            var lng = Number(hit.x);
+            if (!isFinite(lat) || !isFinite(lng)) { resolve(null); return; }
+            resolve({ id: s.id, lat: lat, lng: lng, street: hit.road_address_name || hit.address_name || s.addr || "", phone: hit.phone || "" });
+          }, { size: 3, sort: P.SortBy.ACCURACY });
+        } catch (e) {
+          resolve(null);
+        }
+      });
+    });
+    return Promise.all(jobs).then(function (res) {
+      var geo = {};
+      res.forEach(function (g) { if (g) geo[g.id] = g; });
+      st.cardShopGeo = geo;
+      return geo;
+    });
   }
 
   function rowsFrom(pages) {
@@ -974,10 +1174,16 @@ window.PokeMoaMap = (function () {
       applySnapshot(seq, "timeout");
     }, SEARCH_TIMEOUT);
 
-    searchNearby(center, radius).then(function (rows) {
+    /* 편의점 4사(카테고리+키워드 보축) · 오프라인 마트·아트박스 · 공인 카드샵 좌표를 함께 받아 합친다 */
+    var convReq = searchNearby(center, radius);
+    var offReq = searchOffline(center, radius).catch(function () { return []; });
+    var shopReq = resolveCardShops().catch(function () { return {}; });
+
+    Promise.all([convReq, offReq, shopReq]).then(function (res) {
       clearTimeout(softTimer);
       if (seq !== st.seq) return;
-      st.all = prepare(rows, center, "live");
+      st.all = prepare(res[0].concat(res[1] || []), center, "live")
+        .concat(prepare(builtinOffline(center, radius), center, "live"));
       st.source = "live";
       st.lastError = null;
       st.pendingLive = false;
@@ -995,7 +1201,8 @@ window.PokeMoaMap = (function () {
   function applySnapshot(seq, reason) {
     var center = st.center;
     var rows = snapshotList();
-    st.all = prepare(rows, center, "snapshot");
+    st.all = prepare(rows, center, "snapshot")
+      .concat(prepare(builtinOffline(center, st.radius), center, "snapshot"));
     st.source = "snapshot";
     st.lastError = reason;
     st.loading.data = false;
@@ -1218,6 +1425,12 @@ window.PokeMoaMap = (function () {
     pushData();
   }
 
+  function setShowOffline(on) {
+    st.showOffline = !!on;
+    renderMarkers();
+    pushData();
+  }
+
   function resetStateForNewCenter() {
     st.fetchedRadius = st.radius;
     st.fetchedBand = radiusBand(st.radius);
@@ -1416,6 +1629,7 @@ window.PokeMoaMap = (function () {
     setBrand: setBrand,
     setProduct: setProduct,
     setStockOnly: setStockOnly,
+    setShowOffline: setShowOffline,
     setRadius: setRadius,
     locate: locate,
     retry: retry,

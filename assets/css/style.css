@@ -310,7 +310,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   font-weight: 800;
 }
 .hero h1 em { font-style: normal; color: var(--yellow); }
-.hero-sub { margin: 12px 0 0; color: #c6d3ea; font-size: 14.5px; max-width: 520px; }
+.hero-sub { margin: 12px 0 0; color: #c6d3ea; font-size: 14.5px; max-width: 640px; }
 .price-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0 0; }
 .price-box {
   background: rgba(255, 255, 255, 0.08);
@@ -338,7 +338,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   color: #ffe9a8;
   font-size: 12.8px;
   line-height: 1.55;
-  max-width: 540px;
+  max-width: 700px;
 }
 .hero-warn b { color: #fff; }
 .hero-warn a { color: #fff; text-decoration: underline; text-underline-offset: 2px; }
@@ -346,95 +346,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
 .hero-actions .btn-ghost { color: #fff; border-color: rgba(255, 255, 255, 0.3); }
 .hero-actions .btn-ghost:hover { background: rgba(255, 255, 255, 0.08); border-color: #fff; }
-
-/* 카드 스택 비주얼 */
-.hero-cards {
-  position: relative;
-  height: 236px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.hero-card {
-  position: absolute;
-  width: 148px;
-  height: 206px;
-  border-radius: 12px;
-  padding: 9px;
-  display: flex;
-  background: linear-gradient(160deg, #fdfbf3, #f2eee2);
-  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.36);
-  border: 1px solid rgba(255, 255, 255, 0.7);
-}
-.hero-card:nth-child(1) { transform: translateX(-72px) rotate(-13deg); z-index: 1; }
-.hero-card:nth-child(2) { transform: translateX(0) rotate(-1deg) scale(1.06); z-index: 3; }
-.hero-card:nth-child(3) { transform: translateX(72px) rotate(11deg); z-index: 2; }
-.hero-card .art {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-  border-radius: 7px;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 24% 18%, rgba(255, 255, 255, 0.95), transparent 42%),
-    conic-gradient(from 210deg at 60% 40%, #ffd93d, #ff8a3d, #ff5f8a, #8b5cf6, #38bdf8, #34d399, #ffd93d);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 6px;
-  padding: 9px;
-}
-.hero-card .art::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.35) 0 2px, transparent 2px 9px);
-  mix-blend-mode: overlay;
-}
-.hero-card .art .num {
-  align-self: flex-start;
-  width: 26px; height: 26px;
-  border-radius: 50%;
-  background: rgba(16, 31, 60, 0.82);
-  color: var(--yellow);
-  font-size: 11px;
-  font-weight: 800;
-  display: grid;
-  place-items: center;
-  position: relative;
-  z-index: 1;
-}
-.hero-card .art .name {
-  position: relative;
-  z-index: 1;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 6px;
-  padding: 4px 6px;
-  font-size: 10px;
-  font-weight: 800;
-  color: var(--navy);
-  letter-spacing: -0.02em;
-  line-height: 1.3;
-}
-.hero-card .art .name small { display: block; font-size: 7.5px; font-weight: 600; color: var(--muted); letter-spacing: 0.01em; line-height: 1.35; }
-
-/* --------------------------------------------------------------- 통계 띠 */
-.stat-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 16px;
-}
-.stat {
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 14px 16px;
-  box-shadow: var(--shadow-sm);
-}
-.stat span { display: block; font-size: 11.5px; color: var(--muted); font-weight: 600; }
-.stat strong { display: block; font-size: 21px; letter-spacing: -0.02em; margin-top: 3px; }
-.stat strong small { font-size: 12px; color: var(--muted); font-weight: 600; margin-left: 3px; }
 
 /* ------------------------------------------------------------ 광고 슬롯 */
 .ad-slot {
@@ -1993,7 +1904,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .wrap { padding: 0 24px; }
   .hero { padding: 40px 36px 36px; }
   .hero h1 { font-size: 38px; }
-  .stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .channel-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .trend-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .tip-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -2010,13 +1920,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .status-guide { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .map-shell { height: 460px; }
   .stock-feed li { grid-template-columns: 84px 1fr auto; }
-}
-@media (min-width: 760px) {
-  .hero-grid { grid-template-columns: 1.1fr 0.9fr; align-items: center; }
-  .hero-cards { height: 280px; }
-  .hero-card { width: 168px; height: 234px; }
-  .hero-card:nth-child(1) { transform: translateX(-84px) rotate(-13deg); }
-  .hero-card:nth-child(3) { transform: translateX(84px) rotate(11deg); }
 }
 @media (min-width: 980px) {
   .channel-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -2075,10 +1978,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .hero h1 { font-size: 27px; }
   .price-row { display: grid; grid-template-columns: 1fr 1fr; }
   .price-row .price-box:last-child { grid-column: span 2; }
-  .hero-cards { height: 200px; margin-top: -6px; }
-  .hero-card { width: 124px; height: 172px; }
-  .hero-card:nth-child(1) { transform: translateX(-58px) rotate(-12deg); }
-  .hero-card:nth-child(3) { transform: translateX(58px) rotate(10deg); }
   .section { padding: 32px 0; }
   .section-head h2 { font-size: 22px; }
   .map-shell { height: 330px; }
@@ -2115,10 +2014,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
   box-shadow: inset 0 0 46px rgba(16, 31, 60, 0.08);
   z-index: 3;
 }
-
-/* 카드 스택: 양옆 카드는 겹쳐서 라벨이 가려지므로 이름표는 가운데 카드만 */
-.hero-card:nth-child(1) .name,
-.hero-card:nth-child(3) .name { display: none; }
 
 /* =========================================================================
  * v2 — 실제 지도(Leaflet + OpenStreetMap) · 로딩 UI · 상태 배지
@@ -3166,49 +3061,75 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .box-store-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
 .box-store-head h4 { margin: 0; font-size: 15px; letter-spacing: -0.02em; }
 .box-store-head span { font-size: 11px; color: var(--muted); }
-.box-store-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
-.store-card {
+.box-store-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.store-shortcut {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  align-items: center;
+  gap: 9px;
   min-width: 0;
-  padding: 14px;
+  min-height: 68px;
+  padding: 9px 10px;
   background: #fff;
   border: 1px solid var(--line);
-  border-radius: 14px;
-  transition: border-color 0.16s, box-shadow 0.16s;
+  border-radius: 12px;
+  color: var(--ink);
+  transition: border-color 0.16s, box-shadow 0.16s, transform 0.16s;
 }
-.store-card:hover { border-color: #d8e0ee; box-shadow: var(--shadow-sm); }
-.store-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.store-shortcut:hover { border-color: var(--navy); box-shadow: var(--shadow-sm); transform: translateY(-1px); }
+.store-shortcut:active { transform: none; }
+.store-badge {
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--brand, #e9eef7);
+  color: var(--brand-ink, #10203c);
+  font-size: 14.5px;
+  font-weight: 800;
+  letter-spacing: 0;
+  display: grid;
+  place-items: center;
+}
+.store-shortcut-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.store-shortcut-name {
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.store-sub {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.store-go { margin-left: auto; font-size: 12px; color: #aab5c8; flex: 0 0 auto; }
 .store-state {
-  margin-left: auto;
+  align-self: flex-start;
   font-size: 10.5px;
   font-weight: 800;
   border-radius: 999px;
-  padding: 3px 8px;
+  padding: 2px 7px;
   background: var(--grey-soft);
   color: var(--grey);
 }
 .store-state.out { background: #fdeaea; color: #a83232; }
 .store-state.in { background: var(--green-soft); color: var(--green); }
-.store-name { margin: 0; font-size: 14px; font-weight: 800; letter-spacing: -0.01em; line-height: 1.4; }
-.store-note { margin: 0; font-size: 12.5px; color: var(--ink-2); line-height: 1.6; flex: 1; }
-.store-link {
-  align-self: flex-start;
-  font-size: 11.5px;
-  font-weight: 800;
-  color: var(--navy);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 6px 12px;
-  background: #fff;
-}
-.store-link:hover { background: var(--paper); border-color: var(--navy); }
 
 @media (min-width: 720px) {
   .box-name { font-size: 23px; }
   .box-price { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .box-store-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .box-store-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .store-shortcut { padding: 10px 12px; gap: 10px; min-height: 56px; }
+  .store-badge { flex-basis: 32px; width: 32px; height: 32px; font-size: 15.5px; }
+  .store-shortcut-name { font-size: 13px; }
+  .store-sub { font-size: 11.5px; }
 }
 @media (max-width: 679px) {
   .box-board { padding: 15px; }
@@ -3216,3 +3137,89 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .box-price dd { font-size: 12.5px; }
   .box-picker { margin-bottom: 12px; }
 }
+
+/* =========================================================================
+ * v4.8 — 오프라인 판매처(마트·아트박스·자판기·카드샵)
+ *  · 「정가 구매처」 탭: #offlineStores 컴팩트 바로가기(모바일 2열 · 720px 이상 4열)
+ *  · 「동네에서 찾기」 지도: 오프라인 칩·토글 + 지도 마커/목록
+ * ========================================================================= */
+.store-shortcut-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+@media (min-width: 720px) {
+  .store-shortcut-grid.is-offline-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+}
+
+/* 지도 툴바의 오프라인 판매처 칩 */
+.offline-bar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 6px 10px;
+  margin: 14px 0 12px;
+}
+.offline-bar .row-label {
+  grid-column: 1;
+  grid-row: 1;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--muted-2);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.offline-chips {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.offline-chips::-webkit-scrollbar { display: none; }
+.off-chip {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-2);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 5px 10px;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.off-chip b { font-size: 11px; font-weight: 800; color: var(--muted); }
+.off-chip .off-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--brand, #1b2a4a); flex: 0 0 auto; }
+.off-chip:hover { border-color: var(--brand, var(--navy)); }
+.off-chip.is-active { background: var(--brand, var(--navy)); border-color: var(--brand, var(--navy)); color: #fff; }
+.off-chip.is-active b { color: rgba(255, 255, 255, 0.85); }
+.off-chip.is-muted { opacity: 0.45; }
+.offline-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-2);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.offline-toggle input { width: 15px; height: 15px; accent-color: var(--navy); }
+@media (min-width: 720px) {
+  .offline-bar { grid-template-columns: auto 1fr auto; }
+  .offline-bar .row-label { grid-column: 1; grid-row: 1; }
+  .offline-chips { grid-column: 2; grid-row: 1; flex-wrap: wrap; }
+  .offline-toggle { grid-column: 3; grid-row: 1; }
+}
+
+/* 지도 범례 · 배지 */
+.map-legend .l-offline { background: #7c4dff; }
+.chip-offline { background: #f0eaff; color: #5334d6; font-weight: 800; }
+.pm-pill.is-offline { border-color: rgba(16, 31, 60, 0.18); }
+.store-item.is-offline .s-name { font-weight: 700; }

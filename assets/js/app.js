@@ -121,6 +121,7 @@
     brand: "all",
     sort: "stock",
     stockOnly: false,
+    showOffline: true,
     radius: 3000
   };
 
@@ -216,9 +217,15 @@
     if (!storeListEl) return;
     var list = sortStores(currentStores);
     var counts = { in: 0, check: 0, none: 0 };
-    list.forEach(function (s) { counts[s.status] += 1; });
+    var offlineN = 0;
+    list.forEach(function (s) {
+      counts[s.status] += 1;
+      if (s.offline) offlineN += 1;
+    });
     if (mapCountEl) {
-      mapCountEl.innerHTML = "표시 중 <b>" + list.length + "</b>곳 · 재고 " + counts.in + " · 확인 " + counts.check + " · 없음 " + counts.none;
+      mapCountEl.innerHTML = "표시 중 <b>" + list.length + "</b>곳" +
+        (offlineN ? " · 오프라인 " + offlineN + "곳" : "") +
+        " · 재고 " + counts.in + " · 확인 " + (counts.check - offlineN) + " · 없음 " + counts.none;
     }
     if (sideSummary) {
       sideSummary.textContent = list.length
@@ -241,10 +248,13 @@
     shown.forEach(function (s) {
       var b = D.brandMeta[s.brand] || { label: s.brand, short: "?", color: "#1b2a4a" };
       var dist = s.distance < 1000 ? Math.round(s.distance) + "m" : (s.distance / 1000).toFixed(1) + "km";
+      var sLabel = s.offline
+        ? (s.brand === "vending" ? "공식 설치 지점" : s.brand === "cardshop" ? "공인 카드샵" : "확인 필요")
+        : statusText[s.status];
       var item = document.createElement("li");
       var btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "store-item is-" + s.status;
+      btn.className = "store-item is-" + s.status + (s.offline ? " is-offline" : "");
       btn.setAttribute("data-store", s.id);
       btn.innerHTML =
         '<span class="s-top">' +
@@ -253,10 +263,12 @@
         '<span class="s-dist">' + dist + "</span>" +
         "</span>" +
         '<span class="s-meta">' +
-        '<span class="status-badge ' + s.status + '">' + statusText[s.status] + "</span>" +
-        (s.relay
-          ? '<span class="chip chip-relay">실시간 ' + (s.relayQty || 0) + '개</span>'
-          : '<span class="chip chip-sample">샘플</span>') +
+        '<span class="status-badge ' + s.status + '">' + sLabel + "</span>" +
+        (s.offline
+          ? '<span class="chip chip-offline">재고 미확인</span>'
+          : (s.relay
+            ? '<span class="chip chip-relay">실시간 ' + (s.relayQty || 0) + '개</span>'
+            : '<span class="chip chip-sample">샘플</span>')) +
         (s.street ? "<small>" + escapeHtml(s.street) + "</small>" : "") +
         "</span>" +
         productTagsHtml(s);
@@ -333,7 +345,10 @@
       if (storeSkeleton) storeSkeleton.hidden = true;
       if (storeListEl) storeListEl.hidden = false;
     }
-    if (d.brandCounts) renderBrandSummary(d.brandCounts, d.brand || filterState.brand);
+    if (d.brandCounts) {
+      renderBrandSummary(d.brandCounts, d.brand || filterState.brand);
+      renderOfflineChips(d.brandCounts, d.brand || filterState.brand, d.showOffline);
+    }
   });
 
   document.addEventListener("pokemoa:visible", function (e) {
@@ -930,6 +945,51 @@
     brandSummary.innerHTML = html;
   }
 
+  /* 오프라인 판매처(마트·아트박스·자판기·카드샵) 칩 — 누르면 그 종류만, 한 번 더 누르면 전체 */
+  var offlineChips = $("#offlineChips");
+  var offlineToggle = $("#offlineToggle");
+  var offlineCounts = null;
+
+  function renderOfflineChips(counts, activeBrand, showOffline) {
+    if (!offlineChips) return;
+    if (counts) offlineCounts = counts;
+    counts = offlineCounts || {};
+    var on = showOffline !== false;
+    var list = D.offlineBrands || [];
+    offlineChips.innerHTML = list.map(function (b) {
+      var meta = D.brandMeta[b.id] || { color: "#1b2a4a" };
+      var c = counts[b.id] || { total: 0 };
+      var active = activeBrand === b.id;
+      return '<button type="button" class="off-chip' + (active ? " is-active" : "") + (on ? "" : " is-muted") +
+        '" data-offline="' + b.id + '" style="--brand:' + meta.color + '" aria-pressed="' + (active ? "true" : "false") + '">' +
+        '<i class="off-dot" aria-hidden="true"></i><span>' + b.label + "</span><b>" + c.total + "</b></button>";
+    }).join("");
+    if (offlineToggle) offlineToggle.checked = on;
+  }
+
+  if (offlineChips) {
+    offlineChips.addEventListener("click", function (e) {
+      var btn = e.target.closest(".off-chip");
+      if (!btn) return;
+      var next = btn.getAttribute("data-offline");
+      if (!next) return;
+      if (next === filterState.brand) next = "all";
+      filterState.brand = next;
+      listExpanded = false;
+      if (mapReady) window.PokeMoaMap.setBrand(next);
+      else renderOfflineChips(null, next, filterState.showOffline);
+    });
+  }
+
+  if (offlineToggle) {
+    offlineToggle.addEventListener("change", function () {
+      filterState.showOffline = offlineToggle.checked;
+      listExpanded = false;
+      if (mapReady) window.PokeMoaMap.setShowOffline(filterState.showOffline);
+      toast(filterState.showOffline ? "오프라인 판매처(마트·아트박스·자판기·카드샵)를 함께 표시합니다." : "오프라인 판매처를 지도·목록에서 숨겼습니다.");
+    });
+  }
+
   if (brandSummary) {
     brandSummary.addEventListener("click", function (e) {
       var btn = e.target.closest(".bs-card");
@@ -983,6 +1043,7 @@
       filterState.brand = "all";
       filterState.sort = "stock";
       filterState.stockOnly = false;
+      filterState.showOffline = true;
       filterState.radius = 3000;
       listExpanded = false;
       if (sortSelect) sortSelect.value = "stock";
@@ -993,6 +1054,7 @@
       if (mapReady) {
         window.PokeMoaMap.setBrand("all");
         window.PokeMoaMap.setStockOnly(false);
+        window.PokeMoaMap.setShowOffline(true);
         window.PokeMoaMap.setRadius(3000);
         window.PokeMoaMap.closeCard();
       }
@@ -1687,10 +1749,12 @@
 
   /* ---------------------------------------- 정가 구매처 밖으로 나가는 클릭 */
   document.addEventListener("click", function (e) {
-    var a = e.target && e.target.closest ? e.target.closest(".channel-links a[href^='http']") : null;
+    var a = e.target && e.target.closest
+      ? e.target.closest(".channel-links a[href^='http'], .store-shortcut[href^='http']")
+      : null;
     if (!a) return;
-    var card = a.closest(".channel-card");
-    var nameEl = card ? card.querySelector(".channel-name") : null;
+    var card = a.closest(".channel-card, .store-shortcut");
+    var nameEl = card ? card.querySelector(".channel-name, .store-shortcut-name") : null;
     trackEvent("store_outbound_click", {
       store_name: nameEl ? nameEl.textContent.trim() : "",
       url: a.href
@@ -1805,15 +1869,15 @@
     links.push('<button type="button" class="box-dex-btn" data-box-dex="' + s.id + '">이 박스 도감·시세 비교 →</button>');
 
     var stores = (s.stores || []).map(function (st) {
-      var state = st.state
-        ? '<span class="store-state ' + st.stateKind + '">' + escapeHtml(st.state) + "</span>"
-        : "";
-      return '<article class="store-card" data-store="' + st.id + '">' +
-        '<div class="store-top"><span class="channel-kind ' + st.kindClass + '">' + escapeHtml(st.kind) + "</span>" + state + "</div>" +
-        '<h4 class="store-name">' + escapeHtml(st.name) + "</h4>" +
-        '<p class="store-note">' + escapeHtml(st.note) + "</p>" +
-        '<a class="store-link" href="' + st.url + '" target="_blank" rel="noopener">' + escapeHtml(st.label) + " ↗</a>" +
-        "</article>";
+      var line = st.state
+        ? '<span class="store-state ' + (st.stateKind || "none") + '">' + escapeHtml(st.state) + "</span>"
+        : '<span class="store-sub">' + escapeHtml(st.sub || "검색 바로가기") + "</span>";
+      return '<a class="store-shortcut" href="' + st.url + '" target="_blank" rel="noopener" data-store="' + st.id + '"' +
+        ' aria-label="' + escapeHtml((st.short || "") + " · " + (st.label || "") + " (새 창)") + '">' +
+        '<span class="store-badge" style="--brand:' + (st.brand || "#e9eef7") + ';--brand-ink:' + (st.brandInk || "#10203c") + '">' + escapeHtml(st.initial || "") + "</span>" +
+        '<span class="store-shortcut-body"><strong class="store-shortcut-name">' + escapeHtml(st.short || "") + "</strong>" + line + "</span>" +
+        '<span class="store-go" aria-hidden="true">↗</span>' +
+        "</a>";
     }).join("");
 
     boxBoard.innerHTML =
