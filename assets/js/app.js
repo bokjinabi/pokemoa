@@ -155,8 +155,8 @@
     mapLoadingText.textContent = d.message || "실제 지도와 주변 매장 위치를 불러오는 중...";
     mapLoadingBar.style.width = (d.progress || 20) + "%";
     mapLoadingStep.textContent = d.phase === "tiles"
-      ? "1/2 · 지도 타일(OpenStreetMap) 불러오는 중"
-      : "2/2 · 주변 매장 위치 조회 중 (Overpass API)";
+      ? "1/2 · 카카오맵 지도 불러오는 중"
+      : "2/2 · 카카오 장소 검색으로 주변 편의점 4사 찾는 중";
     /* 진행 바가 멈춰 보이지 않도록 천천히 늘려 둔다 */
     clearInterval(loadingTimer);
     var base = d.progress || 20;
@@ -350,6 +350,12 @@
     }
   });
 
+  document.addEventListener("pokemoa:sdk-error", function (e) {
+    /* 카카오맵 SDK는 등록된 도메인에서만 열린다 — 오류로 멈추지 않고 내장 좌표로 계속 쓴다 */
+    renderLoading({ active: false });
+    toast((e.detail && e.detail.message) || "카카오맵을 이 주소에서 열 수 없어 내장 좌표로 표시합니다.");
+  });
+
   document.addEventListener("pokemoa:error", function (e) {
     toast((e.detail && e.detail.message) || "지도를 불러오지 못했습니다.");
     renderLoading({ active: false });
@@ -385,7 +391,7 @@
   /* ------------------------------------------- 집 태블릿 실시간 중계 연결 */
   /* 태블릿(Termux)에서 켜 둔 relay/server.js 주소를 저장하고, 연결된 동안에는
      주변 매장 조회마다 중계 서버의 실제 재고를 받아 지도·매장 카드에 반영한다.
-     연결이 없거나 응답이 없으면 기존 OSM + 샘플·제보 모드로 자연스럽게 돌아간다. */
+     연결이 없거나 응답이 없으면 기존 카카오맵·스냅샷 + 샘플·제보 모드로 자연스럽게 돌아간다. */
   var RELAY_KEY = "pokemoa.relayUrl";
   var relayBar = $("#relayBar");
   var relayStateText = $("#relayStateText");
@@ -687,6 +693,8 @@
 
   var suggestItems = [];
   var suggestActive = -1;
+  var placeTimer = null;
+  var placeSeq = 0;
 
   function closeSuggest() {
     if (!regionSuggest) return;
@@ -694,6 +702,8 @@
     regionSuggest.innerHTML = "";
     suggestItems = [];
     suggestActive = -1;
+    placeSeq += 1;
+    clearTimeout(placeTimer);
     if (regionSearch) regionSearch.setAttribute("aria-expanded", "false");
   }
 
@@ -731,33 +741,100 @@
   function renderSuggest(q) {
     if (!regionSuggest || !regionSearch) return;
     var hits = searchRegions(q);
-    suggestItems = hits;
-    suggestActive = hits.length ? 0 : -1;
+    suggestItems = hits.map(function (r) { return { kind: "region", region: r }; });
+    suggestActive = suggestItems.length ? 0 : -1;
+    var query = String(q || "").trim();
+    drawSuggest(query);
+    /* 카카오 장소 검색으로 동네·역·건물 이름도 바로 찾는다(지역 목록에 없는 곳) */
+    clearTimeout(placeTimer);
+    placeSeq += 1;
+    if (!query || query.length < 2) return;
+    if (!window.PokeMoaMap || !window.PokeMoaMap.searchPlaces) return;
+    var seq = placeSeq;
+    placeTimer = setTimeout(function () {
+      window.PokeMoaMap.searchPlaces(query, function (list) {
+        if (seq !== placeSeq || !list || !list.length) return;
+        var have = {};
+        suggestItems.forEach(function (it) {
+          if (it.kind === "region") have[it.region.id] = 1;
+        });
+        list.forEach(function (p) {
+          if (suggestItems.length >= 10) return;
+          suggestItems.push({
+            kind: "place",
+            place: p,
+            dup: false
+          });
+          have[p.name] = 1;
+        });
+        drawSuggest(query);
+      });
+    }, 220);
+  }
+
+  /* 제안 목록 그리기 — 지역(내장 55개) 먼저, 그 뒤에 카카오 장소 검색 결과 */
+  function drawSuggest(query) {
+    if (!regionSuggest || !regionSearch) return;
     regionSuggest.innerHTML = "";
-    if (!normText(q)) { closeSuggest(); return; }
-    if (!hits.length) {
+    if (!normText(query)) { closeSuggest(); return; }
+    if (!suggestItems.length) {
       var empty = document.createElement("li");
       empty.className = "region-suggest-empty";
       empty.textContent = "일치하는 지역이 없습니다. 시·도와 시·군·구에서 골라 주세요.";
       regionSuggest.appendChild(empty);
     }
-    hits.forEach(function (r, i) {
+    suggestItems.forEach(function (item, i) {
       var li = document.createElement("li");
       li.className = "region-suggest-item" + (i === suggestActive ? " is-active" : "");
       li.setAttribute("role", "option");
       li.setAttribute("aria-selected", i === suggestActive ? "true" : "false");
-      li.setAttribute("data-region", r.id);
-      li.innerHTML = "<strong>" + r.name + "</strong><span>" +
-        (r.allow20 ? "20km까지" : "도심 · 5km까지") + "</span>";
+      if (item.kind === "region") {
+        var r = item.region;
+        li.setAttribute("data-region", r.id);
+        li.innerHTML = "<strong>" + r.name + "</strong><span>" +
+          (r.allow20 ? "20km까지" : "도심 · 5km까지") + "</span>";
+      } else {
+        var p = item.place;
+        li.setAttribute("data-place", p.name);
+        li.innerHTML = "<strong>" + escapeHtml(p.name) + "</strong><span>" +
+          escapeHtml(p.address || "카카오맵") + "</span>";
+      }
       li.addEventListener("mousedown", function (e) {
         e.preventDefault();
-        selectRegion(r.id);
+        chooseSuggest(i);
         if (regionSearch) regionSearch.blur();
       });
       regionSuggest.appendChild(li);
     });
     regionSuggest.hidden = false;
     regionSearch.setAttribute("aria-expanded", "true");
+  }
+
+  /* 제안 선택 — 내장 지역이면 그 지역으로, 카카오 장소면 그 좌표로 지도를 연다 */
+  function chooseSuggest(i) {
+    var item = suggestItems[i];
+    if (!item) return;
+    if (item.kind === "region") { selectRegion(item.region.id); return; }
+    selectPlace(item.place);
+  }
+
+  /* 카카오 장소 검색 결과(동네·역·건물) 주변을 본다 */
+  function selectPlace(p) {
+    if (!p) return;
+    filterState.region = "";
+    gotFirstData = false;
+    listExpanded = false;
+    if (storeSkeleton) storeSkeleton.hidden = false;
+    if (storeListEl) storeListEl.hidden = true;
+    if (regionSearch) regionSearch.value = p.name;
+    closeSuggest();
+    if (mapReady) window.PokeMoaMap.setPoint({ lat: p.lat, lng: p.lng, name: p.name });
+    toast("‘" + p.name + "’ 주변 편의점 4사를 찾습니다.");
+    trackEvent("region_search", {
+      region: "kakao-place",
+      region_name: p.name,
+      radius_km: filterState.radius / 1000
+    });
   }
 
   if (provinceSelect) {
@@ -795,10 +872,10 @@
       } else if (e.key === "Enter") {
         e.preventDefault();
         if (suggestActive >= 0 && suggestItems[suggestActive]) {
-          selectRegion(suggestItems[suggestActive].id);
+          chooseSuggest(suggestActive);
           regionSearch.blur();
         } else if (suggestItems.length === 1) {
-          selectRegion(suggestItems[0].id);
+          chooseSuggest(0);
           regionSearch.blur();
         }
       } else if (e.key === "Escape") {

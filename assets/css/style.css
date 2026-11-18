@@ -2125,25 +2125,17 @@ button { font: inherit; color: inherit; cursor: pointer; }
  * ========================================================================= */
 .map-shell { touch-action: auto; cursor: default; background: #e9eef5; }
 .map-shell.is-dragging { cursor: default; }
-#mapShell .leaflet-container {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  background: #e9eef5;
-  font-family: inherit;
-  z-index: 1;
-}
-.leaflet-container .leaflet-control-attribution {
+/* 카카오맵은 #mapShell 자체를 지도 컨테이너로 쓰고 내부에 타일·오버레이 판을 만든다. */
+#mapShell .kakao-zoom, #mapShell .kakao-control { font-family: inherit; }
+/* 카카오맵 로고·저작권 표기 */
+#mapShell .kakaomap_logo, #mapShell .kakao-logo { opacity: 0.75; }
+#mapShell .map_copyright, #mapShell .kakao-copyright, #mapShell .map-copyright {
   font-size: 9.5px;
   background: rgba(255, 255, 255, 0.86);
   color: #55637a;
   padding: 1px 6px;
   border-radius: 6px 0 0 0;
 }
-.leaflet-container .leaflet-control-attribution a { color: #2f6df6; }
-.leaflet-bar a { color: var(--navy); }
-.leaflet-control-scale-line { font-size: 9.5px; border-color: #94a3b8; color: #475569; }
 
 /* 실제 매장 핀 */
 .pm-marker { background: none; border: 0; }
@@ -2719,9 +2711,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .map-legend .l-check { background: #e7a72c; }
 .map-shell.is-card-open .map-legend { opacity: 0; transition: opacity 0.15s; }
 
-/* 라이트 지도 스타일: OSM 타일을 저채도·밝게 정돈해 Positron 느낌으로 */
-#mapShell .leaflet-tile-pane { filter: grayscale(0.72) brightness(1.1) contrast(0.85); }
-#mapShell .leaflet-container { background: #f4f6f9; }
+/* 라이트 지도: 카카오맵 기본 스타일을 그대로 쓰고(저채도 도로·지명),
+   마커·말풍선만 브랜드 색으로 강조한다. */
+#mapShell .kakaomap_logo img { max-height: 18px; }
 
 /* 말풍선(알약) 마커 */
 .pm-marker { background: none; border: 0; width: 0 !important; height: 0 !important; }
@@ -2978,3 +2970,116 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .set-chip { padding: 8px 12px; }
   .set-chip strong { font-size: 12.5px; }
 }
+
+/* =========================================================================
+ * v4.3 — 카카오맵 지도 엔진 (kakao.maps.CustomOverlay 말풍선 마커)
+ * ========================================================================= */
+/* 카카오 CustomOverlay의 content 노드는 좌표에 left/top으로 붙으므로,
+   기존Leaflet용 절대 위치·transform을 풀고 앵커(xAnchor/yAnchor)로 맞춘다. */
+#mapShell .pm-marker {
+  position: relative;
+  width: auto !important;
+  height: auto !important;
+  width: max-content;
+  display: inline-flex;
+  padding-bottom: 6px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  outline: none;
+}
+#mapShell .pm-marker .pm-pill {
+  position: relative;
+  left: auto;
+  top: auto;
+  transform: none;
+  display: inline-flex;
+  width: max-content;
+}
+#mapShell .pm-marker:hover .pm-pill { box-shadow: 0 6px 16px rgba(16, 31, 60, 0.24); }
+#mapShell .pm-marker:focus-visible .pm-pill {
+  box-shadow: 0 0 0 3px rgba(47, 109, 246, 0.45), 0 4px 12px rgba(16, 31, 60, 0.22);
+}
+#mapShell .pm-marker.is-selected .pm-pill {
+  box-shadow: 0 0 0 3px rgba(47, 109, 246, 0.32), 0 6px 16px rgba(16, 31, 60, 0.24);
+}
+/* 넓게 볼 때(20km·저줌): 가운데 정렬된 작은 점·브랜드 칩 */
+#mapShell .pm-marker.is-compact {
+  padding-bottom: 0;
+}
+#mapShell .pm-marker.is-compact .pm-pill {
+  transform: none;
+  padding: 2px 6px;
+  font-size: 10px;
+}
+#mapShell .pm-marker.is-compact .pm-pill::after { display: none; }
+
+/* 저줌 클러스터 (`N곳`) */
+#mapShell .pm-marker-cluster {
+  position: relative;
+  width: auto !important;
+  height: auto !important;
+  width: max-content;
+  display: inline-flex;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  outline: none;
+}
+#mapShell .pm-cluster {
+  position: relative;
+  left: auto;
+  top: auto;
+  transform: none;
+}
+
+/* 내 위치 표시 (카카오 CustomOverlay) */
+#mapShell .pm-me {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+}
+#mapShell .pm-me-dot {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #2f6df6;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 3px rgba(47, 109, 246, 0.28), 0 2px 6px rgba(16, 31, 60, 0.3);
+}
+#mapShell .pm-me-label {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #fff;
+  background: #2f6df6;
+  padding: 3px 8px;
+  border-radius: 999px;
+  box-shadow: 0 2px 6px rgba(16, 31, 60, 0.24);
+}
+
+/* 카카오맵을 쓸 수 없는 주소(미등록 도메인)에서 지도 자리에 놓는 안내 */
+#mapShell .pm-sdk-note-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 400;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background:
+    repeating-linear-gradient(135deg, #f4f6fa 0 12px, #eef2f8 12px 24px);
+}
+#mapShell .pm-sdk-note {
+  max-width: 420px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(16, 31, 60, 0.16);
+  text-align: left;
+}
+#mapShell .pm-sdk-note strong { display: block; font-size: 14px; color: var(--navy); margin-bottom: 6px; }
+#mapShell .pm-sdk-note p { font-size: 12.5px; line-height: 1.6; color: var(--ink); margin: 0 0 6px; }
+#mapShell .pm-sdk-note p:last-child { margin-bottom: 0; color: var(--muted); }
+#mapShell .pm-sdk-note a { color: #2f6df6; font-weight: 700; }

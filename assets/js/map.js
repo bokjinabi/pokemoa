@@ -1,43 +1,36 @@
 /* =========================================================================
- * 포켓몬카드모아 — 실제 지도 엔진 (Leaflet + 라이트 스타일 지도 + Overpass API)
+ * 포켓몬카드모아 — 실제 지도 엔진 (카카오맵 JavaScript SDK + 카카오 장소 검색)
  *
- * · 지도 타일: OpenStreetMap 표준 타일을 라이트·저채도로 정돈해(Positron 느낌)
- *   도로·지명만 깔끔하게 보이도록 했다. CARTO Positron은 이제 API 키가 없으면
- *   워터마크 타일이 내려와 쓸 수 없어(2026-11 확인) OSM 타일을 스타일링했다.
- *   타일이 막히면(사내망·차단) 독일 OSM 미러로 자동 대체한다.
- * · 주변 매장: Overpass API 실시간 조회 (편의점 4사만: GS25·CU·세븐일레븐·이마트24)
- * · 매장 마커는 둥근 핀 대신 상태가 바로 읽히는 말풍선(알약) 마커:
- *   재고 있음 = 브랜드 색 말풍선(`CU · 입고 2종`), 확인/없음 = 화이트·그레이 알약.
- * · 매장마다 보유·취급 카드 상품명(30th CELEBRATION 등)을 함께 표시한다.
- * · 실시간 조회가 8초 안에 끝나지 않거나 응답 제한(429/502)이면
- *   내장된 실제 좌표 스냅샷으로 부드럽게 대체하고 배지에 상태를 표기한다.
+ * · 지도 타일: 카카오맵 JavaScript SDK (라이트·저채도 느낌은 카카오 기본 스타일 그대로)
+ * · 주변 매장: 카카오 장소 검색(Places) — 편의점 카테고리(CS2) 3페이지 병렬 조회 +
+ *   결과에 없는 브랜드는 브랜드별 키워드 검색으로 보충한다(편의점 4사만:
+ *   GS25·CU·세븐일레븐·이마트24). 해외 Overpass API 왕복이 없어 1초 안팎에 끝난다.
+ * · 동네·역 이름 검색도 카카오 장소 검색(keywordSearch)으로 즉시 조회한다.
+ * · 매장 마커는 둥근 핀 대신 상태가 바로 읽히는 말풍선(알약) 마커
+ *   (kakao.maps.CustomOverlay): 재고 있음 = 브랜드 색 말풍선(`CU · 입고 2종`),
+ *   확인/없음 = 화이트·그레이 알약. 매장마다 보유·취급 카드 상품명을 함께 표시한다.
+ * · 실시간 조회가 끝나지 않거나 응답 제한(쿼터·차단)이면 내장된 실제 좌표
+ *   스냅샷으로 부드럽게 대체하고 배지에 상태를 표기한다. 카카오 SDK는 등록된
+ *   도메인(https://moa-kr.github.io)에서만 지도를 그리므로, 그 밖의 주소
+ *   (file://·미등록 프리뷰)에서는 안내 문구와 함께 스냅샷 목록으로 동작한다.
  * · 재고 상태는 편의점 앱 API 미연동 → 제보·샘플 기반임을 화면에서 밝힌다.
  * ========================================================================= */
 window.PokeMoaMap = (function () {
   "use strict";
 
   var D = window.POKEMOA_DATA;
-  var TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
-  var TILE_ATTRIB = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> 기여자';
-  var TILE_FALLBACK = "https://tile.openstreetmap.de/{z}/{x}/{y}.png";
-  var TILE_FALLBACK_ATTRIB = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> 기여자 (OSM Germany)';
-  /* 예전에 쓰던 CARTO Positron — API 키 없이는 워터마크 타일이라 사용하지 않는다. */
-  var TILE_LIGHT = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
-  var TILE_LIGHT_SUB = "abcd";
-  var TILE_LIGHT_ATTRIB = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> 기여자 &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>';
-  var OVERPASS_ENDPOINTS = [
-    "https://overpass-api.de/api/interpreter",
-    "https://overpass.kumi.systems/api/interpreter",
-    "https://overpass.private.coffee/api/interpreter"
-  ];
-  var LEAFLET_CDN = [
-    "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js",
-    "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-  ];
-  var OVERPASS_TIMEOUT = 8000;   /* 8초 안에 안 오면 내장 좌표로 먼저 표시 */
-  var LIVE_WINDOW = 45000;       /* 늦게라도 실시간 응답이 오면 교체 */
+  /* 카카오디벨로퍼스 앱 `포켓몬카드모아`(ID 1655851) JavaScript 키.
+     JS SDK 도메인에 https://moa-kr.github.io 가 등록되어 있다. */
+  var KAKAO_KEY = "63b35e228dacdcc4d0e31f83a7738f22";
+  var KAKAO_SDK = "https://dapi.kakao.com/v2/maps/sdk.js?appkey=" + KAKAO_KEY +
+    "&libraries=services&autoload=false";
+  var SDK_TIMEOUT = 9000;        /* SDK·지도 초기화를 이 시간까지 기다린다 */
+  var SEARCH_TIMEOUT = 6000;     /* 장소 검색이 늦으면 내장 좌표로 먼저 표시 */
   var MAX_MARKERS = 90;
   var MAX_MARKERS_20 = 100;
+  var BRAND_QUERY = { gs25: "GS25", cu: "CU", seven: "세븐일레븐", emart24: "이마트24" };
+  var BRAND_ORDER_LIST = ["gs25", "cu", "seven", "emart24"];
+
   /* 도심(allow20:false) 지역 좌표 — 내 위치가 이 근처면 20km를 막는다 */
   function metroRegions() {
     return D.regions.filter(function (r) { return r.allow20 === false; });
@@ -46,12 +39,12 @@ window.PokeMoaMap = (function () {
 
   var st = {
     map: null,
-    tiles: null,
-    tileKind: "primary",   /* primary(OSM 라이트 스타일) | fallback(OSM 미러) */
-    layer: null,
+    ready: false,
+    sdkError: false,
+    layer: [],        /* 현재 지도에 올린 CustomOverlay 목록 */
     ring: null,
     meMarker: null,
-    markers: {},
+    markers: {},      /* id -> { ov, node } */
     all: [],          /* 현재 중심 기준 조회 결과(반경 밖 포함) */
     visible: [],
     brand: "all",
@@ -60,7 +53,7 @@ window.PokeMoaMap = (function () {
     compact: false,
     radius: 3000,
     regionId: "pohang-north",
-    origin: "region",  /* region | geo */
+    origin: "region",  /* region | geo | search */
     center: null,
     source: "snapshot",/* live | snapshot */
     fetchedAt: null,
@@ -72,7 +65,6 @@ window.PokeMoaMap = (function () {
     fetchedRadius: 0,
     snapshotLabel: "",
     pendingLive: false,
-    currentReq: null,
     badgeWasSnapshot: false,
     metro: false,
     allow20: true,
@@ -177,15 +169,16 @@ window.PokeMoaMap = (function () {
   }
 
   /* ------------------------------------------------------- 브랜드 분류 */
-  /* 편의점 4사만 분류한다. 그 밖의 업종·브랜드는 null로 돌려 화면에 올리지 않는다. */
+  /* 편의점 4사만 분류한다. 그 밖의 업종·브랜드는 null로 돌려 화면에 올리지 않는다.
+     카카오 장소 검색 결과의 상호(place_name)·업종(category_name)을 함께 본다. */
   var NAME_RULES = [
     ["gs25", /gs\s*25|지에스\s*25/],
     ["seven", /세븐일레븐|7\s*-?\s*eleven|seven\s*eleven/],
-    ["emart24", /emart\s*24|이마트\s*24/]
+    ["emart24", /emart\s*24|이마트\s*24|emart24/]
   ];
   function classify(tags) {
     tags = tags || {};
-    var n = [tags.name, tags["name:ko"], tags.brand, tags["brand:ko"], tags.operator]
+    var n = [tags.name, tags["name:ko"], tags.brand, tags["brand:ko"], tags.operator, tags.category]
       .filter(Boolean).join(" ").toLowerCase();
     /* CU는 짧아서 부분 일치하면 오탐이 나므로 토큰 단위로 확인 */
     var tokens = n.split(/[^a-z0-9가-힣]+/);
@@ -206,7 +199,7 @@ window.PokeMoaMap = (function () {
     return nm;
   }
 
-  /* --------------------------------------------------- Overpass → 매장 */
+  /* --------------------------------------------- 장소 → 매장 객체 */
   function toStore(o) {
     var id = o.type + "-" + o.id;
     return {
@@ -224,6 +217,8 @@ window.PokeMoaMap = (function () {
       unit: "낱팩",
       note: "",
       products: [],
+      phone: o.phone || "",
+      placeUrl: o.placeUrl || "",
       source: o.source
     };
   }
@@ -240,107 +235,104 @@ window.PokeMoaMap = (function () {
     return out;
   }
 
-  /* ---------------------------------------------------------- 지도 생성 */
-  function ensureLeaflet(cb) {
-    if (window.L) { cb(true); return; }
-    var i = 0;
-    (function next() {
-      if (i >= LEAFLET_CDN.length) { cb(false); return; }
-      var s = document.createElement("script");
-      s.src = LEAFLET_CDN[i++];
-      s.onload = function () { cb(!!window.L); };
-      s.onerror = next;
-      document.head.appendChild(s);
-    })();
+  /* ------------------------------------------------------ 카카오 SDK 로드 */
+  /* index.html이 SDK 스크립트를 미리 넣어 두지만(autoload=false), 미리보기·
+     스크립트 지연에 대비해 없으면 직접 불러온 뒤 kakao.maps.load를 부른다. */
+  function ensureKakao(cb) {
+    var done = false;
+    var timer = setTimeout(function () {
+      if (done) return;
+      done = true;
+      cb(false);
+    }, SDK_TIMEOUT);
+    function finish(ok) {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      cb(ok);
+    }
+    function boot() {
+      if (!window.kakao || !window.kakao.maps) { finish(false); return; }
+      try {
+        window.kakao.maps.load(function () { finish(!!window.kakao.maps.Map); });
+      } catch (e) {
+        finish(false);
+      }
+    }
+    if (window.kakao && window.kakao.maps) { boot(); return; }
+    var s = document.createElement("script");
+    s.async = true;
+    s.src = KAKAO_SDK;
+    s.onload = boot;
+    s.onerror = function () { finish(false); };
+    document.head.appendChild(s);
   }
+
+  /* ---------------------------------------------------------- 지도 생성 */
+  /* 카카오 지도는 level 1(가까이)~14(멀리)를 쓴다. 기존 Leaflet 줌(9~19)과
+     같은 느낌이 나도록 level = 20 - zoom 으로 맞춘다(줌 15 → level 5). */
+  function levelForZoom(z) {
+    return Math.max(1, Math.min(14, 20 - (z || 15)));
+  }
+
+  function latlng(lat, lng) { return new window.kakao.maps.LatLng(lat, lng); }
 
   function buildMap() {
     if (st.map) return;
+    var K = window.kakao.maps;
     var r = region(st.regionId);
-    st.map = L.map(el.container, {
-      center: [r.lat, r.lng],
-      zoom: r.zoom || 15,
-      zoomControl: false,
-      attributionControl: true,
-      preferCanvas: false
+    st.map = new K.Map(el.container, {
+      center: latlng(r.lat, r.lng),
+      level: levelForZoom(r.zoom || 15),
+      draggable: true,
+      scrollwheel: true,
+      disableDoubleClickZoom: false
     });
+    st.ready = true;
 
-    st.tileKind = "primary";
-    var tc = { loaded: 0, errors: 0 };
-    function attachTiles(layer) {
-      layer.on("load", function () {
-        st.loading.tiles = false;
-        emit("pokemoa:loading", loadingState());
-      });
-      layer.on("tileload", function () {
-        tc.loaded += 1;
-        st.loading.tiles = false;
-      });
-      layer.on("tileerror", function () {
-        tc.errors += 1;
-        /* 타일을 한 장도 못 받으면(차단·오프라인) 미러 서버로 대체 */
-        if (tc.loaded === 0 && tc.errors >= 4) {
-          if (st.tileKind === "primary") { useFallbackTiles(); }
-          else { st.loading.tiles = false; emit("pokemoa:loading", loadingState()); }
-        } else if (tc.loaded === 0 && tc.errors >= 2) {
-          st.loading.tiles = false;
-          emit("pokemoa:loading", loadingState());
-        }
-      });
+    try {
+      st.map.addControl(new K.ZoomControl(), K.ControlPosition.RIGHT);
+    } catch (e) {}
+
+    /* 타일이 그려지면 로딩 오버레이의 1단계를 내린다(이벤트가 없으면 2.5초 뒤) */
+    function tilesReady() {
+      if (!st.loading.tiles) return;
+      st.loading.tiles = false;
+      emit("pokemoa:loading", loadingState());
     }
-    function useFallbackTiles() {
-      st.tileKind = "fallback";
-      tc.loaded = 0;
-      tc.errors = 0;
-      try { st.map.removeLayer(st.tiles); } catch (e) {}
-      st.tiles = L.tileLayer(TILE_FALLBACK, {
-        maxZoom: 19,
-        minZoom: 9,
-        attribution: TILE_FALLBACK_ATTRIB,
-        crossOrigin: true
-      });
-      attachTiles(st.tiles);
-      st.tiles.addTo(st.map);
-    }
+    try {
+      K.event.addListener(st.map, "tilesloaded", tilesReady);
+    } catch (e) {}
+    setTimeout(tilesReady, 2500);
 
-    st.tiles = L.tileLayer(TILE_URL, {
-      maxZoom: 19,
-      minZoom: 9,
-      attribution: TILE_ATTRIB,
-      crossOrigin: true
-    });
-    attachTiles(st.tiles);
-    st.tiles.addTo(st.map);
-
-    L.control.zoom({ position: "topright" }).addTo(st.map);
-    L.control.scale({ position: "topright", imperial: false, maxWidth: 90 }).addTo(st.map);
-
-    st.layer = L.layerGroup().addTo(st.map);
-    st.ring = L.circle([r.lat, r.lng], {
+    st.ring = new K.Circle({
+      center: latlng(r.lat, r.lng),
       radius: st.radius,
-      color: "#2f6df6",
-      weight: 1.5,
-      opacity: 0.55,
-      dashArray: "6 6",
+      strokeWeight: 1.5,
+      strokeColor: "#2f6df6",
+      strokeOpacity: 0.55,
+      strokeStyle: "dashed",
       fillColor: "#2f6df6",
-      fillOpacity: 0.05,
-      interactive: false
-    }).addTo(st.map);
+      fillOpacity: 0.05
+    });
+    st.ring.setMap(st.map);
 
     st.compact = compactMode();
-    st.map.on("moveend", positionCard);
-    st.map.on("zoomend", function () {
-      var c = compactMode();
-      if (c === st.compact) return;
-      st.compact = c;
-      renderMarkers();
-    });
+    try {
+      K.event.addListener(st.map, "zoom_changed", function () {
+        var c = compactMode();
+        if (c === st.compact) return;
+        st.compact = c;
+        renderMarkers();
+      });
+    } catch (e) {}
   }
 
   /* ------------------------------------------------------------- 마커 */
   /* 줌이 넓으면(20km 보기) 말풍선 대신 작은 점·브랜드 칩만 그려 겹칩을 줄인다. */
   function compactMode() {
-    return !st.map || st.map.getZoom() < 13;
+    if (!st.map) return false;
+    return st.map.getLevel() >= 8;   /* Leaflet 줌 12 이하와 같은 넓이 */
   }
 
   function stockProductCount(s) {
@@ -351,7 +343,7 @@ window.PokeMoaMap = (function () {
     return n;
   }
 
-  function pillIcon(s) {
+  function pillHtml(s) {
     var b = D.brandMeta[s.brand] || { short: "?", color: "#1b2a4a" };
     var html;
     if (st.compact) {
@@ -371,13 +363,49 @@ window.PokeMoaMap = (function () {
         '<i class="pm-dot" style="background:' + b.color + '"></i>' +
         "<span>" + (s.status === "check" ? "확인" : (s.relay ? "실시간 0개" : "없음")) + "</span></span>";
     }
-    return L.divIcon({
-      className: "pm-marker status-" + s.status + (st.compact ? " is-compact" : ""),
-      html: html,
-      iconSize: [0, 0],
-      iconAnchor: [0, 0],
-      popupAnchor: [0, 0]
+    return html;
+  }
+
+  function pillNode(s, label) {
+    var node = document.createElement("div");
+    node.className = "pm-marker status-" + s.status + (st.compact ? " is-compact" : "");
+    node.innerHTML = pillHtml(s);
+    node.setAttribute("role", "button");
+    node.setAttribute("tabindex", "0");
+    node.setAttribute("aria-label", label);
+    node.title = label;
+    node.addEventListener("click", function (e) {
+      e.stopPropagation();
+      select(s.id, true);
     });
+    node.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        select(s.id, true);
+      }
+    });
+    return node;
+  }
+
+  function addOverlay(node, lat, lng, opts) {
+    var o = opts || {};
+    var ov = new window.kakao.maps.CustomOverlay({
+      position: latlng(lat, lng),
+      content: node,
+      xAnchor: o.xAnchor != null ? o.xAnchor : 0.5,
+      yAnchor: o.yAnchor != null ? o.yAnchor : 1,
+      zIndex: o.zIndex || 100,
+      clickable: !!o.clickable
+    });
+    ov.setMap(st.map);
+    st.layer.push(ov);
+    return ov;
+  }
+
+  function clearOverlays() {
+    st.layer.forEach(function (ov) { try { ov.setMap(null); } catch (e) {} });
+    st.layer = [];
+    st.markers = {};
   }
 
   function brandOrder(b) {
@@ -385,24 +413,17 @@ window.PokeMoaMap = (function () {
   }
 
   /* 넓게 보는 저줌에서는 같은 구역의 매장을 묶어 `N곳` 한 덩이로 표시한다 */
-  function clusterIcon(g) {
-    var html = '<span class="pm-cluster' + (g.in ? " has-stock" : "") + '">' +
-      g.n + '곳' + (g.in ? "<small>재고 " + g.in + "</small>" : "") + "</span>";
-    return L.divIcon({
-      className: "pm-marker-cluster",
-      html: html,
-      iconSize: [0, 0],
-      iconAnchor: [0, 0],
-      popupAnchor: [0, 0]
-    });
-  }
-
   function renderClusters(list) {
     var groups = {};
+    var proj = null;
+    try { proj = st.map.getProjection(); } catch (e) {}
+    var level = st.map.getLevel();
     /* 줌이 낮을수록 넓은 칸으로 묶어 말풍선이 겹치지 않게 한다 */
-    var cell = st.map.getZoom() <= 11 ? 150 : st.map.getZoom() <= 12 ? 110 : 80;
+    var cell = level >= 11 ? 150 : level >= 10 ? 110 : 80;
     list.forEach(function (s) {
-      var pt = st.map.latLngToContainerPoint([s.lat, s.lng]);
+      var pt;
+      try { pt = proj.containerPointFromCoords(latlng(s.lat, s.lng)); } catch (e) { pt = null; }
+      if (!pt) { pt = { x: s.lng * 1000, y: s.lat * 1000 }; }
       var key = Math.floor(pt.x / cell) + ":" + Math.floor(pt.y / cell);
       var g = groups[key] || (groups[key] = { lat: 0, lng: 0, n: 0, in: 0, names: [] });
       g.lat += s.lat;
@@ -413,22 +434,29 @@ window.PokeMoaMap = (function () {
     });
     Object.keys(groups).forEach(function (k) {
       var g = groups[k];
-      var ll = [g.lat / g.n, g.lng / g.n];
-      var m = L.marker(ll, {
-        icon: clusterIcon(g),
-        title: g.names.join(", ") + (g.n > 3 ? " 외" : ""),
-        keyboard: true
+      var ll = { lat: g.lat / g.n, lng: g.lng / g.n };
+      var node = document.createElement("div");
+      node.className = "pm-marker-cluster";
+      node.innerHTML = '<span class="pm-cluster' + (g.in ? " has-stock" : "") + '">' +
+        g.n + "곳" + (g.in ? "<small>재고 " + g.in + "</small>" : "") + "</span>";
+      node.title = g.names.join(", ") + (g.n > 3 ? " 외" : "");
+      node.setAttribute("role", "button");
+      node.setAttribute("tabindex", "0");
+      node.setAttribute("aria-label", g.n + "곳 (" + node.title + ")");
+      function zoomIn() {
+        st.map.setLevel(Math.max(1, st.map.getLevel() - 3));
+        st.map.setCenter(latlng(ll.lat, ll.lng));
+      }
+      node.addEventListener("click", zoomIn);
+      node.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); zoomIn(); }
       });
-      m.on("click", function () {
-        st.map.flyTo(ll, 15, { duration: 0.6 });
-      });
-      m.addTo(st.layer);
+      addOverlay(node, ll.lat, ll.lng, { xAnchor: 0.5, yAnchor: 0.5, zIndex: 60, clickable: true });
     });
   }
 
   function renderMarkers() {
-    st.layer.clearLayers();
-    st.markers = {};
+    if (st.ready) clearOverlays();
     var cap = st.radius >= 20000 ? MAX_MARKERS_20 : MAX_MARKERS;
     var list = st.all.filter(match).slice().sort(function (a, b) {
       return a.distance - b.distance;
@@ -443,7 +471,13 @@ window.PokeMoaMap = (function () {
     st.visible = list.map(function (s) { return s; });
     st.visible.sort(function (a, b) { return a.distance - b.distance; });
 
-    if (st.compact && st.map) {
+    /* 카카오맵을 그릴 수 없는 주소: 마커 대신 목록·집계만 그대로 산출한다 */
+    if (!st.ready) {
+      emit("pokemoa:visible", { stores: st.visible });
+      return;
+    }
+
+    if (st.compact) {
       renderClusters(st.visible);
       if (st.selectedId) closeCard();
       emit("pokemoa:visible", { stores: st.visible });
@@ -451,19 +485,21 @@ window.PokeMoaMap = (function () {
     }
 
     st.visible.forEach(function (s) {
-      var m = L.marker([s.lat, s.lng], {
-        icon: pillIcon(s),
-        title: s.name,
-        keyboard: true,
-        riseOnHover: true,
-        zIndexOffset: s.status === "in" ? 300 : 0
+      var label = s.name + " · " + statusLabel(s.status) +
+        (s.products && s.products.length
+          ? " · " + s.products.map(function (p) { return p.short + " " + p.stateLabel; }).join(", ")
+          : "");
+      var node = pillNode(s, label);
+      var ov = addOverlay(node, s.lat, s.lng, {
+        xAnchor: 0.5,
+        yAnchor: 1,
+        zIndex: s.status === "in" ? 300 : 100,
+        clickable: true
       });
-      m.on("click", function () { select(s.id, true); });
-      m.addTo(st.layer);
-      st.markers[s.id] = m;
+      st.markers[s.id] = { ov: ov, node: node };
       if (st.selectedId === s.id) {
-        var node = m.getElement();
-        if (node) node.classList.add("is-selected");
+        node.classList.add("is-selected");
+        try { ov.setZIndex(900); } catch (e) {}
       }
     });
     if (st.selectedId && !st.markers[st.selectedId]) closeCard();
@@ -491,8 +527,10 @@ window.PokeMoaMap = (function () {
     if (!s) return;
     st.selectedId = id;
     Object.keys(st.markers).forEach(function (k) {
-      var node = st.markers[k].getElement();
-      if (node) node.classList.toggle("is-selected", k === id);
+      var m = st.markers[k];
+      if (!m) return;
+      m.node.classList.toggle("is-selected", k === id);
+      try { m.ov.setZIndex(k === id ? 900 : (m.node.classList.contains("status-in") ? 300 : 100)); } catch (e) {}
     });
     renderCard(s);
     el.container.classList.add("is-card-open");
@@ -558,31 +596,29 @@ window.PokeMoaMap = (function () {
         ? '<span class="chip chip-relay">실시간 재고</span>'
         : '<span class="chip chip-sample">샘플 재고</span>') +
       '<span class="chip">' + s.observed + "</span>" +
+      (s.phone ? '<span class="chip">' + escapeHtml(s.phone) + "</span>" : "") +
       "</div>" +
       productTagsHtml(s, "pm-card-products", true) +
       (s.relay
         ? '<p class="pm-card-note">집 태블릿 중계 서버가 편의점 앱에서 <b>조회한 실제 재고</b>입니다(조회 ' + escapeHtml(s.observed) + '). 수량은 조회 시점 기준이므로 방문 전 매장 전화로 한 번 더 확인하세요.</p>'
-        : '<p class="pm-card-note">매장 위치는 OpenStreetMap 실제 데이터입니다. 재고 상태와 <b>취급 카드 상품명</b>은 편의점 앱 API 미연동으로 <b>제보·샘플 기반</b> 표시이니, 방문 전 공식 앱이나 매장 전화로 확인하세요.</p>') +
+        : '<p class="pm-card-note">매장 위치·상호는 카카오맵 실제 장소 데이터입니다. 재고 상태와 <b>취급 카드 상품명</b>은 편의점 앱 API 미연동으로 <b>제보·샘플 기반</b> 표시이니, 방문 전 공식 앱이나 매장 전화로 확인하세요.</p>') +
       '<a class="btn btn-sm btn-dark pm-card-link" target="_blank" rel="noopener" href="' + navLink + '">네이버 지도에서 보기</a>';
     el.card.querySelector(".pm-card-close").addEventListener("click", function (e) {
       e.stopPropagation();
       closeCard();
     });
-    positionCard();
   }
-
-  function positionCard() { /* 카드형 팝업은 CSS로 위치 고정 */ }
 
   /* ------------------------------------------------------- 상태 표기 */
   function loadingState() {
     var msg, phase, progress;
     if (st.loading.tiles) {
       phase = "tiles";
-      msg = "실제 지도 타일을 불러오는 중...";
+      msg = "카카오맵 지도를 불러오는 중...";
       progress = 34;
     } else if (st.loading.data) {
       phase = "data";
-      msg = "주변 매장 위치를 조회하는 중... (Overpass API)";
+      msg = "주변 편의점 4사를 찾는 중... (카카오 장소 검색)";
       progress = 72;
     } else {
       phase = "done";
@@ -605,8 +641,15 @@ window.PokeMoaMap = (function () {
     if (st.geoBusy) {
       return { kind: "busy", text: "내 위치 확인 중 · 브라우저 위치 권한을 허용해 주세요", action: false };
     }
+    if (st.sdkError) {
+      return {
+        kind: "snapshot",
+        text: "카카오맵을 이 주소에서 열 수 없어 내장 실제 좌표로 표시합니다 (등록 도메인 https://moa-kr.github.io 에서 지도가 열립니다)",
+        action: true
+      };
+    }
     if (st.loading.data && !(st.relay && st.relay.count)) {
-      return { kind: "busy", text: "OpenStreetMap에 주변 매장을 조회하는 중입니다 (최대 8초, 지연 시 내장 좌표로 표시)", action: false };
+      return { kind: "busy", text: "카카오 장소 검색으로 주변 편의점 4사를 찾는 중입니다 (보통 1초 이내)", action: false };
     }
     /* 집 태블릿 중계로 실제 재고를 받았으면 그 사실을 먼저 알린다 */
     if (st.relay && st.relay.count) {
@@ -625,8 +668,8 @@ window.PokeMoaMap = (function () {
     if (st.source === "live") {
       var cap = st.radius >= 20000 ? MAX_MARKERS_20 : MAX_MARKERS;
       var txt = st.all.length > cap
-        ? "실시간 조회 · 주변 매장 " + st.all.length + "곳 중 가까운 " + cap + "곳 표시 (Overpass API)"
-        : "실시간 조회 · OpenStreetMap 주변 매장 " + st.all.length + "곳 (Overpass API)";
+        ? "실시간 조회 · 카카오맵 주변 매장 " + st.all.length + "곳 중 가까운 " + cap + "곳 표시"
+        : "실시간 조회 · 카카오맵 주변 편의점 4사 " + st.all.length + "곳";
       return { kind: "live", text: txt, action: false };
     }
     var snapKm = Math.round(((D.osmSnapshot || {}).radius || 3000) / 1000);
@@ -634,8 +677,8 @@ window.PokeMoaMap = (function () {
     return {
       kind: "snapshot",
       text: (st.pendingLive
-        ? "실시간 조회가 느려 내장 실제 좌표(반경 " + snapKm + "km)로 먼저 표시 (조금 더 기다리는 중 · " + st.snapshotLabel + ")"
-        : "실시간 조회 지연/제한 → 내장 실제 좌표 스냅샷(반경 " + snapKm + "km) 사용 (" + st.snapshotLabel + ")" + wideNote),
+        ? "카카오 장소 검색이 늦어 내장 실제 좌표(반경 " + snapKm + "km)로 먼저 표시 (조금 더 기다리는 중 · " + st.snapshotLabel + ")"
+        : "실시간 조회 실패/제한 → 내장 실제 좌표 스냅샷(반경 " + snapKm + "km) 사용 (" + st.snapshotLabel + ")" + wideNote),
       action: true
     };
   }
@@ -673,7 +716,6 @@ window.PokeMoaMap = (function () {
       stockOnly: st.stockOnly,
       brand: st.brand,
       brandCounts: brandCounts(),
-      tileKind: st.tileKind,
       allow20: allow20(),
       markerCap: st.radius >= 20000 ? MAX_MARKERS_20 : MAX_MARKERS,
       snapshotAt: (D.osmSnapshot || {}).fetchedAt || "",
@@ -684,105 +726,105 @@ window.PokeMoaMap = (function () {
   /* --------------------------------------------------- 데이터 조회 */
   function snapshotList() {
     var snap = (D.osmSnapshot && D.osmSnapshot.items) || [];
-    if (st.origin === "geo") {
-      /* 내 위치 기준일 때는 25km 안에 있는 스냅샷만 후보로 둔다 */
-      var c = st.center;
-      return snap.filter(function (s) { return meters(c, s) <= 25000; });
+    if (st.origin === "region") {
+      return snap.filter(function (s) { return s.regionId === st.regionId; });
     }
-    return snap.filter(function (s) { return s.regionId === st.regionId; });
+    /* 내 위치·장소 검색 기준일 때는 25km 안에 있는 스냅샷만 후보로 둔다 */
+    var c = st.center;
+    return snap.filter(function (s) { return meters(c, s) <= 25000; });
   }
 
-  function overpassQuery(center, radius) {
-    var lat = center.lat.toFixed(5);
-    var lng = center.lng.toFixed(5);
-    var r = Math.round(radius);
-    /* 넓은 반경(20km)은 결과가 수천 건이 될 수 있어 100건 상한을 건다 */
-    var out = radius >= 20000 ? "out center 100;" : "out center;";
-    /* 편의점 4사만: shop=convenience 만 조회하고, 브랜드 분류에서 4사 외는 버린다 */
-    return "[out:json][timeout:8];(" +
-      'nwr(around:' + r + "," + lat + "," + lng + ')[shop=convenience];' +
-      ");" + out;
+  /* ------------------------------------------- 카카오 장소 검색 (Places) */
+  function placesService() {
+    var K = window.kakao.maps.services;
+    return new K.Places();
   }
 
-  function fetchOverpass(center, radius) {
-    var q = overpassQuery(center, radius);
-    var controllers = [];
-    var hardTimer = null;
-    var pending = OVERPASS_ENDPOINTS.length;
-
-    var promise = new Promise(function (resolve, reject) {
-      var settled = false;
-      function cleanup() {
-        clearTimeout(hardTimer);
-        controllers.forEach(function (c) { try { c.abort(); } catch (e) {} });
-      }
-      function done(payload) {
-        if (settled) return;
-        settled = true;
-        cleanup();
-        resolve(payload);
-      }
-      function fail(err) {
-        if (settled) return;
-        settled = true;
-        cleanup();
-        reject(err);
-      }
-      OVERPASS_ENDPOINTS.forEach(function (ep) {
-        var ctrl = new AbortController();
-        controllers.push(ctrl);
-        fetch(ep + "?data=" + encodeURIComponent(q), {
-          signal: ctrl.signal,
-          mode: "cors",
-          cache: "no-store"
-        }).then(function (res) {
-          if (!res.ok) throw new Error("HTTP " + res.status);
-          return res.json();
-        }).then(done, function (err) {
-          pending -= 1;
-          if (pending === 0) fail(err || new Error("network"));
-        });
+  /* 편의점 카테고리(CS2) 한 페이지 — 15건, 페이지를 넘기면 최대 45건 */
+  function categoryPage(center, radius, page) {
+    return new Promise(function (resolve) {
+      var P = window.kakao.maps.services;
+      placesService().categorySearch("CS2", function (data, status) {
+        resolve({ ok: status === P.Status.OK, data: data || [] });
+      }, {
+        location: latlng(center.lat, center.lng),
+        radius: Math.min(20000, Math.max(100, Math.round(radius))),
+        sort: P.SortBy.DISTANCE,
+        page: page || 1,
+        size: 15
       });
-      /* 8초(OVERPASS_TIMEOUT)는 화면 표시용 소프트 한도이고,
-         요청 자체는 LIVE_WINDOW 동안 살려 두어 늦게라도 도착하면 실시간 값으로 바꾼다. */
-      hardTimer = setTimeout(function () { fail(new Error("timeout")); }, LIVE_WINDOW);
     });
+  }
 
+  /* 브랜드별 키워드 검색 — 카테고리 조회 45건에 없는 브랜드를 보충한다 */
+  function keywordPage(query, center, radius, page) {
+    return new Promise(function (resolve) {
+      var P = window.kakao.maps.services;
+      placesService().keywordSearch(query, function (data, status) {
+        resolve({ ok: status === P.Status.OK, data: data || [] });
+      }, {
+        location: latlng(center.lat, center.lng),
+        radius: Math.min(20000, Math.max(100, Math.round(radius))),
+        sort: P.SortBy.DISTANCE,
+        page: page || 1,
+        size: 15
+      });
+    });
+  }
+
+  function placeToRow(p) {
+    var brand = classify({ name: p.place_name, category: p.category_name });
+    if (!brand) return null;
+    var lat = Number(p.y);
+    var lng = Number(p.x);
+    if (!isFinite(lat) || !isFinite(lng)) return null;
     return {
-      promise: promise,
-      abort: function () {
-        controllers.forEach(function (c) { try { c.abort(); } catch (e) {} });
-      }
+      id: p.id || (p.place_name + ":" + lat + ":" + lng),
+      type: "kakao",
+      name: p.place_name || "",
+      brand: brand,
+      shop: "convenience",
+      lat: lat,
+      lng: lng,
+      street: p.road_address_name || p.address_name || "",
+      phone: p.phone || "",
+      placeUrl: p.place_url || ""
     };
   }
 
-  function parseOverpass(payload) {
-    var els = (payload && payload.elements) || [];
+  function rowsFrom(pages) {
     var out = [];
     var seen = {};
-    els.forEach(function (e) {
-      var t = e.tags || {};
-      var lat = e.lat != null ? e.lat : (e.center && e.center.lat);
-      var lng = e.lon != null ? e.lon : (e.center && e.center.lon);
-      if (lat == null || lng == null) return;
-      var b = classify(t);
-      if (!b) return;
-      var id = e.type + "-" + e.id;
-      if (seen[id]) return;
-      seen[id] = 1;
-      out.push({
-        id: id,
-        type: e.type,
-        osmId: e.id,
-        name: t.name || t["name:ko"] || "",
-        brand: b,
-        shop: t.shop,
-        lat: lat,
-        lng: lng,
-        street: t["addr:street"] || ""
+    pages.forEach(function (pg) {
+      (pg.data || []).forEach(function (p) {
+        var row = placeToRow(p);
+        if (!row || seen[row.id]) return;
+        seen[row.id] = 1;
+        out.push(row);
       });
     });
     return out;
+  }
+
+  /* 카테고리 3페이지 병렬 → 빠진 브랜드는 브랜드별 키워드 1페이지로 보충 */
+  function searchNearby(center, radius) {
+    var reqs = [categoryPage(center, radius, 1),
+      categoryPage(center, radius, 2),
+      categoryPage(center, radius, 3)];
+    return Promise.all(reqs).then(function (pages) {
+      var anyOk = pages.some(function (p) { return p.ok; });
+      if (!anyOk) throw new Error("place-search-failed");
+      var rows = rowsFrom(pages);
+      var missing = BRAND_ORDER_LIST.filter(function (b) {
+        return !rows.some(function (r) { return r.brand === b; });
+      });
+      if (!missing.length) return rows;
+      var extra = missing.map(function (b) { return keywordPage(BRAND_QUERY[b], center, radius, 1); });
+      return Promise.all(extra).then(function (pages2) {
+        var more = rowsFrom(pages2).filter(function (r) { return missing.indexOf(r.brand) >= 0; });
+        return rows.concat(more);
+      });
+    });
   }
 
   function load() {
@@ -790,31 +832,29 @@ window.PokeMoaMap = (function () {
     st.loading.data = true;
     st.lastError = null;
     st.pendingLive = false;
-    if (st.currentReq) {
-      try { st.currentReq.abort(); } catch (e) {}
-      st.currentReq = null;
-    }
     pushLoading();
     pushData();
+
+    if (!st.ready) {
+      /* 지도가 없으면(SDK 미등록 도메인·차단) 스냅샷으로 조용히 표시한다 */
+      applySnapshot(seq, st.sdkError ? "kakao-sdk-unavailable" : "map-not-ready");
+      return;
+    }
 
     var center = st.center;
     var radius = st.radius;
     st.fetchedRadius = radius;
-    var req = fetchOverpass(center, radius);
-    st.currentReq = req;
 
     var softTimer = setTimeout(function () {
       if (seq !== st.seq) return;
       if (st.source === "live") return;
       st.pendingLive = true;
       applySnapshot(seq, "timeout");
-    }, OVERPASS_TIMEOUT);
+    }, SEARCH_TIMEOUT);
 
-    req.promise.then(function (payload) {
+    searchNearby(center, radius).then(function (rows) {
       clearTimeout(softTimer);
       if (seq !== st.seq) return;
-      st.currentReq = null;
-      var rows = parseOverpass(payload);
       st.all = prepare(rows, center, "live");
       st.source = "live";
       st.lastError = null;
@@ -824,9 +864,7 @@ window.PokeMoaMap = (function () {
     }).catch(function (err) {
       clearTimeout(softTimer);
       if (seq !== st.seq) return;
-      st.currentReq = null;
       if (st.source === "live") return;
-      /* 요청이 끝까지 실패했으므로 '조금 더 기다리는 중' 표기를 내린다 */
       st.pendingLive = false;
       applySnapshot(seq, String((err && err.message) || err));
     });
@@ -839,6 +877,7 @@ window.PokeMoaMap = (function () {
     st.source = "snapshot";
     st.lastError = reason;
     st.loading.data = false;
+    st.loading.tiles = false;
     finishLoad(seq, false);
   }
 
@@ -861,7 +900,7 @@ window.PokeMoaMap = (function () {
   /* ------------------------------------- 집 태블릿 중계 실재고(relay) */
   /* 중계 서버는 편의점 앱 재고를 대신 조회해 { stores: [{ brand, name, address,
      lat, lng, distanceM, status, items:[{name,qty,code}], updatedAt }] } 로 준다.
-     이 값은 실제 재고이므로 같은 자리의 OSM 매장이 있으면 그 매장 카드에 얹고,
+     이 값은 실제 재고이므로 같은 자리의 지도 매장이 있으면 그 매장 카드에 얹고,
      없으면 중계 매장을 새로 그린다. 해제하면 원래 샘플 상태로 되돌린다. */
   var RELAY_ORDER = ["emart24", "cu", "seven"];
   var RELAY_LABEL = { emart24: "이마트24", cu: "CU", seven: "세븐일레븐" };
@@ -934,7 +973,7 @@ window.PokeMoaMap = (function () {
         if (b.brand === r.brand && meters(b, r) < 80) { twin = b; break; }
       }
       if (twin && !twin.relay) {
-        /* OSM으로 그려둔 같은 매장 — 원래 값을 저장해 두고 중계 값으로 잠시 버꿔 쓴다 */
+        /* 지도로 그려둔 같은 매장 — 원래 값을 저장해 두고 중계 값으로 잠시 바꿔 쓴다 */
         twin.relayBase = {
           name: twin.name, status: twin.status, observed: twin.observed,
           products: twin.products, street: twin.street, source: twin.source, relayQty: null
@@ -979,7 +1018,7 @@ window.PokeMoaMap = (function () {
         delete s.relayBase;
         return true;
       }
-      return !s.relay;   /* 순수 중계 매장은 빼고 OSM·스냅샷 매장만 남깁니다 */
+      return !s.relay;   /* 순수 중계 매장은 빼고 지도·스냅샷 매장만 남깁니다 */
     });
   }
 
@@ -995,15 +1034,21 @@ window.PokeMoaMap = (function () {
 
   /* ---------------------------------------------------------- 공개 API */
   function setView(center, zoom) {
-    if (!st.map) return;
-    st.map.setView([center.lat, center.lng], zoom || st.map.getZoom(), { animate: true });
+    if (!st.ready) return;
+    st.map.setCenter(latlng(center.lat, center.lng));
+    st.map.setLevel(levelForZoom(zoom || 15));
     if (st.ring) {
-      st.ring.setLatLng([center.lat, center.lng]);
+      st.ring.setPosition(latlng(center.lat, center.lng));
       st.ring.setRadius(st.radius);
     }
   }
 
   function allow20() { return st.allow20 !== false; }
+
+  function fitRing() {
+    if (!st.ready || !st.ring) return;
+    try { st.map.setBounds(st.ring.getBounds()); } catch (e) {}
+  }
 
   function setRadius(radius) {
     if (radius > 5000 && !allow20()) radius = 5000;
@@ -1011,9 +1056,7 @@ window.PokeMoaMap = (function () {
     st.radius = radius;
     if (st.ring) st.ring.setRadius(radius);
     /* 20km는 반경 전체가 보이도록 지도를 맞춘다 */
-    if (radius >= 20000 && st.map && st.ring) {
-      st.map.fitBounds(st.ring.getBounds(), { padding: [18, 18] });
-    }
+    if (radius >= 20000) fitRing();
     renderMarkers();
     pushData();
     /* 조회 범위보다 넓어졌으면(스냅샷 포함) 그 반경으로 다시 조회한다 */
@@ -1041,6 +1084,14 @@ window.PokeMoaMap = (function () {
     pushData();
   }
 
+  function resetStateForNewCenter() {
+    st.fetchedRadius = st.radius;
+    st.source = "snapshot";
+    st.all = [];
+    st.visible = [];
+    closeCard();
+  }
+
   function setRegion(id) {
     var r = region(id);
     st.regionId = r.id;
@@ -1049,22 +1100,64 @@ window.PokeMoaMap = (function () {
     st.metro = !st.allow20;
     if (!st.allow20 && st.radius > 5000) st.radius = 5000;
     st.center = { lat: r.lat, lng: r.lng };
-    st.fetchedRadius = st.radius;
-    st.source = "snapshot";
-    st.all = [];
-    st.visible = [];
-    closeCard();
-    if (st.map) {
+    resetStateForNewCenter();
+    if (st.ready) {
       st.loading.tiles = false;
       setView(st.center, st.radius >= 20000 ? (r.zoom || 12) : (r.zoom || 15));
       if (st.ring) st.ring.setRadius(st.radius);
       /* 20km 반경을 고른 상태에서 지역만 바꾸면 반경 전체가 보이도록 맞춘다 */
-      if (st.radius >= 20000 && st.ring) {
-        st.map.fitBounds(st.ring.getBounds(), { padding: [18, 18] });
-      }
+      if (st.radius >= 20000) fitRing();
     }
     renderMarkers();
     load();
+  }
+
+  /* 동네·역 이름 검색 결과(카카오 장소 검색)로 임의 좌표를 볼 때 */
+  function setPoint(point) {
+    if (!point || !isFinite(point.lat) || !isFinite(point.lng)) return;
+    st.origin = "search";
+    st.regionId = "";
+    st.center = { lat: Number(point.lat), lng: Number(point.lng) };
+    st.metro = metroRegions().some(function (r) {
+      return meters(st.center, { lat: r.lat, lng: r.lng }) < METRO_RADIUS_M;
+    });
+    st.allow20 = !st.metro;
+    if (!st.allow20 && st.radius > 5000) st.radius = 5000;
+    resetStateForNewCenter();
+    if (st.ready) {
+      st.loading.tiles = false;
+      setView(st.center, st.radius >= 20000 ? 12 : 15);
+      if (st.ring) st.ring.setRadius(st.radius);
+      if (st.radius >= 20000) fitRing();
+    }
+    renderMarkers();
+    load();
+  }
+
+  /* 동네·역 이름 → 좌표 (카카오 장소 검색). 결과는 callback(list)로 돌려준다. */
+  function searchPlaces(query, cb) {
+    if (!query || !window.kakao || !window.kakao.maps || !window.kakao.maps.services) {
+      if (cb) cb([]);
+      return;
+    }
+    var P = window.kakao.maps.services;
+    try {
+      placesService().keywordSearch(query, function (data, status) {
+        if (!cb) return;
+        if (status !== P.Status.OK || !data) { cb([]); return; }
+        cb(data.slice(0, 6).map(function (p) {
+          return {
+            name: p.place_name,
+            address: p.road_address_name || p.address_name || "",
+            category: p.category_name || "",
+            lat: Number(p.y),
+            lng: Number(p.x)
+          };
+        }).filter(function (p) { return isFinite(p.lat) && isFinite(p.lng); }));
+      }, { size: 6, sort: P.SortBy.ACCURACY });
+    } catch (e) {
+      if (cb) cb([]);
+    }
   }
 
   function locate() {
@@ -1086,13 +1179,21 @@ window.PokeMoaMap = (function () {
       if (!st.allow20 && st.radius > 5000) st.radius = 5000;
       st.fetchedRadius = st.radius;
       st.regionId = "";
-      if (st.map) {
+      if (st.ready) {
         st.loading.tiles = false;
         setView(st.center, 15);
-        if (st.meMarker) st.map.removeLayer(st.meMarker);
-        st.meMarker = L.circleMarker([st.center.lat, st.center.lng], {
-          radius: 7, color: "#ffffff", weight: 3, fillColor: "#2f6df6", fillOpacity: 1
-        }).addTo(st.map).bindTooltip("내 위치");
+        if (st.meMarker) { try { st.meMarker.setMap(null); } catch (e) {} }
+        var node = document.createElement("div");
+        node.className = "pm-me";
+        node.innerHTML = '<span class="pm-me-dot"></span><span class="pm-me-label">내 위치</span>';
+        st.meMarker = new window.kakao.maps.CustomOverlay({
+          position: latlng(st.center.lat, st.center.lng),
+          content: node,
+          xAnchor: 0.5,
+          yAnchor: 0.5,
+          zIndex: 950
+        });
+        st.meMarker.setMap(st.map);
       }
       emit("pokemoa:geo-done", { lat: st.center.lat, lng: st.center.lng });
       load();
@@ -1114,19 +1215,50 @@ window.PokeMoaMap = (function () {
   function focusStore(id) {
     var s = null;
     for (var i = 0; i < st.visible.length; i++) if (st.visible[i].id === id) s = st.visible[i];
-    if (!s || !st.map) return;
-    st.map.flyTo([s.lat, s.lng], Math.max(st.map.getZoom(), 16), { duration: 0.5 });
+    if (!s) return;
+    if (st.ready) {
+      st.map.setLevel(Math.min(st.map.getLevel(), 4));
+      st.map.panTo(latlng(s.lat, s.lng));
+    }
     select(id, false);
+  }
+
+  /* SDK를 못 쓰는 주소(미등록 도메인·차단)에서 지도 자리에 남기는 안내 */
+  function sdkNoticeHtml() {
+    return '<div class="pm-sdk-note" role="status">' +
+      '<strong>카카오맵을 이 주소에서는 열 수 없습니다</strong>' +
+      '<p>카카오 JavaScript 키에 등록된 도메인은 <b>https://moa-kr.github.io</b> 하나입니다. ' +
+      '배포 주소 <a href="https://moa-kr.github.io/pokemoa/" target="_blank" rel="noopener">moa-kr.github.io/pokemoa</a>에서 열면 ' +
+      '카카오맵 지도와 실제 편의점 4사 매장이 표시됩니다.</p>' +
+      '<p>아래 매장 목록은 내장된 실제 좌표 스냅샷(2026-11-17)으로 계산한 값이라 그대로 확인할 수 있습니다.</p>' +
+      '</div>';
+  }
+
+  function showSdkNotice() {
+    if (!el.container) return;
+    var old = el.container.querySelector(".pm-sdk-note-wrap");
+    if (old) old.parentNode.removeChild(old);
+    var wrap = document.createElement("div");
+    wrap.className = "pm-sdk-note-wrap";
+    wrap.innerHTML = sdkNoticeHtml();
+    el.container.appendChild(wrap);
   }
 
   function init(opts) {
     el.container = opts.container;
     el.card = opts.card;
 
-    ensureLeaflet(function (ok) {
+    ensureKakao(function (ok) {
       if (!ok) {
-        emit("pokemoa:error", { message: "지도 라이브러리(Leaflet)를 불러오지 못했습니다. 네트워크 확인 후 '다시 조회'를 눌러 주세요." });
-        emit("pokemoa:loading", { active: false, phase: "error", message: "지도 라이브러리 로드 실패", progress: 0 });
+        st.sdkError = true;
+        st.ready = false;
+        st.loading.tiles = false;
+        showSdkNotice();
+        emit("pokemoa:loading", { active: false, phase: "error", message: "카카오맵 SDK를 불러오지 못했습니다", progress: 0 });
+        emit("pokemoa:sdk-error", {
+          message: "카카오맵을 이 주소에서 열 수 없어 내장 실제 좌표 스냅샷으로 표시합니다. 배포 주소(moa-kr.github.io/pokemoa)에서는 카카오맵이 정상 동작합니다."
+        });
+        setRegion(st.regionId);
         return;
       }
       buildMap();
@@ -1143,6 +1275,8 @@ window.PokeMoaMap = (function () {
   var API = {
     init: init,
     setRegion: setRegion,
+    setPoint: setPoint,
+    searchPlaces: searchPlaces,
     setBrand: setBrand,
     setProduct: setProduct,
     setStockOnly: setStockOnly,
@@ -1155,7 +1289,7 @@ window.PokeMoaMap = (function () {
     getVisible: function () { return st.visible.slice(); },
     applyRelay: applyRelay,
     clearRelay: clearRelay,
-    invalidate: function () { if (st.map) st.map.invalidateSize(); }
+    invalidate: function () { if (st.ready && st.map.relayout) { try { st.map.relayout(); } catch (e) {} } }
   };
   return API;
 })();
