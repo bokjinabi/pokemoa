@@ -35,7 +35,8 @@
     home: $("#panel-home"),
     map: $("#panel-map"),
     schedule: $("#panel-schedule"),
-    guide: $("#panel-guide")
+    guide: $("#panel-guide"),
+    trends: $("#panel-trends")
   };
   var navBtns = $$(".nav-btn");
   var currentTab = "map";
@@ -59,6 +60,7 @@
         setTimeout(function () { window.PokeMoaMap.invalidate(); }, 80);
       }
     }
+    if (name === "trends") loadRelayMovers();
     if (!opts || !opts.keepScroll) {
       window.scrollTo({ top: 0, behavior: "auto" });
     }
@@ -1904,6 +1906,510 @@
     }
   }
 
+  /* =========================================================================
+   * 시세·이슈·신규팩·팝수 (v4.9)
+   * - 시세: data.js 의 kreamMovers(2026-11-18 KREAM 확인값)를 그대로 그립니다.
+   *   태블릿 중계({relay}/api/kream-movers)가 연결되면 같은 자리를 실시간 값으로
+   *   바꾸고, 응답이 없거나 형식이 다르면 정적 값으로 남겨 둡니다.
+   * - 팝수: 도감·번호 인덱스에서 찾아 기본 정보와 바로가기를 보여 주고,
+   *   중계의 /api/pop?q= 가 응답하면 팝수를 함께 표시합니다.
+   * ========================================================================= */
+  var KC = D.KREAM_CHECKED || {};
+  var MOVERS = (D.kreamMovers || []).slice();
+  var CARD_NUMBERS = D.cardNumbers || [];
+  var CARD_RANGES = D.cardRanges || [];
+  var POP_TOOLS = D.popTools || {};
+
+  var moverGrid = $("#moverGrid");
+  var kreamTableBody = $("#kreamTableBody");
+  var kreamBoardSub = $("#kreamBoardSub");
+  var kreamRelayBadge = $("#kreamRelayBadge");
+  var trendStats = $("#trendStats");
+  var kreamLiveLink = $("#kreamLiveLink");
+  var issueList = $("#issueList");
+  var releaseGrid = $("#releaseGrid");
+
+  var popForm = $("#popForm");
+  var popQueryEl = $("#popQuery");
+  var popChips = $("#popChips");
+  var popLinks = $("#popLinks");
+  var popResults = $("#popResults");
+  var popRelayStatus = $("#popRelayStatus");
+  var popRelaySeq = 0;
+
+  function won(n) {
+    if (n == null || isNaN(n)) return "-";
+    return Number(n).toLocaleString("ko-KR") + "원";
+  }
+  function signed(n) {
+    if (n == null || isNaN(n)) return "-";
+    return (n > 0 ? "+" : n < 0 ? "-" : "") + Math.abs(Number(n)).toLocaleString("ko-KR");
+  }
+  function pctOf(n) {
+    if (n == null || isNaN(n)) return "";
+    var v = Math.abs(Number(n)).toFixed(1).replace(/\.0$/, "");
+    return (n > 0 ? "+" : n < 0 ? "-" : "") + v + "%";
+  }
+  function relDirection(m) {
+    if (m.dir === "up") return "up";
+    if (m.dir === "down") return "down";
+    if (m.dir === "flat") return "flat";
+    return "na";
+  }
+  function artFor(item) {
+    var c = artClass[item.tag];
+    if (c) return c;
+    return "art-sar";
+  }
+  function artGradient(item) {
+    if (item.tag === "fur") return "";
+    if (item.tag === "classic") return "background:linear-gradient(150deg,hsl(38 32% 89%),hsl(32 26% 80%) 55%,hsl(26 22% 75%))";
+    if (item.tag === "ar") return "background:linear-gradient(150deg,hsl(198 60% 90%),hsl(150 42% 88%) 55%,hsl(44 70% 90%))";
+    return "background:linear-gradient(150deg,hsl(330 70% 92%),hsl(292 58% 89%) 55%,hsl(258 56% 92%))";
+  }
+  function relayUrl() {
+    try { return localStorage.getItem("pokemoa.relayUrl") || ""; } catch (e) { return ""; }
+  }
+
+  /* --------------------------------------------------- 오늘 오른 카드 */
+  function renderTrendStats(list) {
+    if (!trendStats) return;
+    var up = 0, down = 0, flat = 0, na = 0;
+    list.forEach(function (m) {
+      var d = relDirection(m);
+      if (d === "up") up++; else if (d === "down") down++;
+      else if (d === "flat") flat++; else na++;
+    });
+    trendStats.innerHTML =
+      '<span class="trend-stat is-up"><b>' + up + '</b>장 상승</span>' +
+      '<span class="trend-stat is-down"><b>' + down + '</b>장 하락</span>' +
+      '<span class="trend-stat"><b>' + flat + '</b>장 보합</span>' +
+      (na ? '<span class="trend-stat"><b>' + na + '</b>장 비교 불가</span>' : "") +
+      '<span class="trend-stat is-src">' + escapeHtml((KC.label || "KREAM") + " · " + (KC.date || "") + " " + (KC.time || "") + " 확인") + "</span>";
+  }
+
+  function renderMovers(list) {
+    if (!moverGrid) return;
+    var rising = list.filter(function (m) { return relDirection(m) === "up"; });
+    rising.sort(function (a, b) { return (b.pct || 0) - (a.pct || 0); });
+    if (!rising.length) {
+      moverGrid.innerHTML = '<p class="mover-empty">지금 확인된 상승 체결이 없습니다. 아래 표에서 오늘 체결 전체를 볼 수 있습니다.</p>';
+      return;
+    }
+    moverGrid.innerHTML = rising.slice(0, 4).map(function (m, i) {
+      return '<article class="mover-card">' +
+        '<span class="mover-rank">' + (i + 1) + '</span>' +
+        '<span class="mover-art ' + artFor(m) + '" data-mark="' + escapeHtml((m.num || "").split("/")[0] || "") + '" style="' + artGradient(m) + '">' +
+          '<span class="mover-rarity">' + escapeHtml(m.rarity || "") + '</span>' +
+          '<span class="mover-num">' + escapeHtml(m.num || "") + '</span>' +
+        '</span>' +
+        '<div class="mover-body">' +
+          '<div class="mover-top"><strong>' + escapeHtml(m.name) + '</strong>' +
+            (m.kreamId ? '<a class="mover-kream" href="' + m.url + '" target="_blank" rel="noopener" data-kream-out="' + m.kreamId + '">KREAM ↗</a>' : '') +
+          '</div>' +
+          '<div class="mover-price"><b>' + won(m.lastPrice) + '</b>' +
+            '<span class="mover-delta is-up">▲ ' + pctOf(m.pct) + '</span></div>' +
+          '<p class="mover-meta">최근 체결 <b>' + escapeHtml(m.lastWhen || "") + '</b> · 직전 ' + won(m.prevPrice) + '(' + escapeHtml(m.prevWhen || "") + ') · 누적 ' + (m.trades || 0) + '건</p>' +
+          '<p class="mover-note">' + escapeHtml(m.set || "") + ' · ' + escapeHtml(m.model || "") + '</p>' +
+          '<button type="button" class="mover-pop" data-pop-num="' + escapeHtml(m.num || "") + '">' + escapeHtml(m.num || "") + ' 팝수 조회 →</button>' +
+        '</div>' +
+      '</article>';
+    }).join("");
+    $$("[data-pop-num]", moverGrid).forEach(function (b) {
+      b.addEventListener("click", function () {
+        showTab("trends");
+        if (popQueryEl) popQueryEl.value = b.getAttribute("data-pop-num");
+        runPopSearch(b.getAttribute("data-pop-num"), "mover");
+        var anchor = $("#popSection");
+        if (anchor) setTimeout(function () { anchor.scrollIntoView({ behavior: "smooth", block: "start" }); }, 60);
+      });
+    });
+    $$("[data-kream-out]", moverGrid).forEach(function (a) {
+      a.addEventListener("click", function () { trackEvent("kream_outbound", { from: "movers" }); });
+    });
+  }
+
+  function renderKreamTable(list) {
+    if (!kreamTableBody) return;
+    var order = list.slice().sort(function (a, b) {
+      var rank = { up: 0, flat: 1, down: 2, na: 3 };
+      var d = (rank[relDirection(a)] || 3) - (rank[relDirection(b)] || 3);
+      if (d) return d;
+      return Math.abs(b.pct || 0) - Math.abs(a.pct || 0);
+    });
+    kreamTableBody.innerHTML = order.map(function (m) {
+      var dir = relDirection(m);
+      var pctCell = dir === "na"
+        ? '<span class="kream-na">비교 불가</span>'
+        : '<span class="kream-pct is-' + dir + '">' + (dir === "up" ? "▲ " : dir === "down" ? "▼ " : "") + pctOf(m.pct) + '</span>' +
+          (m.diff ? '<small>(' + signed(m.diff) + '원)</small>' : "");
+      var pageCell = m.pageDelta
+        ? '<span class="kream-page is-' + m.pageDelta.kind + '">' + escapeHtml(m.pageDelta.text) + '</span><small>' + escapeHtml(m.pageDelta.note || "") + '</small>'
+        : '<span class="kream-na">표시 없음</span>';
+      return '<tr>' +
+        '<td><a class="kream-name" href="' + m.url + '" target="_blank" rel="noopener" data-kream-out="' + m.kreamId + '">' + escapeHtml(m.name) + '</a>' +
+          '<small class="kream-sub">' + escapeHtml(m.num || "") + ' · ' + escapeHtml(m.model || "") + '</small></td>' +
+        '<td class="num">' + won(m.lastPrice) + '<small>' + escapeHtml(m.lastWhen || "") + '</small></td>' +
+        '<td class="num">' + won(m.prevPrice) + '<small>' + escapeHtml(m.prevWhen || "") + '</small></td>' +
+        '<td class="num">' + pctCell + '</td>' +
+        '<td class="num">' + (m.trades || 0) + '건</td>' +
+        '<td>' + pageCell + '</td>' +
+      '</tr>';
+    }).join("");
+    $$("[data-kream-out]", kreamTableBody).forEach(function (a) {
+      a.addEventListener("click", function () { trackEvent("kream_outbound", { from: "table" }); });
+    });
+  }
+
+  function renderKreamNote(list) {
+    if (kreamBoardSub) {
+      kreamBoardSub.textContent = (KC.date || "") + " " + (KC.time || "") + " 확인 · 한글판 · 비로그인 공개 내역 · 수수료·배송비 별도 · " + list.length + "장";
+    }
+    if (kreamLiveLink && KC.collection) kreamLiveLink.href = KC.collection;
+  }
+
+  function applyMovers(list, source) {
+    MOVERS = list;
+    renderTrendStats(list);
+    renderMovers(list);
+    renderKreamTable(list);
+    renderKreamNote(list);
+    if (kreamRelayBadge) {
+      kreamRelayBadge.textContent = source === "relay" ? "중계 실시간" : "정적 데이터";
+      kreamRelayBadge.className = "chip " + (source === "relay" ? "chip-yellow" : "chip-line");
+    }
+  }
+
+  var relayMoversTried = false;
+  function loadRelayMovers() {
+    renderTrendStats(MOVERS);
+    renderMovers(MOVERS);
+    renderKreamTable(MOVERS);
+    renderKreamNote(MOVERS);
+    if (relayMoversTried) return;
+    relayMoversTried = true;
+    trackEvent("trends_view", { cards: MOVERS.length });
+    var base = relayUrl();
+    if (!base) return;
+    var ctrl = new AbortController();
+    var timer = setTimeout(function () { ctrl.abort(); }, 6000);
+    fetch(base + "/api/kream-movers", { signal: ctrl.signal, mode: "cors", cache: "no-store" })
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .then(function (payload) {
+        if (payload && payload.ok && payload.items && payload.items.length) {
+          applyMovers(payload.items, "relay");
+          toast("중계에서 KREAM 시세 " + payload.items.length + "장을 받았습니다.");
+        }
+      })
+      .catch(function () { /* 중계가 없으면 정적 값 그대로 */ })
+      .finally(function () { clearTimeout(timer); });
+  }
+
+  /* ------------------------------------------------------- 카드 이슈 */
+  function renderIssues() {
+    if (!issueList) return;
+    var items = D.cardIssues || [];
+    issueList.innerHTML = items.map(function (it) {
+      var links = (it.links || []).map(function (l) {
+        return '<a href="' + l.url + '" target="_blank" rel="noopener" data-issue-out="' + escapeHtml(it.tag) + '">' + escapeHtml(l.label) + ' ↗</a>';
+      }).join("");
+      return '<li class="issue-item is-' + (it.kind || "etc") + '">' +
+        '<div class="issue-side"><span class="issue-date">' + escapeHtml(it.date) + '</span>' +
+          '<span class="issue-tag">' + escapeHtml(it.tag) + '</span></div>' +
+        '<div class="issue-body"><h3>' + escapeHtml(it.title) + '</h3>' +
+          '<p>' + escapeHtml(it.body) + '</p>' +
+          '<div class="issue-links">' + links + '</div></div>' +
+      '</li>';
+    }).join("");
+    $$("[data-issue-out]", issueList).forEach(function (a) {
+      a.addEventListener("click", function () { trackEvent("issue_outbound", { tag: a.getAttribute("data-issue-out") }); });
+    });
+  }
+
+  /* ---------------------------------------------------- 신규 팩 발매 */
+  function renderReleases() {
+    if (!releaseGrid) return;
+    var items = D.newReleases || [];
+    releaseGrid.innerHTML = items.map(function (r) {
+      var chipCls = r.kind === "soon" ? "chip-yellow" : r.kind === "overseas" ? "chip-blue" : "chip-line";
+      return '<article class="release-card is-' + (r.kind || "done") + '">' +
+        '<div class="release-head"><span class="chip ' + chipCls + '">' + escapeHtml(r.status) + '</span>' +
+          '<span class="release-date">' + escapeHtml(r.date) + '</span></div>' +
+        '<h3>' + escapeHtml(r.name) + '</h3>' +
+        '<p class="release-type">' + escapeHtml(r.type) + '</p>' +
+        '<dl class="release-spec">' +
+          '<div><dt>정가</dt><dd>' + escapeHtml(r.price) + '</dd></div>' +
+          '<div><dt>구성</dt><dd>' + escapeHtml(r.config) + '</dd></div>' +
+        '</dl>' +
+        '<p class="release-note">' + escapeHtml(r.note || "") + '</p>' +
+        '<div class="release-links">' +
+          '<a href="' + r.url + '" target="_blank" rel="noopener" data-release-out="official">공식 제품 정보 ↗</a>' +
+          (r.store ? '<a href="' + r.store + '" target="_blank" rel="noopener" data-release-out="store">스토어 상품 페이지 ↗</a>' : '') +
+        '</div>' +
+      '</article>';
+    }).join("");
+    $$("[data-release-out]", releaseGrid).forEach(function (a) {
+      a.addEventListener("click", function () { trackEvent("release_outbound", { kind: a.getAttribute("data-release-out") }); });
+    });
+  }
+
+  /* ------------------------------------------------------ 팝수 조회 */
+  function normNum(raw) {
+    var s = String(raw == null ? "" : raw).replace(/\s+/g, "");
+    var m = s.match(/(\d{1,4})\/(\d{1,4})/);
+    if (!m) return "";
+    return parseInt(m[1], 10) + "/" + parseInt(m[2], 10);
+  }
+  function moverFor(item) {
+    for (var i = 0; i < MOVERS.length; i++) {
+      if (item.num && normNum(MOVERS[i].num) === normNum(item.num) && MOVERS[i].name === item.name) return MOVERS[i];
+    }
+    for (var j = 0; j < MOVERS.length; j++) {
+      if (item.num && normNum(MOVERS[j].num) === normNum(item.num)) return MOVERS[j];
+    }
+    return null;
+  }
+  function popQueryText(item) {
+    var parts = [];
+    if (item.en) parts.push(item.en);
+    else if (item.name) parts.push(item.name);
+    if (item.num) parts.push(item.num);
+    if (item.set && !item.en) parts.push(item.set);
+    return parts.join(" ");
+  }
+  function priceChartingUrl(item) {
+    var base = POP_TOOLS.pricecharting || "https://www.pricecharting.com/search-products?q=";
+    var q = item && item.en ? (item.en + " " + (/30th/i.test(item.set || "") ? "30th Celebration" : (item.set || ""))) : (popQueryEl ? popQueryEl.value : "");
+    return base + encodeURIComponent(q.trim()) + "&type=prices";
+  }
+  function copyText(text) {
+    var value = String(text || "");
+    if (!value) return Promise.resolve(false);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(value).then(function () { return true; }).catch(function () { return legacyCopy(value); });
+    }
+    return Promise.resolve(legacyCopy(value));
+  }
+  function legacyCopy(value) {
+    try {
+      var ta = document.createElement("textarea");
+      ta.value = value;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return ok;
+    } catch (e) { return false; }
+  }
+  function openExternal(url) {
+    var w = window.open(url, "_blank", "noopener");
+    if (w) w.opener = null;
+  }
+
+  function popMatches(raw) {
+    var q = String(raw || "").trim();
+    var out = { items: [], range: null, query: q };
+    if (!q) return out;
+    var num = normNum(q);
+    var seen = {};
+    function push(item) {
+      var key = (item.set || "") + "|" + item.name + "|" + (item.num || "");
+      if (seen[key]) return;
+      seen[key] = 1;
+      out.items.push(item);
+    }
+    if (num) {
+      CARD_NUMBERS.forEach(function (c) { if (normNum(c.num) === num) push(c); });
+      SETS.forEach(function (s) {
+        (s.cards || []).forEach(function (c) {
+          if (c.num && normNum(c.num) === num) {
+            push({ name: c.name, num: c.num, rarity: c.rarity, tag: c.tag, set: s.short, note: c.note });
+          }
+        });
+      });
+      if (!out.items.length) {
+        var parts = num.split("/");
+        var no = parseInt(parts[0], 10), total = parseInt(parts[1], 10);
+        CARD_RANGES.forEach(function (r) {
+          if (r.total === total && no >= r.from && no <= r.to) {
+            out.range = { set: r.set, label: r.label, note: r.note, num: no + "/" + total };
+          }
+        });
+      }
+      return out;
+    }
+    var needle = q.toLowerCase();
+    CARD_NUMBERS.forEach(function (c) {
+      if (String(c.name).toLowerCase().indexOf(needle) >= 0 || String(c.en || "").toLowerCase().indexOf(needle) >= 0) push(c);
+    });
+    SETS.forEach(function (s) {
+      (s.cards || []).forEach(function (c) {
+        if (String(c.name).toLowerCase().indexOf(needle) >= 0) {
+          push({ name: c.name, num: c.num, rarity: c.rarity, tag: c.tag, set: s.short, note: c.note });
+        }
+      });
+    });
+    return out;
+  }
+
+  function renderPopLinks(context) {
+    if (!popLinks) return;
+    var q = context && context.query ? context.query : "";
+    var item = context && context.items && context.items.length ? context.items[0] : null;
+    var text = item ? popQueryText(item) : q;
+    var kreamBase = POP_TOOLS.kream || "https://kream.co.kr/search?keyword=";
+    var kreamKeyword = item ? (item.name + " " + (item.set || "")) : q;
+    popLinks.innerHTML =
+      '<button type="button" class="pop-link" data-pop-tool="psa"><b>PSA 팝 리포트</b><small>검색어 복사 후 열기</small></button>' +
+      '<button type="button" class="pop-link" data-pop-tool="brg"><b>BRG 팝 리포트</b><small>검색어 복사 후 열기</small></button>' +
+      '<a class="pop-link" href="' + kreamBase + encodeURIComponent(kreamKeyword) + '" target="_blank" rel="noopener" data-pop-tool="kream"><b>KREAM 시세 검색</b><small>' + escapeHtml(item ? item.name + " " + (item.num || "") : (q || "카드명을 넣어 보세요")) + '</small></a>' +
+      '<a class="pop-link" href="' + priceChartingUrl(item) + '" target="_blank" rel="noopener" data-pop-tool="price"><b>PriceCharting</b><small>영문 카드명 기준 검색</small></a>';
+
+    $$("[data-pop-tool]", popLinks).forEach(function (el) {
+      var tool = el.getAttribute("data-pop-tool");
+      el.addEventListener("click", function (e) {
+        trackEvent("pop_outbound", { tool: tool });
+        if (tool === "psa" || tool === "brg") {
+          e.preventDefault();
+          var url = tool === "psa" ? (POP_TOOLS.psa || {}).url : (POP_TOOLS.brg || {}).url;
+          var target = tool === "psa" ? (POP_TOOLS.psa || {}).url : (POP_TOOLS.brg || {}).url;
+          if (!target) return;
+          copyText(text || q).then(function (ok) {
+            openExternal(target);
+            toast(ok
+              ? "검색어 \u201c" + (text || q) + "\u201d를 복사했습니다. 열린 사이트 검색창에 붙여넣으세요."
+              : "검색어 \u201c" + (text || q) + "\u201d를 직접 입력해 주세요.");
+          });
+        }
+      });
+    });
+  }
+
+  function renderPopResults(context) {
+    if (!popResults) return;
+    var items = context.items || [];
+    var html = "";
+    if (!context.query) {
+      html = '<p class="pop-empty">카드 번호나 카드명을 넣으면 도감·번호 인덱스에서 찾아 드립니다. 위쪽 빠른 검색을 눌러도 됩니다.</p>';
+    } else if (!items.length && !context.range) {
+      html = '<p class="pop-empty">‘' + escapeHtml(context.query) + '’에 해당하는 카드를 사이트 도감에서 찾지 못했습니다. 위 팝 리포트·KREAM 검색으로 바로 확인해 보세요.</p>';
+    }
+    if (context.range) {
+      html += '<div class="pop-range"><b>' + escapeHtml(context.range.num) + ' · ' + escapeHtml(context.range.set) + '</b>' +
+        '<span>' + escapeHtml(context.range.label) + ' 구간입니다. ' + escapeHtml(context.range.note) + '</span></div>';
+    }
+    html += items.slice(0, 8).map(function (item) {
+      var mv = moverFor(item);
+      var priceLine = mv
+        ? '<span class="pop-price">KREAM 최근 체결 <b>' + won(mv.lastPrice) + '</b> · ' + escapeHtml(mv.lastWhen || "") + ' (누적 ' + (mv.trades || 0) + '건)</span>'
+        : '<span class="pop-price muted">참고 시세 없음 · KREAM 검색으로 확인</span>';
+      return '<article class="pop-card">' +
+        '<span class="pop-art ' + artFor(item) + '" data-mark="' + escapeHtml((item.set || "").slice(0, 2)) + '" style="' + artGradient(item) + '">' +
+          '<span class="mover-rarity">' + escapeHtml(item.rarity || "") + '</span></span>' +
+        '<div class="pop-info">' +
+          '<div class="pop-name">' + escapeHtml(item.name) + '</div>' +
+          '<div class="pop-set">' + escapeHtml(item.set || "") + (item.num ? ' · ' + escapeHtml(item.num) : '') + '</div>' +
+          priceLine +
+          (item.note ? '<p class="pop-note-line">' + escapeHtml(item.note) + '</p>' : '') +
+          '<div class="pop-card-links">' +
+            (item.kream ? '<a href="' + item.kream + '" target="_blank" rel="noopener">KREAM ↗</a>' : '') +
+            '<button type="button" data-pop-psa="' + escapeHtml(popQueryText(item)) + '">PSA 팝</button>' +
+            '<button type="button" data-pop-brg="' + escapeHtml(popQueryText(item)) + '">BRG 팝</button>' +
+          '</div>' +
+        '</div>' +
+      '</article>';
+    }).join("");
+    popResults.innerHTML = html;
+
+    function bind(key, url) {
+      $$('[data-pop-' + key + ']', popResults).forEach(function (b) {
+        b.addEventListener("click", function () {
+          var text = b.getAttribute('data-pop-' + key) || "";
+          trackEvent("pop_outbound", { tool: key });
+          copyText(text).then(function (ok) {
+            openExternal(url);
+            toast(ok ? "검색어 \u201c" + text + "\u201d를 복사했습니다. 검색창에 붙여넣으세요." : "검색어를 직접 입력해 주세요: " + text);
+          });
+        });
+      });
+    }
+    bind("psa", (POP_TOOLS.psa || {}).url);
+    bind("brg", (POP_TOOLS.brg || {}).url);
+  }
+
+  function renderPopRelay(payload, context) {
+    if (!popRelayStatus) return;
+    if (!payload) {
+      popRelayStatus.textContent = relayUrl()
+        ? "태블릿 중계에 팝수 조회(/api/pop?q=)를 요청했습니다."
+        : "PSA·BRG 팝수는 사이트에서 직접 읽어 올 수 없어 검색어 복사 방식으로 연결합니다. 태블릿 중계를 연결하면 이 자리에 팝수가 표시됩니다.";
+      return;
+    }
+    var rows = payload.items || payload.results || [];
+    if (!payload.ok || !rows.length) {
+      popRelayStatus.textContent = "중계 응답에 팝수가 없습니다. 팝 리포트 바로가기로 확인해 주세요.";
+      return;
+    }
+    popRelayStatus.innerHTML = '<span class="pop-relay-title">중계 팝수 · ' + escapeHtml(context.query) + '</span>' +
+      rows.map(function (r) {
+        return '<span class="pop-relay-row"><b>' + escapeHtml(r.name || r.label || "") + '</b> ' +
+          (r.psa10 != null ? 'PSA 10 ' + r.psa10 + '장' : '') +
+          (r.psaTotal != null ? ' / PSA 전체 ' + r.psaTotal + '장' : '') +
+          (r.brg10 != null ? ' · BRG 10 ' + r.brg10 + '장' : '') +
+          (r.brgTotal != null ? ' / BRG 전체 ' + r.brgTotal + '장' : '') + '</span>';
+      }).join("");
+  }
+
+  function runPopSearch(raw, from) {
+    var context = popMatches(raw);
+    renderPopLinks(context);
+    renderPopResults(context);
+    trackEvent("pop_search", { from: from || "form", has_result: context.items.length ? 1 : 0 });
+    var base = relayUrl();
+    if (!base || !context.query) {
+      renderPopRelay(null, context);
+      return;
+    }
+    var seq = ++popRelaySeq;
+    var ctrl = new AbortController();
+    var timer = setTimeout(function () { ctrl.abort(); }, 7000);
+    fetch(base + "/api/pop?q=" + encodeURIComponent(context.query), { signal: ctrl.signal, mode: "cors", cache: "no-store" })
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .then(function (payload) {
+        if (seq === popRelaySeq) renderPopRelay(payload || { ok: false }, context);
+      })
+      .catch(function () {
+        if (seq === popRelaySeq) renderPopRelay({ ok: false }, context);
+      })
+      .finally(function () { clearTimeout(timer); });
+  }
+
+  function initPop() {
+    if (!popForm) return;
+    popForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      runPopSearch(popQueryEl ? popQueryEl.value : "", "form");
+    });
+    if (popChips) {
+      popChips.innerHTML = (POP_TOOLS.quick || []).map(function (q) {
+        return '<button type="button" class="pop-chip" data-quick="' + escapeHtml(q) + '">' + escapeHtml(q) + '</button>';
+      }).join("");
+      $$("[data-quick]", popChips).forEach(function (b) {
+        b.addEventListener("click", function () {
+          var q = b.getAttribute("data-quick");
+          if (popQueryEl) popQueryEl.value = q;
+          runPopSearch(q, "chip");
+        });
+      });
+    }
+    renderPopLinks({ query: "", items: [] });
+    renderPopResults({ query: "", items: [] });
+    renderPopRelay(null, { query: "" });
+  }
+
   /* --------------------------------------------------------------- 초기화 */
   buildCalendar();
   buildScheduleFold();
@@ -1915,11 +2421,16 @@
   runCalc();
   renderBoxPicker();
   renderBoxBoard();
+  applyMovers(MOVERS, "static");
+  renderIssues();
+  renderReleases();
+  initPop();
 
   /* #stores·#boxStores는 「정가 구매처」 탭의 짧은 주소로 같이 받아 줍니다. */
   function tabOfHash(h) {
     if (h === "stores" || h === "boxStores") return "home";
     if (h === "cards") return "guide";
+    if (h === "pop" || h === "movers" || h === "issues" || h === "releases") return "trends";
     return panels[h] ? h : "";
   }
 

@@ -14,7 +14,7 @@
 </script>
 
 <title>포켓몬카드모아 — 포켓몬 카드 정가·입고·재고 한눈에 (30th CELEBRATION)</title>
-<meta name="description" content="포켓몬카드모아는 포켓몬 카드 확장팩별 도감·가이드(30th CELEBRATION·어비스아이·블랙볼트·테라스탈 페스타 ex·배틀 파트너즈·로켓단의 영광·초전 브레이커·열풍의 아레나·스타터 세트 등)와 30th CELEBRATION 정가 구매처(포켓몬스토어·SSG·G마켓·티씨지박스·편의점 4사), 다른 확장팩·박스별 정가 구매처(포켓몬스토어·네이버 브랜드스토어·G마켓 공식인증샵·SSG·티씨지박스·롯데ON), 추첨 일정, 입고 기록, 편의점 4사 재고·취급 카드 지도, 수록 카드 도감과 정가·리셀 판단 가이드를 한 곳에 모았습니다.">
+<meta name="description" content="포켓몬카드모아는 포켓몬 카드 확장팩별 도감·가이드(30th CELEBRATION·어비스아이·블랙볼트·테라스탈 페스타 ex·배틀 파트너즈·로켓단의 영광·초전 브레이커·열풍의 아레나·스타터 세트 등)와 30th CELEBRATION 정가 구매처(포켓몬스토어·SSG·G마켓·티씨지박스·편의점 4사), 다른 확장팩·박스별 정가 구매처(포켓몬스토어·네이버 브랜드스토어·G마켓 공식인증샵·SSG·티씨지박스·롯데ON), 추첨 일정, 입고 기록, 편의점 4사 재고·취급 카드 지도. 최근 KREAM 한글판 시세와 카드 이슈·신규팩 발매 소식, 카드 번호로 찾는 PSA·BRG 팝수 조회 메뉴를 함께 제공합니다.">
 <meta name="keywords" content="포켓몬카드, 30th CELEBRATION, 30주년 카드팩, 포켓몬 카드 정가, 포켓몬 카드 재고, 편의점 포켓몬카드, GS25 포켓몬카드, CU 포켓몬카드, 포켓몬스토어 추첨, 포켓몬카드모아, 카드모아">
 <meta name="author" content="포켓몬카드모아">
 <meta name="robots" content="index, follow">
@@ -3264,6 +3264,224 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .pm-pill.is-offline { border-color: rgba(16, 31, 60, 0.18); }
 .store-item.is-offline .s-name { font-weight: 700; }
 
+/* =========================================================================
+   v4.9 시세·이슈·신규팩·팝수 탭
+   ========================================================================= */
+.trend-stats { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.trend-stat {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 11px; border-radius: 999px;
+  background: #fff; border: 1px solid var(--line);
+  font-size: 12px; font-weight: 700; color: var(--ink-2);
+}
+.trend-stat b { font-size: 14px; font-variant-numeric: tabular-nums; }
+.trend-stat.is-up { background: #fdeceb; border-color: #f6cfcb; color: #b3261e; }
+.trend-stat.is-down { background: var(--blue-soft); border-color: #cadcff; color: #1f4fbe; }
+.trend-stat.is-src { background: transparent; border-style: dashed; font-weight: 600; color: var(--muted); }
+
+/* ---------------------------------------------------- 오늘 오른 카드 */
+.mover-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.mover-empty { margin: 0; padding: 16px; background: #fff; border: 1px dashed var(--line); border-radius: 14px; font-size: 13px; color: var(--muted); }
+.mover-card {
+  position: relative;
+  display: flex; gap: 12px;
+  padding: 14px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.mover-card:first-child { border-color: #f2dfa5; box-shadow: 0 8px 22px rgba(255, 203, 5, 0.16); }
+.mover-rank {
+  position: absolute; top: -8px; left: 12px;
+  min-width: 22px; height: 22px; padding: 0 6px;
+  display: grid; place-items: center;
+  border-radius: 999px;
+  background: var(--navy); color: #fff;
+  font-size: 11.5px; font-weight: 900;
+}
+.mover-art {
+  position: relative; flex-shrink: 0;
+  width: 74px; aspect-ratio: 4 / 5;
+  border-radius: 10px; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: space-between;
+  padding: 6px;
+  background: linear-gradient(150deg, #eef1f7, #dfe6f1);
+}
+.mover-art::after {
+  content: ""; position: absolute; inset: 0;
+  background: repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.32) 0 2px, transparent 2px 10px);
+  mix-blend-mode: overlay;
+}
+.mover-rarity {
+  position: relative; z-index: 1; align-self: flex-start;
+  font-size: 9px; font-weight: 900; letter-spacing: 0.04em;
+  padding: 2px 5px; border-radius: 4px;
+  background: rgba(16, 31, 60, 0.82); color: #fff;
+}
+.mover-num {
+  position: relative; z-index: 1; align-self: flex-end;
+  font-size: 9.5px; font-weight: 800;
+  color: rgba(16, 31, 60, 0.6);
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 4px; padding: 1px 4px;
+}
+.mover-body { flex: 1; min-width: 0; }
+.mover-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.mover-top strong { font-size: 15px; letter-spacing: -0.02em; }
+.mover-kream { font-size: 11.5px; font-weight: 800; color: var(--blue); white-space: nowrap; }
+.mover-price { display: flex; align-items: baseline; gap: 8px; margin-top: 4px; }
+.mover-price b { font-size: 20px; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.mover-delta { font-size: 13px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.mover-delta.is-up { color: #c0392b; }
+.mover-meta { margin: 6px 0 0; font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+.mover-meta b { color: var(--ink-2); }
+.mover-note { margin: 2px 0 0; font-size: 10.5px; color: var(--muted-2); }
+.mover-pop {
+  margin-top: 8px; padding: 5px 9px;
+  border: 1px dashed var(--line); border-radius: 8px;
+  background: var(--paper); color: var(--ink-2);
+  font-size: 11px; font-weight: 800;
+}
+.mover-pop:hover { border-color: var(--navy); background: #fff; }
+
+.kream-board { margin-top: 16px; }
+.kream-board-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.kream-board-head .chip { flex-shrink: 0; }
+.kream-table td small { display: block; margin-top: 2px; font-size: 10.5px; font-weight: 600; color: var(--muted); }
+.kream-name { font-weight: 800; color: var(--navy); }
+.kream-name:hover { text-decoration: underline; }
+.kream-sub { font-variant-numeric: tabular-nums; }
+.kream-pct { font-weight: 800; font-variant-numeric: tabular-nums; }
+.kream-pct.is-up { color: #c0392b; }
+.kream-pct.is-down { color: #1f4fbe; }
+.kream-pct.is-flat { color: var(--green); }
+.kream-page { font-weight: 700; font-size: 12px; font-variant-numeric: tabular-nums; }
+.kream-page.is-up { color: #c0392b; }
+.kream-page.is-down { color: #1f4fbe; }
+.kream-na { font-size: 11.5px; color: var(--muted-2); }
+
+/* ---------------------------------------------------------- 카드 이슈 */
+.issue-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.issue-item {
+  display: grid; grid-template-columns: 78px 1fr; gap: 14px;
+  padding: 14px 16px;
+  background: #fff; border: 1px solid var(--line); border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.issue-side {
+  display: flex; flex-direction: column; gap: 6px; align-items: flex-start;
+  padding-right: 12px; border-right: 1px dashed var(--line);
+}
+.issue-date { font-size: 11.5px; font-weight: 800; color: var(--muted); font-variant-numeric: tabular-nums; }
+.issue-tag { font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: var(--grey-soft); color: var(--ink-2); }
+.issue-item.is-urgent { border-color: #f6cfcb; }
+.issue-item.is-urgent .issue-tag { background: #fdeceb; color: #b3261e; }
+.issue-item.is-release .issue-tag { background: var(--yellow-soft); color: #7a5a00; }
+.issue-item.is-market .issue-tag { background: var(--blue-soft); color: #1f4fbe; }
+.issue-item.is-event .issue-tag { background: var(--green-soft); color: var(--green); }
+.issue-body h3 { margin: 0 0 6px; font-size: 15px; line-height: 1.4; letter-spacing: -0.02em; }
+.issue-body p { margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.65; }
+.issue-links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+.issue-links a { font-size: 11.5px; font-weight: 800; color: var(--blue); }
+
+/* ------------------------------------------------------ 신규 팩 발매 */
+.release-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.release-card {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 16px;
+  background: #fff; border: 1px solid var(--line); border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.release-card.is-soon { border-color: #f2dfa5; box-shadow: 0 8px 20px rgba(255, 203, 5, 0.14); }
+.release-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.release-date { font-size: 11.5px; font-weight: 800; color: var(--muted); font-variant-numeric: tabular-nums; }
+.release-card h3 { margin: 2px 0 0; font-size: 15.5px; line-height: 1.3; letter-spacing: -0.02em; }
+.release-type { margin: 0; font-size: 11.5px; font-weight: 700; color: var(--muted); }
+.release-spec { margin: 8px 0 0; display: grid; gap: 6px; }
+.release-spec div { display: grid; grid-template-columns: 40px 1fr; gap: 8px; font-size: 12px; }
+.release-spec dt { color: var(--muted-2); font-weight: 700; }
+.release-spec dd { margin: 0; font-weight: 600; color: var(--ink-2); line-height: 1.5; }
+.release-note { margin: 2px 0 0; font-size: 11.5px; color: var(--muted); line-height: 1.6; }
+.release-links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: auto; padding-top: 10px; border-top: 1px dashed var(--line); }
+.release-links a { font-size: 11.5px; font-weight: 800; color: var(--blue); }
+
+/* ---------------------------------------------------------- 팝수 조회 */
+.pop-board { padding: 16px; background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow-sm); }
+.pop-label { display: block; margin-bottom: 6px; font-size: 11.5px; font-weight: 800; color: var(--muted); }
+.pop-row { display: flex; gap: 8px; }
+.pop-input {
+  flex: 1; min-width: 0;
+  padding: 12px 14px;
+  border: 1.5px solid var(--line); border-radius: 12px;
+  background: var(--paper); color: var(--ink);
+  font: inherit; font-size: 15px;
+}
+.pop-input:focus { outline: none; border-color: var(--navy); background: #fff; }
+.pop-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.pop-chip { padding: 5px 11px; border: 1px solid var(--line); border-radius: 999px; background: #fff; font-size: 11.5px; font-weight: 700; color: var(--ink-2); }
+.pop-chip:hover { border-color: var(--navy); background: var(--paper); }
+.pop-links { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+.pop-link {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--line); border-radius: 12px;
+  background: var(--paper); text-align: left; text-decoration: none;
+}
+button.pop-link { font: inherit; color: inherit; cursor: pointer; }
+.pop-link b { font-size: 12.5px; }
+.pop-link small { font-size: 10.5px; color: var(--muted); line-height: 1.4; }
+.pop-link:hover { border-color: var(--navy); background: #fff; }
+.pop-results { display: grid; gap: 10px; margin-top: 14px; }
+.pop-empty { margin: 0; padding: 12px; border: 1px dashed var(--line); border-radius: 12px; background: var(--paper); font-size: 12.5px; color: var(--muted); }
+.pop-range { display: flex; flex-direction: column; gap: 4px; padding: 12px; border: 1px solid #f2dfa5; border-radius: 12px; background: var(--yellow-soft); font-size: 12px; color: #6b5200; line-height: 1.55; }
+.pop-range b { font-size: 13px; }
+.pop-card { display: flex; gap: 12px; padding: 10px; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+.pop-art { position: relative; flex-shrink: 0; width: 58px; aspect-ratio: 4 / 5; border-radius: 8px; overflow: hidden; display: flex; padding: 5px; }
+.pop-info { flex: 1; min-width: 0; }
+.pop-name { font-size: 14px; font-weight: 800; letter-spacing: -0.02em; }
+.pop-set { font-size: 11px; font-weight: 700; color: var(--muted); }
+.pop-price { display: block; margin-top: 4px; font-size: 11.5px; color: var(--ink-2); }
+.pop-price.muted { color: var(--muted-2); }
+.pop-note-line { margin: 4px 0 0; font-size: 11px; color: var(--muted); line-height: 1.55; }
+.pop-card-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+.pop-card-links a, .pop-card-links button {
+  padding: 0; border: 0; background: none;
+  font-size: 11px; font-weight: 800; color: var(--blue);
+  text-decoration: underline; cursor: pointer;
+}
+.pop-relay { margin: 12px 0 0; font-size: 11.5px; color: var(--muted); line-height: 1.6; }
+.pop-relay-title { display: block; margin-bottom: 4px; font-weight: 800; color: var(--ink-2); }
+.pop-relay-row { display: block; }
+
+@media (min-width: 720px) {
+  .mover-grid { grid-template-columns: 1fr 1fr; }
+  .release-grid { grid-template-columns: 1fr 1fr; }
+  .pop-links { grid-template-columns: repeat(4, 1fr); }
+}
+@media (max-width: 679px) {
+  .issue-item { grid-template-columns: 1fr; gap: 8px; padding: 13px 14px; }
+  .issue-side { flex-direction: row; align-items: center; gap: 8px; padding: 0 0 8px; border-right: 0; border-bottom: 1px dashed var(--line); }
+  .pop-links { grid-template-columns: 1fr 1fr; }
+  .pop-board { padding: 14px; border-radius: 16px; }
+}
+
+/* 하단 내비게이션 5탭 (390px에서 줄바꿈·잘림 없이) */
+@media (max-width: 679px) {
+  .main-nav { grid-template-columns: repeat(5, 1fr); }
+  .nav-btn { font-size: 10.5px; padding: 7px 2px; letter-spacing: -0.02em; white-space: nowrap; }
+  .nav-btn .nav-ico { line-height: 1; }
+  .nav-btn .nav-ico svg { width: 15px; height: 15px; }
+}
+@media (max-width: 359px) {
+  .nav-btn { font-size: 9.5px; gap: 2px; }
+}
+@media (min-width: 680px) and (max-width: 1119px) {
+  .main-nav { gap: 2px; }
+  .nav-btn { padding: 9px 9px; font-size: 12.5px; }
+  .header-date { display: none; }
+}
+
 </style>
 <!-- 단일 파일 미리보기: index.html + assets/css/style.css + data.js/map.js/app.js 를 인라인으로 합친 파일입니다. 지도는 카카오맵 SDK+카카오 장소 검색(CDN·공개 API)을 그대로 사용합니다. -->
 <!-- 카카오맵 JavaScript SDK — autoload=false로 불러 두고 map.js가 kakao.maps.load()로 초기화합니다.
@@ -3353,6 +3571,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
       <button type="button" class="nav-btn" data-tab="guide">
         <span class="nav-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v18H6a2 2 0 0 1-2-2z"/><path d="M8 3v18"/></svg></span>
         도감·가이드
+      </button>
+      <button type="button" class="nav-btn" data-tab="trends">
+        <span class="nav-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 4 8-8"/><path d="M16 8h4v4"/></svg></span>
+        시세·팝수
       </button>
     </nav>
 
@@ -4292,6 +4514,124 @@ button { font: inherit; color: inherit; cursor: pointer; }
   </div>
 </section>
 
+<!-- ===================================================== 시세·이슈·팝수 탭 -->
+<section class="tab-panel" id="panel-trends" aria-labelledby="trends-title" hidden>
+  <div class="wrap">
+    <div class="map-page-head">
+      <span class="eyebrow">시세 · 이슈 · 신규팩 · 팝수</span>
+      <h1 id="trends-title">오늘 오른 카드와 팝 리포트</h1>
+      <p>KREAM 한글판 최근 체결로 본 오늘의 시세, 2026년 11월 카드 이슈와 공식 발매 소식, 카드 번호로 찾는 PSA·BRG 팝수를 한 탭에 모았습니다. 확인한 값만 적고 <b>확인 날짜와 출처</b>를 함께 표시하며, 확인되지 않은 등락률은 만들지 않습니다.</p>
+      <div class="trend-stats" id="trendStats" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <!-- --------------------------------------------------- 오늘 상승률 -->
+  <div class="wrap">
+    <section class="section" id="moversSection" aria-labelledby="movers-title">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">오늘 상승률 높은 카드</span>
+          <h2 id="movers-title">KREAM에서 오늘 값이 오른 카드</h2>
+          <p>KREAM 한글판 단품의 <b>같은 옵션(등급 없음 A)</b> 최근 체결 2건을 비교했습니다. 등급·언어가 섞인 체결은 등락률을 만들지 않고 표에 그대로 적었습니다.</p>
+        </div>
+        <a class="head-link" id="kreamLiveLink" href="https://kream.co.kr/content/17991" target="_blank" rel="noopener">KREAM 실시간 시세 ↗</a>
+      </div>
+
+      <div class="mover-grid" id="moverGrid"></div>
+      <noscript><p class="src-note">시세 카드는 자바스크립트로 그립니다. 아래 표와 출처 링크는 그대로 볼 수 있습니다.</p></noscript>
+
+      <div class="panel-card kream-board">
+        <div class="kream-board-head">
+          <div>
+            <h3>KREAM 최근 체결 전체</h3>
+            <p class="panel-sub" id="kreamBoardSub">2026-11-18 19:10 확인 · 한글판 · 비로그인 공개 내역 · 수수료·배송비 별도</p>
+          </div>
+          <span class="chip chip-line" id="kreamRelayBadge">정적 데이터</span>
+        </div>
+        <div class="table-scroll">
+          <table class="compare-table kream-table">
+            <thead>
+              <tr>
+                <th>카드</th>
+                <th class="num">최근 체결</th>
+                <th class="num">직전 체결</th>
+                <th class="num">같은 옵션 등락</th>
+                <th class="num">누적 거래</th>
+                <th>KREAM 표시 등락</th>
+              </tr>
+            </thead>
+            <tbody id="kreamTableBody"></tbody>
+          </table>
+        </div>
+        <p class="src-note mt-8" id="kreamNote">KREAM은 같은 카드라도 등급·언어 옵션별로 체결가가 따로 쌓입니다. 표시 등락은 KREAM 페이지가 '직전 거래 대비'로 보여 주는 값이라 등급이 다른 체결과 비교될 수 있어, 같은 옵션끼리 비교한 값과 나눠 적었습니다.</p>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------------- 카드 이슈 -->
+    <section class="section" id="issueSection" aria-labelledby="issues-title">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">최근 이슈되는 카드 이슈</span>
+          <h2 id="issues-title">2026년 11월 카드 게임 소식</h2>
+          <p>공식 공지와 보도로 확인한 6건입니다. 날짜는 공지·보도 기준이고, 링크는 원문으로 바로 갑니다.</p>
+        </div>
+        <a class="head-link" href="https://www.pokemonkorea.co.kr/" target="_blank" rel="noopener">포켓몬코리아 소식 ↗</a>
+      </div>
+      <ol class="issue-list" id="issueList"></ol>
+    </section>
+
+    <!-- ------------------------------------------------- 신규 팩 발매 -->
+    <section class="section" id="releaseSection" aria-labelledby="releases-title">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">신규 팩 발매 소식</span>
+          <h2 id="releases-title">공식 사이트에서 확인한 발매·발매 예정</h2>
+          <p>포켓몬 카드 게임 공식 제품 정보(pokemoncard.co.kr)의 발매일·정가·구성입니다. 한국판 일정이 없는 상품은 '해외'로 표시했습니다.</p>
+        </div>
+        <a class="head-link" href="https://pokemoncard.co.kr/card" target="_blank" rel="noopener">공식 제품 목록 ↗</a>
+      </div>
+      <div class="release-grid" id="releaseGrid"></div>
+    </section>
+
+    <!-- ------------------------------------------------- 팝수 조회 -->
+    <section class="section" id="popSection" aria-labelledby="pop-title">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">번호·카드명으로 팝수 조회</span>
+          <h2 id="pop-title">PSA 팝수 · BRG 팝수 · 시세 바로가기</h2>
+          <p>카드 번호(<b>127/103</b>, <b>025/176</b>)나 카드명(<b>피카츄</b>, <b>리자몽</b>)을 넣으면 도감에 있는 카드는 기본 정보와 참고 시세를 함께 보여 주고, 팝 리포트·시세 검색으로 바로 넘겨 줍니다.</p>
+        </div>
+      </div>
+
+      <div class="pop-board">
+        <form class="pop-form" id="popForm" role="search" aria-label="카드 번호·이름 검색">
+          <label class="pop-label" for="popQuery">카드 번호 또는 카드명</label>
+          <div class="pop-row">
+            <input type="search" id="popQuery" class="pop-input" placeholder="예: 127/103, 025/176, 피카츄, 리자몽"
+                   autocomplete="off" spellcheck="false" enterkeyhint="search">
+            <button type="submit" class="btn btn-dark" id="popSearchBtn">조회</button>
+          </div>
+          <div class="pop-chips" id="popChips" role="group" aria-label="빠른 검색"></div>
+        </form>
+
+        <div class="pop-links" id="popLinks" aria-label="외부 팝 리포트·시세 바로가기"></div>
+        <div class="pop-results" id="popResults" aria-live="polite"></div>
+        <p class="pop-relay" id="popRelayStatus"></p>
+      </div>
+
+      <p class="src-note mt-16">PSA Pop Report(psacard.com/pop) · BRG 팝 리포트(break.co.kr/pop-report) · KREAM 검색 · PriceCharting. 팝수는 등급·언어·에디션별로 따로 집계되므로, 조회할 때 세트명·카드 번호·언어판을 함께 확인하세요. 이 사이트는 팝수를 저장·가공하지 않고 공식 사이트로 넘겨 줍니다.</p>
+    </section>
+
+    <div class="inquiry-cta">
+      <div class="inquiry-cta-copy">
+        <b>시세나 이슈가 실제와 다른가요?</b>
+        <span>가격 오류, 빠진 발매 소식, 팝수 조회에서 찾지 못한 카드를 <a href="mailto:acewoni3717@gmail.com">acewoni3717@gmail.com</a>으로 보내 주세요.</span>
+      </div>
+      <button type="button" class="btn btn-dark btn-sm" data-modal="inquiry">관리자 문의</button>
+    </div>
+  </div>
+</section>
+
 </main>
 
 <!-- ============================================================ 푸터 -->
@@ -4315,6 +4655,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
           <li><button type="button" data-tab="home">정가 구매처</button></li>
           <li><button type="button" data-tab="schedule">일정·입고</button></li>
           <li><button type="button" data-tab="guide">도감·가이드</button></li>
+          <li><button type="button" data-tab="trends">시세·팝수</button></li>
           <li><a href="#cards" data-tab="guide">수록 카드 검색</a></li>
         </ul>
       </div>
@@ -6701,6 +7042,219 @@ window.POKEMOA_DATA = (function () {
     { id: "광주", name: "포켓몬 카드샵 화성스토어TCG 광주", addr: "광주광역시 동구 중앙로160번길 22 2층", q: "화성스토어 광주", url: "https://www.pokemonkorea.co.kr/pokemon_cardshop/menu213" }
   ];
 
+  /* ==================================================================
+   * v4.9 시세·이슈·신규팩·팝수 (「시세·팝수」 탭 데이터)
+   * 시세: 2026-11-18 19:10 KST, KREAM 한글판 단품 상품 페이지의
+   *   비로그인 공개 최근 체결 내역을 직접 확인한 값입니다.
+   *   등락률은 "같은 옵션(Ungraded A)의 최근 두 체결"만 비교해 계산했고,
+   *   KREAM이 페이지에 표시하는 '직전 거래 대비' 값은 등급·언어가 다른 체결과
+   *   비교될 수 있어 pageDelta 에 그대로 옮겨 적었습니다(비고에 근거 표기).
+   *   체결가는 수수료·배송비 반영 전 값이고, 상태·등급에 따라 달라집니다.
+   * ================================================================== */
+  var KREAM_CHECKED = {
+    date: "2026-11-18",
+    time: "19:10",
+    label: "KREAM 한글판 · 비로그인 공개 최근 체결",
+    collection: "https://kream.co.kr/content/17991",
+    search: "https://kream.co.kr/search?keyword=30%EC%A3%BC%EB%85%84%20%EA%B8%B0%EB%85%90%ED%8C%A9%20%ED%95%9C%EA%B8%80%ED%8C%90"
+  };
+
+  var kreamMovers = [
+    {
+      id: "lugia-rs", name: "루기아 RS", en: "Lugia RS", num: "142/103", model: "M6A142-103",
+      rarity: "RS", tag: "classic", set: "30th CELEBRATION", kreamId: 1094183,
+      url: "https://kream.co.kr/products/1094183",
+      lastPrice: 42000, lastWhen: "1시간 전", prevPrice: 32000, prevWhen: "3시간 전",
+      trades: 249, dir: "up", pct: 31.3, diff: 10000, pageDelta: null
+    },
+    {
+      id: "mew-fur", name: "뮤 ex FUR", en: "Mew ex FUR", num: "135/103", model: "M6A135-103",
+      rarity: "FUR", tag: "fur", set: "30th CELEBRATION", kreamId: 1094181,
+      url: "https://kream.co.kr/products/1094181",
+      lastPrice: 25000, lastWhen: "3시간 전", prevPrice: 20000, prevWhen: "6시간 전",
+      trades: 305, dir: "up", pct: 25.0, diff: 5000,
+      pageDelta: { text: "▼ 50,000원 (-66.7%)", kind: "down", note: "BRG 10 영문 75,000원 체결과 비교된 값" }
+    },
+    {
+      id: "pikachu-ex-126", name: "피카츄 ex", en: "Pikachu ex", num: "126/103", model: "M6A126-103",
+      rarity: "SAR", tag: "sar", set: "30th CELEBRATION", kreamId: 1094178,
+      url: "https://kream.co.kr/products/1094178",
+      lastPrice: 22000, lastWhen: "46분 전", prevPrice: 21000, prevWhen: "6시간 전",
+      trades: 229, dir: "up", pct: 4.8, diff: 1000, pageDelta: null
+    },
+    {
+      id: "charizard-rh", name: "리자몽 RH", en: "Charizard RH", num: "137/103", model: "M6A137-103",
+      rarity: "RH", tag: "classic", set: "30th CELEBRATION", kreamId: 1094182,
+      url: "https://kream.co.kr/products/1094182",
+      lastPrice: 49000, lastWhen: "7시간 전", prevPrice: 48000, prevWhen: "7시간 전",
+      trades: 331, dir: "up", pct: 2.1, diff: 1000,
+      pageDelta: { text: "▼ 101,000원 (-67.3%)", kind: "down", note: "BRG 10 영문 150,000원 체결과 비교된 값" }
+    },
+    {
+      id: "pikachu-ex-127", name: "피카츄 ex", en: "Pikachu ex", num: "127/103", model: "M6A127-103",
+      rarity: "SAR", tag: "sar", set: "30th CELEBRATION", kreamId: 1094179,
+      url: "https://kream.co.kr/products/1094179",
+      lastPrice: 21000, lastWhen: "46분 전", prevPrice: 22000, prevWhen: "6시간 전",
+      trades: 204, dir: "down", pct: -4.5, diff: -1000,
+      pageDelta: { text: "▼ 1,000원 (-4.5%)", kind: "down", note: "같은 옵션끼리 비교된 값" }
+    },
+    {
+      id: "magikarp-ar", name: "잉어킹 AR", en: "Magikarp AR", num: "165/103", model: "M6A165-103",
+      rarity: "AR", tag: "ar", set: "30th CELEBRATION", kreamId: 1094186,
+      url: "https://kream.co.kr/products/1094186",
+      lastPrice: 20000, lastWhen: "2시간 전", prevPrice: 20000, prevWhen: "8시간 전",
+      trades: 224, dir: "flat", pct: 0, diff: 0, pageDelta: null
+    },
+    {
+      id: "mewtwo-fur", name: "뮤츠 ex FUR", en: "Mewtwo ex FUR", num: "134/103", model: "M6A134-103",
+      rarity: "FUR", tag: "fur", set: "30th CELEBRATION", kreamId: 1094180,
+      url: "https://kream.co.kr/products/1094180",
+      lastPrice: 75000, lastWhen: "7시간 전", prevPrice: 21000, prevWhen: "등급 없음",
+      trades: 282, dir: "na", pct: null, diff: null,
+      pageDelta: { text: "▲ 54,000원 (+257.1%)", kind: "up", note: "직전 Ungraded A 21,000원과 비교된 값 · 75,000원 체결은 등급 표기 없음" }
+    }
+  ];
+
+  /* 번호·카드명 조회용 인덱스 — KREAM 상품 페이지의 모델번호로 확인한 번호만 넣었습니다. */
+  var cardNumbers = [
+    { num: "126/103", name: "피카츄 ex", en: "Pikachu ex", rarity: "SAR", tag: "sar", set: "30th CELEBRATION", kream: "https://kream.co.kr/products/1094178" },
+    { num: "127/103", name: "피카츄 ex", en: "Pikachu ex", rarity: "SAR", tag: "sar", set: "30th CELEBRATION", kream: "https://kream.co.kr/products/1094179" },
+    { num: "129/103", name: "뮤 ex", en: "Mew ex", rarity: "SAR", tag: "sar", set: "30th CELEBRATION", kream: "" },
+    { num: "130/103", name: "님피아 ex", en: "Sylveon ex", rarity: "SAR", tag: "sar", set: "30th CELEBRATION", kream: "https://kream.co.kr/products/1120208" },
+    { num: "134/103", name: "뮤츠 ex", en: "Mewtwo ex", rarity: "FUR", tag: "fur", set: "30th CELEBRATION", kream: "https://kream.co.kr/products/1094180" },
+    { num: "135/103", name: "뮤 ex", en: "Mew ex", rarity: "FUR", tag: "fur", set: "30th CELEBRATION", kream: "https://kream.co.kr/products/1094181" },
+    { num: "137/103", name: "리자몽", en: "Charizard", rarity: "RH", tag: "classic", set: "30th CELEBRATION", kream: "https://kream.co.kr/products/1094182" },
+    { num: "142/103", name: "루기아", en: "Lugia", rarity: "RS", tag: "classic", set: "30th CELEBRATION", kream: "https://kream.co.kr/products/1094183" },
+    { num: "165/103", name: "잉어킹", en: "Magikarp", rarity: "AR", tag: "ar", set: "30th CELEBRATION", kream: "https://kream.co.kr/products/1094186" }
+  ];
+
+  /* 번호 구간 안내 — 30th CELEBRATION 017~046은 피카츄 30종입니다. */
+  var cardRanges = [
+    { set: "30th CELEBRATION", total: 176, from: 17, to: 46, label: "피카츄 30종 (017~046)", note: "30명의 일러스트레이터가 한 장씩 그린 피카츄 시리즈입니다. 카드마다 01/30~30/30 마크가 들어갑니다." }
+  ];
+
+  /* ---------------------------------------------------- 최근 카드 이슈 */
+  var cardIssues = [
+    {
+      date: "2026-11-18", tag: "마감", kind: "urgent",
+      title: "Team Masters 2027 추첨 발표가 11/20로 연기 · 참가 약관 동의는 오늘 23:59까지",
+      body: "주최 측이 11/13 공지에서 추첨 결과 발표를 11/13 14시에서 11/20 14시(한국 시간)로 미뤘습니다. 팀원 전원이 약관에 동의해야 엔트리가 끝나고, 동의 기간은 11/13 14시 ~ 11/18 23:59입니다. 이 기간에는 신규 접수나 멤버 변경을 받지 않습니다. 대회는 2027-01-23~24 킨텍스.",
+      links: [
+        { label: "공식 공지", url: "https://www.pokemon-team-masters.com/pages/news/news-detail/news-detail?id=8" },
+        { label: "TCG뉴스 정리", url: "https://tcgnews.kr/article/234" }
+      ]
+    },
+    {
+      date: "2026-11-16", tag: "신제품", kind: "release",
+      title: "아크릴 카드 홀더 세트 「개굴닌자」·「님피아」 11/20 발매 · 각 30,000원",
+      body: "프로모 카드 「개굴닌자 ex」 또는 「님피아 ex」 1장 + 아크릴 카드 홀더 1개 + 30th CELEBRATION 3팩 구성입니다. 홀더는 같고 프로모만 달라, 원하는 프로모로 고르면 됩니다.",
+      links: [
+        { label: "개굴닌자", url: "https://pokemoncard.co.kr/card/990" },
+        { label: "님피아", url: "https://pokemoncard.co.kr/card/988" },
+        { label: "TCG뉴스", url: "https://tcgnews.kr/article/251" }
+      ]
+    },
+    {
+      date: "2026-11-13", tag: "대회", kind: "event",
+      title: "2027 포켓몬 카드샵 대항전 · 대표 선발전이 11/21 시작",
+      body: "전국 15개 카드샵에서 1회차 11/21~22, 2회차 11/28~29에 카드샵 대표를 뽑습니다(1회차 온라인 예약 11/17 18시 시작). 리그전 1위 500만 원, 최종 우승팀은 포켓몬 월드챔피언십 2027 참관을 지원합니다.",
+      links: [
+        { label: "대회 안내", url: "https://pokemonkorea.co.kr/2027card_shop_league/menu839" },
+        { label: "TCG뉴스", url: "https://tcgnews.kr/article/241" }
+      ]
+    },
+    {
+      date: "2026-11-03", tag: "이벤트", kind: "event",
+      title: "「메가엘레이드 ex SAR GET BATTLE」 개최",
+      body: "포켓몬코리아가 카드 게임 이벤트로 연 「메가엘레이드 ex SAR GET BATTLE」 안내를 올렸습니다. 참가 조건·일정은 공식 이벤트 페이지에서 매장별로 확인해야 합니다.",
+      links: [
+        { label: "공식 이벤트", url: "https://pokemonkorea.co.kr/PCG_Getbattle_M6" },
+        { label: "카드 게임 소식", url: "https://pokemoncard.co.kr/card" }
+      ]
+    },
+    {
+      date: "2026-11-01", tag: "시세", kind: "market",
+      title: "30주년 뮤 ex FUR 무등급 낙찰가, 3주 만에 5만 원대 → 3만 1천 원대",
+      body: "Collectory가 네이버카페 경매·번개장터 판매완료 낙찰만 골라 정리한 값입니다. BRG 10도 9만~13만 원대에서 7만 7천~8만 1천 원으로 내려왔습니다. 최근 표본이 2~3건이라 추세를 단정하기는 이릅니다.",
+      links: [
+        { label: "Collectory 기사", url: "https://collectory.cc/news/30%EC%A3%BC%EB%85%84-%EB%AE%A4-fur-%EB%AC%B4%EB%93%B1%EA%B8%89%EC%9D%80-3%EC%A3%BC-%EB%A7%8C%EC%97%90-5%EB%A7%8C-%EC%9B%90%EC%97%90%EC%84%9C-3%EB%A7%8C-1%EC%B2%9C-%EC%9B%90%EC%9D%B4-%EB%90%90%EA%B3%A0-%EB%A9%94%EA%B0%80%ED%8C%AC%ED%85%80-sar-psa10%EC%9D%80-22%EB%A7%8C-%EC%9B%90%EB%8C%80%EB%A5%BC-%EC%A7%80%EC%BC%B0%EC%8A%B5%EB%8B%88%EB%8B%A4-mvxro3ge" }
+      ]
+    },
+    {
+      date: "2026-11-18", tag: "해외", kind: "release",
+      title: "일본 「하도우시커」 11/27 발매 · 로손은 1인 10팩 제한",
+      body: "일본 포켓몬 카드 공식이 MEGA 확장팩 「하도우시커」(1팩 200엔)를 11/27 발매한다고 확정했습니다. 로손은 11/27 7시부터 계산당 10팩으로 제한하고 예약·보관은 받지 않습니다. 한국어판 발매 일정은 아직 공지되지 않았습니다.",
+      links: [
+        { label: "TCG뉴스(판매)", url: "https://tcgnews.kr/article/256" },
+        { label: "수록 카드 공개", url: "https://tcgnews.kr/article/236" }
+      ]
+    }
+  ];
+
+  /* -------------------------------------------------- 신규 팩 발매 소식 */
+  var newReleases = [
+    {
+      date: "2026-11-20", status: "예정", kind: "soon",
+      name: "아크릴 카드 홀더 세트 「개굴닌자」", type: "특별 제품 · 한글판",
+      price: "30,000원", config: "프로모 「개굴닌자 ex」 1장 · 아크릴 카드 홀더 1개 · 30th CELEBRATION 3팩",
+      url: "https://pokemoncard.co.kr/card/990",
+      note: "공식 제품 페이지 발매일 2026-11-20 기준. 매장 입고는 점포별로 다를 수 있습니다."
+    },
+    {
+      date: "2026-11-20", status: "예정", kind: "soon",
+      name: "아크릴 카드 홀더 세트 「님피아」", type: "특별 제품 · 한글판",
+      price: "30,000원", config: "프로모 「님피아 ex」 1장 · 아크릴 카드 홀더 1개 · 30th CELEBRATION 3팩",
+      url: "https://pokemoncard.co.kr/card/988",
+      note: "개굴닌자 세트와 홀더 수량·동봉 확장팩은 같고 프로모 카드만 다릅니다."
+    },
+    {
+      date: "2026-11-27", status: "해외", kind: "overseas",
+      name: "확장팩 「하도우시커」 (일본 M7)", type: "확장팩 · 한국판 미정",
+      price: "1팩 200엔 (약 1,700원)", config: "1팩 5장 · 메가루카리오Z ex · 메가한카리아스Z ex · 메가앱솔Z ex",
+      url: "https://tcgnews.kr/article/256",
+      note: "한국어판 발매일과 정가는 아직 공식 공지가 없습니다. 일본판 날짜를 한국판에 그대로 적용하지 마세요."
+    },
+    {
+      date: "2026-10-07", status: "발매", kind: "done",
+      name: "30th CELEBRATION FUTURISTIC BOX", type: "특별 세트 · 한글판",
+      price: "275,000원", config: "FUR 피카츄 ex 프로모 2종 · 카드 실드 64장 · 플레이매트 · 덱·카운터 케이스 · 금속 데미지 카운터 주사위 12개 · 디스플레이 프레임",
+      url: "https://pokemoncard.co.kr/card/975",
+      store: "https://www.pokemonstore.co.kr/pages/pokemoncardgame30th/product/furbox/index.html",
+      note: "확장팩은 들어 있지 않은 배틀 구성품 세트입니다."
+    },
+    {
+      date: "2026-09-30", status: "발매", kind: "done",
+      name: "MEGA 스타터 세트 ex 3종", type: "구축덱 · 한글판",
+      price: "각 17,000원", config: "이브이 ex · 조로아&조로아크 ex · 나오하&마스카나 ex · 덱 60장 + 데미지 카운터·동전·플레이매트·가이드",
+      url: "https://pokemoncard.co.kr/card/966",
+      note: "구축덱은 팩이 아니라 덱 구성이 정해진 상품입니다. 확장팩만으로는 대전할 수 없습니다."
+    },
+    {
+      date: "2026-09-16", status: "발매", kind: "done",
+      name: "확장팩 「30th CELEBRATION」", type: "확장팩 · 한글판",
+      price: "1팩 3,500원 / 1박스 70,000원", config: "1팩 6장 · 1박스 20팩(120장) · 176종(기본 103종)",
+      url: "https://pokemoncard.co.kr/card/960",
+      note: "전 세계 동시 발매. KREAM 미개봉 1박스는 2026-11-17 기준 72,000~76,000원입니다."
+    },
+    {
+      date: "2026-08-21", status: "발매", kind: "done",
+      name: "확장팩 「스톰에메랄다」", type: "확장팩 · 한글판",
+      price: "1팩 1,500원 / 1상자 45,000원", config: "1팩 5장 · 1상자 30팩(150장) · 메가레쿠쟈 ex",
+      url: "https://pokemoncard.co.kr/card/938",
+      note: "2026-08-16 포켓몬 카드샵 선행 발매 후 8/21 일반 발매."
+    }
+  ];
+
+  /* ------------------------------------------------------ 팝수 조회 도구 */
+  var popTools = {
+    note: "PSA Pop Report와 BRG 팝 리포트는 로그인·CORS·자동화 차단 때문에 이 사이트 안에서 표를 직접 읽어 오지 못합니다. 검색어를 복사해 공식 사이트에서 확인하는 방식이고, 태블릿 중계(/api/pop?q=)가 연결되면 같은 화면에서 결과를 받아 표시합니다.",
+    psa: { label: "PSA Pop Report", url: "https://www.psacard.com/Pop/Search", home: "https://www.psacard.com/pop" },
+    brg: { label: "BRG 팝 리포트", url: "https://break.co.kr/pop-report", global: "https://www.breakgrading.com" },
+    kream: "https://kream.co.kr/search?keyword=",
+    pricecharting: "https://www.pricecharting.com/search-products?q=",
+    quick: ["127/103", "135/103", "134/103", "025/176", "리자몽", "피카츄"]
+  };
+
   /* ------------------------------------------------------ 사실 메모(출처) */
   var facts = [
     { label: "정가·구성", text: "포켓몬 카드 게임 공식 제품 정보 (1팩 3,500원 / 1상자 70,000원, 1팩 6장, 1상자 20팩)", url: "https://pokemoncard.co.kr/card/960" },
@@ -6733,7 +7287,14 @@ window.POKEMOA_DATA = (function () {
     cardShops: cardShops,
     shortcuts: shortcuts,
     faq: faq,
-    facts: facts
+    facts: facts,
+    KREAM_CHECKED: KREAM_CHECKED,
+    kreamMovers: kreamMovers,
+    cardNumbers: cardNumbers,
+    cardRanges: cardRanges,
+    cardIssues: cardIssues,
+    newReleases: newReleases,
+    popTools: popTools
   };
 })();
 
@@ -8427,7 +8988,8 @@ window.PokeMoaMap = (function () {
     home: $("#panel-home"),
     map: $("#panel-map"),
     schedule: $("#panel-schedule"),
-    guide: $("#panel-guide")
+    guide: $("#panel-guide"),
+    trends: $("#panel-trends")
   };
   var navBtns = $$(".nav-btn");
   var currentTab = "map";
@@ -8451,6 +9013,7 @@ window.PokeMoaMap = (function () {
         setTimeout(function () { window.PokeMoaMap.invalidate(); }, 80);
       }
     }
+    if (name === "trends") loadRelayMovers();
     if (!opts || !opts.keepScroll) {
       window.scrollTo({ top: 0, behavior: "auto" });
     }
@@ -10296,6 +10859,510 @@ window.PokeMoaMap = (function () {
     }
   }
 
+  /* =========================================================================
+   * 시세·이슈·신규팩·팝수 (v4.9)
+   * - 시세: data.js 의 kreamMovers(2026-11-18 KREAM 확인값)를 그대로 그립니다.
+   *   태블릿 중계({relay}/api/kream-movers)가 연결되면 같은 자리를 실시간 값으로
+   *   바꾸고, 응답이 없거나 형식이 다르면 정적 값으로 남겨 둡니다.
+   * - 팝수: 도감·번호 인덱스에서 찾아 기본 정보와 바로가기를 보여 주고,
+   *   중계의 /api/pop?q= 가 응답하면 팝수를 함께 표시합니다.
+   * ========================================================================= */
+  var KC = D.KREAM_CHECKED || {};
+  var MOVERS = (D.kreamMovers || []).slice();
+  var CARD_NUMBERS = D.cardNumbers || [];
+  var CARD_RANGES = D.cardRanges || [];
+  var POP_TOOLS = D.popTools || {};
+
+  var moverGrid = $("#moverGrid");
+  var kreamTableBody = $("#kreamTableBody");
+  var kreamBoardSub = $("#kreamBoardSub");
+  var kreamRelayBadge = $("#kreamRelayBadge");
+  var trendStats = $("#trendStats");
+  var kreamLiveLink = $("#kreamLiveLink");
+  var issueList = $("#issueList");
+  var releaseGrid = $("#releaseGrid");
+
+  var popForm = $("#popForm");
+  var popQueryEl = $("#popQuery");
+  var popChips = $("#popChips");
+  var popLinks = $("#popLinks");
+  var popResults = $("#popResults");
+  var popRelayStatus = $("#popRelayStatus");
+  var popRelaySeq = 0;
+
+  function won(n) {
+    if (n == null || isNaN(n)) return "-";
+    return Number(n).toLocaleString("ko-KR") + "원";
+  }
+  function signed(n) {
+    if (n == null || isNaN(n)) return "-";
+    return (n > 0 ? "+" : n < 0 ? "-" : "") + Math.abs(Number(n)).toLocaleString("ko-KR");
+  }
+  function pctOf(n) {
+    if (n == null || isNaN(n)) return "";
+    var v = Math.abs(Number(n)).toFixed(1).replace(/\.0$/, "");
+    return (n > 0 ? "+" : n < 0 ? "-" : "") + v + "%";
+  }
+  function relDirection(m) {
+    if (m.dir === "up") return "up";
+    if (m.dir === "down") return "down";
+    if (m.dir === "flat") return "flat";
+    return "na";
+  }
+  function artFor(item) {
+    var c = artClass[item.tag];
+    if (c) return c;
+    return "art-sar";
+  }
+  function artGradient(item) {
+    if (item.tag === "fur") return "";
+    if (item.tag === "classic") return "background:linear-gradient(150deg,hsl(38 32% 89%),hsl(32 26% 80%) 55%,hsl(26 22% 75%))";
+    if (item.tag === "ar") return "background:linear-gradient(150deg,hsl(198 60% 90%),hsl(150 42% 88%) 55%,hsl(44 70% 90%))";
+    return "background:linear-gradient(150deg,hsl(330 70% 92%),hsl(292 58% 89%) 55%,hsl(258 56% 92%))";
+  }
+  function relayUrl() {
+    try { return localStorage.getItem("pokemoa.relayUrl") || ""; } catch (e) { return ""; }
+  }
+
+  /* --------------------------------------------------- 오늘 오른 카드 */
+  function renderTrendStats(list) {
+    if (!trendStats) return;
+    var up = 0, down = 0, flat = 0, na = 0;
+    list.forEach(function (m) {
+      var d = relDirection(m);
+      if (d === "up") up++; else if (d === "down") down++;
+      else if (d === "flat") flat++; else na++;
+    });
+    trendStats.innerHTML =
+      '<span class="trend-stat is-up"><b>' + up + '</b>장 상승</span>' +
+      '<span class="trend-stat is-down"><b>' + down + '</b>장 하락</span>' +
+      '<span class="trend-stat"><b>' + flat + '</b>장 보합</span>' +
+      (na ? '<span class="trend-stat"><b>' + na + '</b>장 비교 불가</span>' : "") +
+      '<span class="trend-stat is-src">' + escapeHtml((KC.label || "KREAM") + " · " + (KC.date || "") + " " + (KC.time || "") + " 확인") + "</span>";
+  }
+
+  function renderMovers(list) {
+    if (!moverGrid) return;
+    var rising = list.filter(function (m) { return relDirection(m) === "up"; });
+    rising.sort(function (a, b) { return (b.pct || 0) - (a.pct || 0); });
+    if (!rising.length) {
+      moverGrid.innerHTML = '<p class="mover-empty">지금 확인된 상승 체결이 없습니다. 아래 표에서 오늘 체결 전체를 볼 수 있습니다.</p>';
+      return;
+    }
+    moverGrid.innerHTML = rising.slice(0, 4).map(function (m, i) {
+      return '<article class="mover-card">' +
+        '<span class="mover-rank">' + (i + 1) + '</span>' +
+        '<span class="mover-art ' + artFor(m) + '" data-mark="' + escapeHtml((m.num || "").split("/")[0] || "") + '" style="' + artGradient(m) + '">' +
+          '<span class="mover-rarity">' + escapeHtml(m.rarity || "") + '</span>' +
+          '<span class="mover-num">' + escapeHtml(m.num || "") + '</span>' +
+        '</span>' +
+        '<div class="mover-body">' +
+          '<div class="mover-top"><strong>' + escapeHtml(m.name) + '</strong>' +
+            (m.kreamId ? '<a class="mover-kream" href="' + m.url + '" target="_blank" rel="noopener" data-kream-out="' + m.kreamId + '">KREAM ↗</a>' : '') +
+          '</div>' +
+          '<div class="mover-price"><b>' + won(m.lastPrice) + '</b>' +
+            '<span class="mover-delta is-up">▲ ' + pctOf(m.pct) + '</span></div>' +
+          '<p class="mover-meta">최근 체결 <b>' + escapeHtml(m.lastWhen || "") + '</b> · 직전 ' + won(m.prevPrice) + '(' + escapeHtml(m.prevWhen || "") + ') · 누적 ' + (m.trades || 0) + '건</p>' +
+          '<p class="mover-note">' + escapeHtml(m.set || "") + ' · ' + escapeHtml(m.model || "") + '</p>' +
+          '<button type="button" class="mover-pop" data-pop-num="' + escapeHtml(m.num || "") + '">' + escapeHtml(m.num || "") + ' 팝수 조회 →</button>' +
+        '</div>' +
+      '</article>';
+    }).join("");
+    $$("[data-pop-num]", moverGrid).forEach(function (b) {
+      b.addEventListener("click", function () {
+        showTab("trends");
+        if (popQueryEl) popQueryEl.value = b.getAttribute("data-pop-num");
+        runPopSearch(b.getAttribute("data-pop-num"), "mover");
+        var anchor = $("#popSection");
+        if (anchor) setTimeout(function () { anchor.scrollIntoView({ behavior: "smooth", block: "start" }); }, 60);
+      });
+    });
+    $$("[data-kream-out]", moverGrid).forEach(function (a) {
+      a.addEventListener("click", function () { trackEvent("kream_outbound", { from: "movers" }); });
+    });
+  }
+
+  function renderKreamTable(list) {
+    if (!kreamTableBody) return;
+    var order = list.slice().sort(function (a, b) {
+      var rank = { up: 0, flat: 1, down: 2, na: 3 };
+      var d = (rank[relDirection(a)] || 3) - (rank[relDirection(b)] || 3);
+      if (d) return d;
+      return Math.abs(b.pct || 0) - Math.abs(a.pct || 0);
+    });
+    kreamTableBody.innerHTML = order.map(function (m) {
+      var dir = relDirection(m);
+      var pctCell = dir === "na"
+        ? '<span class="kream-na">비교 불가</span>'
+        : '<span class="kream-pct is-' + dir + '">' + (dir === "up" ? "▲ " : dir === "down" ? "▼ " : "") + pctOf(m.pct) + '</span>' +
+          (m.diff ? '<small>(' + signed(m.diff) + '원)</small>' : "");
+      var pageCell = m.pageDelta
+        ? '<span class="kream-page is-' + m.pageDelta.kind + '">' + escapeHtml(m.pageDelta.text) + '</span><small>' + escapeHtml(m.pageDelta.note || "") + '</small>'
+        : '<span class="kream-na">표시 없음</span>';
+      return '<tr>' +
+        '<td><a class="kream-name" href="' + m.url + '" target="_blank" rel="noopener" data-kream-out="' + m.kreamId + '">' + escapeHtml(m.name) + '</a>' +
+          '<small class="kream-sub">' + escapeHtml(m.num || "") + ' · ' + escapeHtml(m.model || "") + '</small></td>' +
+        '<td class="num">' + won(m.lastPrice) + '<small>' + escapeHtml(m.lastWhen || "") + '</small></td>' +
+        '<td class="num">' + won(m.prevPrice) + '<small>' + escapeHtml(m.prevWhen || "") + '</small></td>' +
+        '<td class="num">' + pctCell + '</td>' +
+        '<td class="num">' + (m.trades || 0) + '건</td>' +
+        '<td>' + pageCell + '</td>' +
+      '</tr>';
+    }).join("");
+    $$("[data-kream-out]", kreamTableBody).forEach(function (a) {
+      a.addEventListener("click", function () { trackEvent("kream_outbound", { from: "table" }); });
+    });
+  }
+
+  function renderKreamNote(list) {
+    if (kreamBoardSub) {
+      kreamBoardSub.textContent = (KC.date || "") + " " + (KC.time || "") + " 확인 · 한글판 · 비로그인 공개 내역 · 수수료·배송비 별도 · " + list.length + "장";
+    }
+    if (kreamLiveLink && KC.collection) kreamLiveLink.href = KC.collection;
+  }
+
+  function applyMovers(list, source) {
+    MOVERS = list;
+    renderTrendStats(list);
+    renderMovers(list);
+    renderKreamTable(list);
+    renderKreamNote(list);
+    if (kreamRelayBadge) {
+      kreamRelayBadge.textContent = source === "relay" ? "중계 실시간" : "정적 데이터";
+      kreamRelayBadge.className = "chip " + (source === "relay" ? "chip-yellow" : "chip-line");
+    }
+  }
+
+  var relayMoversTried = false;
+  function loadRelayMovers() {
+    renderTrendStats(MOVERS);
+    renderMovers(MOVERS);
+    renderKreamTable(MOVERS);
+    renderKreamNote(MOVERS);
+    if (relayMoversTried) return;
+    relayMoversTried = true;
+    trackEvent("trends_view", { cards: MOVERS.length });
+    var base = relayUrl();
+    if (!base) return;
+    var ctrl = new AbortController();
+    var timer = setTimeout(function () { ctrl.abort(); }, 6000);
+    fetch(base + "/api/kream-movers", { signal: ctrl.signal, mode: "cors", cache: "no-store" })
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .then(function (payload) {
+        if (payload && payload.ok && payload.items && payload.items.length) {
+          applyMovers(payload.items, "relay");
+          toast("중계에서 KREAM 시세 " + payload.items.length + "장을 받았습니다.");
+        }
+      })
+      .catch(function () { /* 중계가 없으면 정적 값 그대로 */ })
+      .finally(function () { clearTimeout(timer); });
+  }
+
+  /* ------------------------------------------------------- 카드 이슈 */
+  function renderIssues() {
+    if (!issueList) return;
+    var items = D.cardIssues || [];
+    issueList.innerHTML = items.map(function (it) {
+      var links = (it.links || []).map(function (l) {
+        return '<a href="' + l.url + '" target="_blank" rel="noopener" data-issue-out="' + escapeHtml(it.tag) + '">' + escapeHtml(l.label) + ' ↗</a>';
+      }).join("");
+      return '<li class="issue-item is-' + (it.kind || "etc") + '">' +
+        '<div class="issue-side"><span class="issue-date">' + escapeHtml(it.date) + '</span>' +
+          '<span class="issue-tag">' + escapeHtml(it.tag) + '</span></div>' +
+        '<div class="issue-body"><h3>' + escapeHtml(it.title) + '</h3>' +
+          '<p>' + escapeHtml(it.body) + '</p>' +
+          '<div class="issue-links">' + links + '</div></div>' +
+      '</li>';
+    }).join("");
+    $$("[data-issue-out]", issueList).forEach(function (a) {
+      a.addEventListener("click", function () { trackEvent("issue_outbound", { tag: a.getAttribute("data-issue-out") }); });
+    });
+  }
+
+  /* ---------------------------------------------------- 신규 팩 발매 */
+  function renderReleases() {
+    if (!releaseGrid) return;
+    var items = D.newReleases || [];
+    releaseGrid.innerHTML = items.map(function (r) {
+      var chipCls = r.kind === "soon" ? "chip-yellow" : r.kind === "overseas" ? "chip-blue" : "chip-line";
+      return '<article class="release-card is-' + (r.kind || "done") + '">' +
+        '<div class="release-head"><span class="chip ' + chipCls + '">' + escapeHtml(r.status) + '</span>' +
+          '<span class="release-date">' + escapeHtml(r.date) + '</span></div>' +
+        '<h3>' + escapeHtml(r.name) + '</h3>' +
+        '<p class="release-type">' + escapeHtml(r.type) + '</p>' +
+        '<dl class="release-spec">' +
+          '<div><dt>정가</dt><dd>' + escapeHtml(r.price) + '</dd></div>' +
+          '<div><dt>구성</dt><dd>' + escapeHtml(r.config) + '</dd></div>' +
+        '</dl>' +
+        '<p class="release-note">' + escapeHtml(r.note || "") + '</p>' +
+        '<div class="release-links">' +
+          '<a href="' + r.url + '" target="_blank" rel="noopener" data-release-out="official">공식 제품 정보 ↗</a>' +
+          (r.store ? '<a href="' + r.store + '" target="_blank" rel="noopener" data-release-out="store">스토어 상품 페이지 ↗</a>' : '') +
+        '</div>' +
+      '</article>';
+    }).join("");
+    $$("[data-release-out]", releaseGrid).forEach(function (a) {
+      a.addEventListener("click", function () { trackEvent("release_outbound", { kind: a.getAttribute("data-release-out") }); });
+    });
+  }
+
+  /* ------------------------------------------------------ 팝수 조회 */
+  function normNum(raw) {
+    var s = String(raw == null ? "" : raw).replace(/\s+/g, "");
+    var m = s.match(/(\d{1,4})\/(\d{1,4})/);
+    if (!m) return "";
+    return parseInt(m[1], 10) + "/" + parseInt(m[2], 10);
+  }
+  function moverFor(item) {
+    for (var i = 0; i < MOVERS.length; i++) {
+      if (item.num && normNum(MOVERS[i].num) === normNum(item.num) && MOVERS[i].name === item.name) return MOVERS[i];
+    }
+    for (var j = 0; j < MOVERS.length; j++) {
+      if (item.num && normNum(MOVERS[j].num) === normNum(item.num)) return MOVERS[j];
+    }
+    return null;
+  }
+  function popQueryText(item) {
+    var parts = [];
+    if (item.en) parts.push(item.en);
+    else if (item.name) parts.push(item.name);
+    if (item.num) parts.push(item.num);
+    if (item.set && !item.en) parts.push(item.set);
+    return parts.join(" ");
+  }
+  function priceChartingUrl(item) {
+    var base = POP_TOOLS.pricecharting || "https://www.pricecharting.com/search-products?q=";
+    var q = item && item.en ? (item.en + " " + (/30th/i.test(item.set || "") ? "30th Celebration" : (item.set || ""))) : (popQueryEl ? popQueryEl.value : "");
+    return base + encodeURIComponent(q.trim()) + "&type=prices";
+  }
+  function copyText(text) {
+    var value = String(text || "");
+    if (!value) return Promise.resolve(false);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(value).then(function () { return true; }).catch(function () { return legacyCopy(value); });
+    }
+    return Promise.resolve(legacyCopy(value));
+  }
+  function legacyCopy(value) {
+    try {
+      var ta = document.createElement("textarea");
+      ta.value = value;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return ok;
+    } catch (e) { return false; }
+  }
+  function openExternal(url) {
+    var w = window.open(url, "_blank", "noopener");
+    if (w) w.opener = null;
+  }
+
+  function popMatches(raw) {
+    var q = String(raw || "").trim();
+    var out = { items: [], range: null, query: q };
+    if (!q) return out;
+    var num = normNum(q);
+    var seen = {};
+    function push(item) {
+      var key = (item.set || "") + "|" + item.name + "|" + (item.num || "");
+      if (seen[key]) return;
+      seen[key] = 1;
+      out.items.push(item);
+    }
+    if (num) {
+      CARD_NUMBERS.forEach(function (c) { if (normNum(c.num) === num) push(c); });
+      SETS.forEach(function (s) {
+        (s.cards || []).forEach(function (c) {
+          if (c.num && normNum(c.num) === num) {
+            push({ name: c.name, num: c.num, rarity: c.rarity, tag: c.tag, set: s.short, note: c.note });
+          }
+        });
+      });
+      if (!out.items.length) {
+        var parts = num.split("/");
+        var no = parseInt(parts[0], 10), total = parseInt(parts[1], 10);
+        CARD_RANGES.forEach(function (r) {
+          if (r.total === total && no >= r.from && no <= r.to) {
+            out.range = { set: r.set, label: r.label, note: r.note, num: no + "/" + total };
+          }
+        });
+      }
+      return out;
+    }
+    var needle = q.toLowerCase();
+    CARD_NUMBERS.forEach(function (c) {
+      if (String(c.name).toLowerCase().indexOf(needle) >= 0 || String(c.en || "").toLowerCase().indexOf(needle) >= 0) push(c);
+    });
+    SETS.forEach(function (s) {
+      (s.cards || []).forEach(function (c) {
+        if (String(c.name).toLowerCase().indexOf(needle) >= 0) {
+          push({ name: c.name, num: c.num, rarity: c.rarity, tag: c.tag, set: s.short, note: c.note });
+        }
+      });
+    });
+    return out;
+  }
+
+  function renderPopLinks(context) {
+    if (!popLinks) return;
+    var q = context && context.query ? context.query : "";
+    var item = context && context.items && context.items.length ? context.items[0] : null;
+    var text = item ? popQueryText(item) : q;
+    var kreamBase = POP_TOOLS.kream || "https://kream.co.kr/search?keyword=";
+    var kreamKeyword = item ? (item.name + " " + (item.set || "")) : q;
+    popLinks.innerHTML =
+      '<button type="button" class="pop-link" data-pop-tool="psa"><b>PSA 팝 리포트</b><small>검색어 복사 후 열기</small></button>' +
+      '<button type="button" class="pop-link" data-pop-tool="brg"><b>BRG 팝 리포트</b><small>검색어 복사 후 열기</small></button>' +
+      '<a class="pop-link" href="' + kreamBase + encodeURIComponent(kreamKeyword) + '" target="_blank" rel="noopener" data-pop-tool="kream"><b>KREAM 시세 검색</b><small>' + escapeHtml(item ? item.name + " " + (item.num || "") : (q || "카드명을 넣어 보세요")) + '</small></a>' +
+      '<a class="pop-link" href="' + priceChartingUrl(item) + '" target="_blank" rel="noopener" data-pop-tool="price"><b>PriceCharting</b><small>영문 카드명 기준 검색</small></a>';
+
+    $$("[data-pop-tool]", popLinks).forEach(function (el) {
+      var tool = el.getAttribute("data-pop-tool");
+      el.addEventListener("click", function (e) {
+        trackEvent("pop_outbound", { tool: tool });
+        if (tool === "psa" || tool === "brg") {
+          e.preventDefault();
+          var url = tool === "psa" ? (POP_TOOLS.psa || {}).url : (POP_TOOLS.brg || {}).url;
+          var target = tool === "psa" ? (POP_TOOLS.psa || {}).url : (POP_TOOLS.brg || {}).url;
+          if (!target) return;
+          copyText(text || q).then(function (ok) {
+            openExternal(target);
+            toast(ok
+              ? "검색어 \u201c" + (text || q) + "\u201d를 복사했습니다. 열린 사이트 검색창에 붙여넣으세요."
+              : "검색어 \u201c" + (text || q) + "\u201d를 직접 입력해 주세요.");
+          });
+        }
+      });
+    });
+  }
+
+  function renderPopResults(context) {
+    if (!popResults) return;
+    var items = context.items || [];
+    var html = "";
+    if (!context.query) {
+      html = '<p class="pop-empty">카드 번호나 카드명을 넣으면 도감·번호 인덱스에서 찾아 드립니다. 위쪽 빠른 검색을 눌러도 됩니다.</p>';
+    } else if (!items.length && !context.range) {
+      html = '<p class="pop-empty">‘' + escapeHtml(context.query) + '’에 해당하는 카드를 사이트 도감에서 찾지 못했습니다. 위 팝 리포트·KREAM 검색으로 바로 확인해 보세요.</p>';
+    }
+    if (context.range) {
+      html += '<div class="pop-range"><b>' + escapeHtml(context.range.num) + ' · ' + escapeHtml(context.range.set) + '</b>' +
+        '<span>' + escapeHtml(context.range.label) + ' 구간입니다. ' + escapeHtml(context.range.note) + '</span></div>';
+    }
+    html += items.slice(0, 8).map(function (item) {
+      var mv = moverFor(item);
+      var priceLine = mv
+        ? '<span class="pop-price">KREAM 최근 체결 <b>' + won(mv.lastPrice) + '</b> · ' + escapeHtml(mv.lastWhen || "") + ' (누적 ' + (mv.trades || 0) + '건)</span>'
+        : '<span class="pop-price muted">참고 시세 없음 · KREAM 검색으로 확인</span>';
+      return '<article class="pop-card">' +
+        '<span class="pop-art ' + artFor(item) + '" data-mark="' + escapeHtml((item.set || "").slice(0, 2)) + '" style="' + artGradient(item) + '">' +
+          '<span class="mover-rarity">' + escapeHtml(item.rarity || "") + '</span></span>' +
+        '<div class="pop-info">' +
+          '<div class="pop-name">' + escapeHtml(item.name) + '</div>' +
+          '<div class="pop-set">' + escapeHtml(item.set || "") + (item.num ? ' · ' + escapeHtml(item.num) : '') + '</div>' +
+          priceLine +
+          (item.note ? '<p class="pop-note-line">' + escapeHtml(item.note) + '</p>' : '') +
+          '<div class="pop-card-links">' +
+            (item.kream ? '<a href="' + item.kream + '" target="_blank" rel="noopener">KREAM ↗</a>' : '') +
+            '<button type="button" data-pop-psa="' + escapeHtml(popQueryText(item)) + '">PSA 팝</button>' +
+            '<button type="button" data-pop-brg="' + escapeHtml(popQueryText(item)) + '">BRG 팝</button>' +
+          '</div>' +
+        '</div>' +
+      '</article>';
+    }).join("");
+    popResults.innerHTML = html;
+
+    function bind(key, url) {
+      $$('[data-pop-' + key + ']', popResults).forEach(function (b) {
+        b.addEventListener("click", function () {
+          var text = b.getAttribute('data-pop-' + key) || "";
+          trackEvent("pop_outbound", { tool: key });
+          copyText(text).then(function (ok) {
+            openExternal(url);
+            toast(ok ? "검색어 \u201c" + text + "\u201d를 복사했습니다. 검색창에 붙여넣으세요." : "검색어를 직접 입력해 주세요: " + text);
+          });
+        });
+      });
+    }
+    bind("psa", (POP_TOOLS.psa || {}).url);
+    bind("brg", (POP_TOOLS.brg || {}).url);
+  }
+
+  function renderPopRelay(payload, context) {
+    if (!popRelayStatus) return;
+    if (!payload) {
+      popRelayStatus.textContent = relayUrl()
+        ? "태블릿 중계에 팝수 조회(/api/pop?q=)를 요청했습니다."
+        : "PSA·BRG 팝수는 사이트에서 직접 읽어 올 수 없어 검색어 복사 방식으로 연결합니다. 태블릿 중계를 연결하면 이 자리에 팝수가 표시됩니다.";
+      return;
+    }
+    var rows = payload.items || payload.results || [];
+    if (!payload.ok || !rows.length) {
+      popRelayStatus.textContent = "중계 응답에 팝수가 없습니다. 팝 리포트 바로가기로 확인해 주세요.";
+      return;
+    }
+    popRelayStatus.innerHTML = '<span class="pop-relay-title">중계 팝수 · ' + escapeHtml(context.query) + '</span>' +
+      rows.map(function (r) {
+        return '<span class="pop-relay-row"><b>' + escapeHtml(r.name || r.label || "") + '</b> ' +
+          (r.psa10 != null ? 'PSA 10 ' + r.psa10 + '장' : '') +
+          (r.psaTotal != null ? ' / PSA 전체 ' + r.psaTotal + '장' : '') +
+          (r.brg10 != null ? ' · BRG 10 ' + r.brg10 + '장' : '') +
+          (r.brgTotal != null ? ' / BRG 전체 ' + r.brgTotal + '장' : '') + '</span>';
+      }).join("");
+  }
+
+  function runPopSearch(raw, from) {
+    var context = popMatches(raw);
+    renderPopLinks(context);
+    renderPopResults(context);
+    trackEvent("pop_search", { from: from || "form", has_result: context.items.length ? 1 : 0 });
+    var base = relayUrl();
+    if (!base || !context.query) {
+      renderPopRelay(null, context);
+      return;
+    }
+    var seq = ++popRelaySeq;
+    var ctrl = new AbortController();
+    var timer = setTimeout(function () { ctrl.abort(); }, 7000);
+    fetch(base + "/api/pop?q=" + encodeURIComponent(context.query), { signal: ctrl.signal, mode: "cors", cache: "no-store" })
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .then(function (payload) {
+        if (seq === popRelaySeq) renderPopRelay(payload || { ok: false }, context);
+      })
+      .catch(function () {
+        if (seq === popRelaySeq) renderPopRelay({ ok: false }, context);
+      })
+      .finally(function () { clearTimeout(timer); });
+  }
+
+  function initPop() {
+    if (!popForm) return;
+    popForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      runPopSearch(popQueryEl ? popQueryEl.value : "", "form");
+    });
+    if (popChips) {
+      popChips.innerHTML = (POP_TOOLS.quick || []).map(function (q) {
+        return '<button type="button" class="pop-chip" data-quick="' + escapeHtml(q) + '">' + escapeHtml(q) + '</button>';
+      }).join("");
+      $$("[data-quick]", popChips).forEach(function (b) {
+        b.addEventListener("click", function () {
+          var q = b.getAttribute("data-quick");
+          if (popQueryEl) popQueryEl.value = q;
+          runPopSearch(q, "chip");
+        });
+      });
+    }
+    renderPopLinks({ query: "", items: [] });
+    renderPopResults({ query: "", items: [] });
+    renderPopRelay(null, { query: "" });
+  }
+
   /* --------------------------------------------------------------- 초기화 */
   buildCalendar();
   buildScheduleFold();
@@ -10307,11 +11374,16 @@ window.PokeMoaMap = (function () {
   runCalc();
   renderBoxPicker();
   renderBoxBoard();
+  applyMovers(MOVERS, "static");
+  renderIssues();
+  renderReleases();
+  initPop();
 
   /* #stores·#boxStores는 「정가 구매처」 탭의 짧은 주소로 같이 받아 줍니다. */
   function tabOfHash(h) {
     if (h === "stores" || h === "boxStores") return "home";
     if (h === "cards") return "guide";
+    if (h === "pop" || h === "movers" || h === "issues" || h === "releases") return "trends";
     return panels[h] ? h : "";
   }
 

@@ -2151,6 +2151,219 @@ window.POKEMOA_DATA = (function () {
     { id: "광주", name: "포켓몬 카드샵 화성스토어TCG 광주", addr: "광주광역시 동구 중앙로160번길 22 2층", q: "화성스토어 광주", url: "https://www.pokemonkorea.co.kr/pokemon_cardshop/menu213" }
   ];
 
+  /* ==================================================================
+   * v4.9 시세·이슈·신규팩·팝수 (「시세·팝수」 탭 데이터)
+   * 시세: 2026-11-18 19:10 KST, KREAM 한글판 단품 상품 페이지의
+   *   비로그인 공개 최근 체결 내역을 직접 확인한 값입니다.
+   *   등락률은 "같은 옵션(Ungraded A)의 최근 두 체결"만 비교해 계산했고,
+   *   KREAM이 페이지에 표시하는 '직전 거래 대비' 값은 등급·언어가 다른 체결과
+   *   비교될 수 있어 pageDelta 에 그대로 옮겨 적었습니다(비고에 근거 표기).
+   *   체결가는 수수료·배송비 반영 전 값이고, 상태·등급에 따라 달라집니다.
+   * ================================================================== */
+  var KREAM_CHECKED = {
+    date: "2026-11-18",
+    time: "19:10",
+    label: "KREAM 한글판 · 비로그인 공개 최근 체결",
+    collection: "https://kream.co.kr/content/17991",
+    search: "https://kream.co.kr/search?keyword=30%EC%A3%BC%EB%85%84%20%EA%B8%B0%EB%85%90%ED%8C%A9%20%ED%95%9C%EA%B8%80%ED%8C%90"
+  };
+
+  var kreamMovers = [
+    {
+      id: "lugia-rs", name: "루기아 RS", en: "Lugia RS", num: "142/103", model: "M6A142-103",
+      rarity: "RS", tag: "classic", set: "30th CELEBRATION", kreamId: 1094183,
+      url: "https://kream.co.kr/products/1094183",
+      lastPrice: 42000, lastWhen: "1시간 전", prevPrice: 32000, prevWhen: "3시간 전",
+      trades: 249, dir: "up", pct: 31.3, diff: 10000, pageDelta: null
+    },
+    {
+      id: "mew-fur", name: "뮤 ex FUR", en: "Mew ex FUR", num: "135/103", model: "M6A135-103",
+      rarity: "FUR", tag: "fur", set: "30th CELEBRATION", kreamId: 1094181,
+      url: "https://kream.co.kr/products/1094181",
+      lastPrice: 25000, lastWhen: "3시간 전", prevPrice: 20000, prevWhen: "6시간 전",
+      trades: 305, dir: "up", pct: 25.0, diff: 5000,
+      pageDelta: { text: "▼ 50,000원 (-66.7%)", kind: "down", note: "BRG 10 영문 75,000원 체결과 비교된 값" }
+    },
+    {
+      id: "pikachu-ex-126", name: "피카츄 ex", en: "Pikachu ex", num: "126/103", model: "M6A126-103",
+      rarity: "SAR", tag: "sar", set: "30th CELEBRATION", kreamId: 1094178,
+      url: "https://kream.co.kr/products/1094178",
+      lastPrice: 22000, lastWhen: "46분 전", prevPrice: 21000, prevWhen: "6시간 전",
+      trades: 229, dir: "up", pct: 4.8, diff: 1000, pageDelta: null
+    },
+    {
+      id: "charizard-rh", name: "리자몽 RH", en: "Charizard RH", num: "137/103", model: "M6A137-103",
+      rarity: "RH", tag: "classic", set: "30th CELEBRATION", kreamId: 1094182,
+      url: "https://kream.co.kr/products/1094182",
+      lastPrice: 49000, lastWhen: "7시간 전", prevPrice: 48000, prevWhen: "7시간 전",
+      trades: 331, dir: "up", pct: 2.1, diff: 1000,
+      pageDelta: { text: "▼ 101,000원 (-67.3%)", kind: "down", note: "BRG 10 영문 150,000원 체결과 비교된 값" }
+    },
+    {
+      id: "pikachu-ex-127", name: "피카츄 ex", en: "Pikachu ex", num: "127/103", model: "M6A127-103",
+      rarity: "SAR", tag: "sar", set: "30th CELEBRATION", kreamId: 1094179,
+      url: "https://kream.co.kr/products/1094179",
+      lastPrice: 21000, lastWhen: "46분 전", prevPrice: 22000, prevWhen: "6시간 전",
+      trades: 204, dir: "down", pct: -4.5, diff: -1000,
+      pageDelta: { text: "▼ 1,000원 (-4.5%)", kind: "down", note: "같은 옵션끼리 비교된 값" }
+    },
+    {
+      id: "magikarp-ar", name: "잉어킹 AR", en: "Magikarp AR", num: "165/103", model: "M6A165-103",
+      rarity: "AR", tag: "ar", set: "30th CELEBRATION", kreamId: 1094186,
+      url: "https://kream.co.kr/products/1094186",
+      lastPrice: 20000, lastWhen: "2시간 전", prevPrice: 20000, prevWhen: "8시간 전",
+      trades: 224, dir: "flat", pct: 0, diff: 0, pageDelta: null
+    },
+    {
+      id: "mewtwo-fur", name: "뮤츠 ex FUR", en: "Mewtwo ex FUR", num: "134/103", model: "M6A134-103",
+      rarity: "FUR", tag: "fur", set: "30th CELEBRATION", kreamId: 1094180,
+      url: "https://kream.co.kr/products/1094180",
+      lastPrice: 75000, lastWhen: "7시간 전", prevPrice: 21000, prevWhen: "등급 없음",
+      trades: 282, dir: "na", pct: null, diff: null,
+      pageDelta: { text: "▲ 54,000원 (+257.1%)", kind: "up", note: "직전 Ungraded A 21,000원과 비교된 값 · 75,000원 체결은 등급 표기 없음" }
+    }
+  ];
+
+  /* 번호·카드명 조회용 인덱스 — KREAM 상품 페이지의 모델번호로 확인한 번호만 넣었습니다. */
+  var cardNumbers = [
+    { num: "126/103", name: "피카츄 ex", en: "Pikachu ex", rarity: "SAR", tag: "sar", set: "30th CELEBRATION", kream: "https://kream.co.kr/products/1094178" },
+    { num: "127/103", name: "피카츄 ex", en: "Pikachu ex", rarity: "SAR", tag: "sar", set: "30th CELEBRATION", kream: "https://kream.co.kr/products/1094179" },
+    { num: "129/103", name: "뮤 ex", en: "Mew ex", rarity: "SAR", tag: "sar", set: "30th CELEBRATION", kream: "" },
+    { num: "130/103", name: "님피아 ex", en: "Sylveon ex", rarity: "SAR", tag: "sar", set: "30th CELEBRATION", kream: "https://kream.co.kr/products/1120208" },
+    { num: "134/103", name: "뮤츠 ex", en: "Mewtwo ex", rarity: "FUR", tag: "fur", set: "30th CELEBRATION", kream: "https://kream.co.kr/products/1094180" },
+    { num: "135/103", name: "뮤 ex", en: "Mew ex", rarity: "FUR", tag: "fur", set: "30th CELEBRATION", kream: "https://kream.co.kr/products/1094181" },
+    { num: "137/103", name: "리자몽", en: "Charizard", rarity: "RH", tag: "classic", set: "30th CELEBRATION", kream: "https://kream.co.kr/products/1094182" },
+    { num: "142/103", name: "루기아", en: "Lugia", rarity: "RS", tag: "classic", set: "30th CELEBRATION", kream: "https://kream.co.kr/products/1094183" },
+    { num: "165/103", name: "잉어킹", en: "Magikarp", rarity: "AR", tag: "ar", set: "30th CELEBRATION", kream: "https://kream.co.kr/products/1094186" }
+  ];
+
+  /* 번호 구간 안내 — 30th CELEBRATION 017~046은 피카츄 30종입니다. */
+  var cardRanges = [
+    { set: "30th CELEBRATION", total: 176, from: 17, to: 46, label: "피카츄 30종 (017~046)", note: "30명의 일러스트레이터가 한 장씩 그린 피카츄 시리즈입니다. 카드마다 01/30~30/30 마크가 들어갑니다." }
+  ];
+
+  /* ---------------------------------------------------- 최근 카드 이슈 */
+  var cardIssues = [
+    {
+      date: "2026-11-18", tag: "마감", kind: "urgent",
+      title: "Team Masters 2027 추첨 발표가 11/20로 연기 · 참가 약관 동의는 오늘 23:59까지",
+      body: "주최 측이 11/13 공지에서 추첨 결과 발표를 11/13 14시에서 11/20 14시(한국 시간)로 미뤘습니다. 팀원 전원이 약관에 동의해야 엔트리가 끝나고, 동의 기간은 11/13 14시 ~ 11/18 23:59입니다. 이 기간에는 신규 접수나 멤버 변경을 받지 않습니다. 대회는 2027-01-23~24 킨텍스.",
+      links: [
+        { label: "공식 공지", url: "https://www.pokemon-team-masters.com/pages/news/news-detail/news-detail?id=8" },
+        { label: "TCG뉴스 정리", url: "https://tcgnews.kr/article/234" }
+      ]
+    },
+    {
+      date: "2026-11-16", tag: "신제품", kind: "release",
+      title: "아크릴 카드 홀더 세트 「개굴닌자」·「님피아」 11/20 발매 · 각 30,000원",
+      body: "프로모 카드 「개굴닌자 ex」 또는 「님피아 ex」 1장 + 아크릴 카드 홀더 1개 + 30th CELEBRATION 3팩 구성입니다. 홀더는 같고 프로모만 달라, 원하는 프로모로 고르면 됩니다.",
+      links: [
+        { label: "개굴닌자", url: "https://pokemoncard.co.kr/card/990" },
+        { label: "님피아", url: "https://pokemoncard.co.kr/card/988" },
+        { label: "TCG뉴스", url: "https://tcgnews.kr/article/251" }
+      ]
+    },
+    {
+      date: "2026-11-13", tag: "대회", kind: "event",
+      title: "2027 포켓몬 카드샵 대항전 · 대표 선발전이 11/21 시작",
+      body: "전국 15개 카드샵에서 1회차 11/21~22, 2회차 11/28~29에 카드샵 대표를 뽑습니다(1회차 온라인 예약 11/17 18시 시작). 리그전 1위 500만 원, 최종 우승팀은 포켓몬 월드챔피언십 2027 참관을 지원합니다.",
+      links: [
+        { label: "대회 안내", url: "https://pokemonkorea.co.kr/2027card_shop_league/menu839" },
+        { label: "TCG뉴스", url: "https://tcgnews.kr/article/241" }
+      ]
+    },
+    {
+      date: "2026-11-03", tag: "이벤트", kind: "event",
+      title: "「메가엘레이드 ex SAR GET BATTLE」 개최",
+      body: "포켓몬코리아가 카드 게임 이벤트로 연 「메가엘레이드 ex SAR GET BATTLE」 안내를 올렸습니다. 참가 조건·일정은 공식 이벤트 페이지에서 매장별로 확인해야 합니다.",
+      links: [
+        { label: "공식 이벤트", url: "https://pokemonkorea.co.kr/PCG_Getbattle_M6" },
+        { label: "카드 게임 소식", url: "https://pokemoncard.co.kr/card" }
+      ]
+    },
+    {
+      date: "2026-11-01", tag: "시세", kind: "market",
+      title: "30주년 뮤 ex FUR 무등급 낙찰가, 3주 만에 5만 원대 → 3만 1천 원대",
+      body: "Collectory가 네이버카페 경매·번개장터 판매완료 낙찰만 골라 정리한 값입니다. BRG 10도 9만~13만 원대에서 7만 7천~8만 1천 원으로 내려왔습니다. 최근 표본이 2~3건이라 추세를 단정하기는 이릅니다.",
+      links: [
+        { label: "Collectory 기사", url: "https://collectory.cc/news/30%EC%A3%BC%EB%85%84-%EB%AE%A4-fur-%EB%AC%B4%EB%93%B1%EA%B8%89%EC%9D%80-3%EC%A3%BC-%EB%A7%8C%EC%97%90-5%EB%A7%8C-%EC%9B%90%EC%97%90%EC%84%9C-3%EB%A7%8C-1%EC%B2%9C-%EC%9B%90%EC%9D%B4-%EB%90%90%EA%B3%A0-%EB%A9%94%EA%B0%80%ED%8C%AC%ED%85%80-sar-psa10%EC%9D%80-22%EB%A7%8C-%EC%9B%90%EB%8C%80%EB%A5%BC-%EC%A7%80%EC%BC%B0%EC%8A%B5%EB%8B%88%EB%8B%A4-mvxro3ge" }
+      ]
+    },
+    {
+      date: "2026-11-18", tag: "해외", kind: "release",
+      title: "일본 「하도우시커」 11/27 발매 · 로손은 1인 10팩 제한",
+      body: "일본 포켓몬 카드 공식이 MEGA 확장팩 「하도우시커」(1팩 200엔)를 11/27 발매한다고 확정했습니다. 로손은 11/27 7시부터 계산당 10팩으로 제한하고 예약·보관은 받지 않습니다. 한국어판 발매 일정은 아직 공지되지 않았습니다.",
+      links: [
+        { label: "TCG뉴스(판매)", url: "https://tcgnews.kr/article/256" },
+        { label: "수록 카드 공개", url: "https://tcgnews.kr/article/236" }
+      ]
+    }
+  ];
+
+  /* -------------------------------------------------- 신규 팩 발매 소식 */
+  var newReleases = [
+    {
+      date: "2026-11-20", status: "예정", kind: "soon",
+      name: "아크릴 카드 홀더 세트 「개굴닌자」", type: "특별 제품 · 한글판",
+      price: "30,000원", config: "프로모 「개굴닌자 ex」 1장 · 아크릴 카드 홀더 1개 · 30th CELEBRATION 3팩",
+      url: "https://pokemoncard.co.kr/card/990",
+      note: "공식 제품 페이지 발매일 2026-11-20 기준. 매장 입고는 점포별로 다를 수 있습니다."
+    },
+    {
+      date: "2026-11-20", status: "예정", kind: "soon",
+      name: "아크릴 카드 홀더 세트 「님피아」", type: "특별 제품 · 한글판",
+      price: "30,000원", config: "프로모 「님피아 ex」 1장 · 아크릴 카드 홀더 1개 · 30th CELEBRATION 3팩",
+      url: "https://pokemoncard.co.kr/card/988",
+      note: "개굴닌자 세트와 홀더 수량·동봉 확장팩은 같고 프로모 카드만 다릅니다."
+    },
+    {
+      date: "2026-11-27", status: "해외", kind: "overseas",
+      name: "확장팩 「하도우시커」 (일본 M7)", type: "확장팩 · 한국판 미정",
+      price: "1팩 200엔 (약 1,700원)", config: "1팩 5장 · 메가루카리오Z ex · 메가한카리아스Z ex · 메가앱솔Z ex",
+      url: "https://tcgnews.kr/article/256",
+      note: "한국어판 발매일과 정가는 아직 공식 공지가 없습니다. 일본판 날짜를 한국판에 그대로 적용하지 마세요."
+    },
+    {
+      date: "2026-10-07", status: "발매", kind: "done",
+      name: "30th CELEBRATION FUTURISTIC BOX", type: "특별 세트 · 한글판",
+      price: "275,000원", config: "FUR 피카츄 ex 프로모 2종 · 카드 실드 64장 · 플레이매트 · 덱·카운터 케이스 · 금속 데미지 카운터 주사위 12개 · 디스플레이 프레임",
+      url: "https://pokemoncard.co.kr/card/975",
+      store: "https://www.pokemonstore.co.kr/pages/pokemoncardgame30th/product/furbox/index.html",
+      note: "확장팩은 들어 있지 않은 배틀 구성품 세트입니다."
+    },
+    {
+      date: "2026-09-30", status: "발매", kind: "done",
+      name: "MEGA 스타터 세트 ex 3종", type: "구축덱 · 한글판",
+      price: "각 17,000원", config: "이브이 ex · 조로아&조로아크 ex · 나오하&마스카나 ex · 덱 60장 + 데미지 카운터·동전·플레이매트·가이드",
+      url: "https://pokemoncard.co.kr/card/966",
+      note: "구축덱은 팩이 아니라 덱 구성이 정해진 상품입니다. 확장팩만으로는 대전할 수 없습니다."
+    },
+    {
+      date: "2026-09-16", status: "발매", kind: "done",
+      name: "확장팩 「30th CELEBRATION」", type: "확장팩 · 한글판",
+      price: "1팩 3,500원 / 1박스 70,000원", config: "1팩 6장 · 1박스 20팩(120장) · 176종(기본 103종)",
+      url: "https://pokemoncard.co.kr/card/960",
+      note: "전 세계 동시 발매. KREAM 미개봉 1박스는 2026-11-17 기준 72,000~76,000원입니다."
+    },
+    {
+      date: "2026-08-21", status: "발매", kind: "done",
+      name: "확장팩 「스톰에메랄다」", type: "확장팩 · 한글판",
+      price: "1팩 1,500원 / 1상자 45,000원", config: "1팩 5장 · 1상자 30팩(150장) · 메가레쿠쟈 ex",
+      url: "https://pokemoncard.co.kr/card/938",
+      note: "2026-08-16 포켓몬 카드샵 선행 발매 후 8/21 일반 발매."
+    }
+  ];
+
+  /* ------------------------------------------------------ 팝수 조회 도구 */
+  var popTools = {
+    note: "PSA Pop Report와 BRG 팝 리포트는 로그인·CORS·자동화 차단 때문에 이 사이트 안에서 표를 직접 읽어 오지 못합니다. 검색어를 복사해 공식 사이트에서 확인하는 방식이고, 태블릿 중계(/api/pop?q=)가 연결되면 같은 화면에서 결과를 받아 표시합니다.",
+    psa: { label: "PSA Pop Report", url: "https://www.psacard.com/Pop/Search", home: "https://www.psacard.com/pop" },
+    brg: { label: "BRG 팝 리포트", url: "https://break.co.kr/pop-report", global: "https://www.breakgrading.com" },
+    kream: "https://kream.co.kr/search?keyword=",
+    pricecharting: "https://www.pricecharting.com/search-products?q=",
+    quick: ["127/103", "135/103", "134/103", "025/176", "리자몽", "피카츄"]
+  };
+
   /* ------------------------------------------------------ 사실 메모(출처) */
   var facts = [
     { label: "정가·구성", text: "포켓몬 카드 게임 공식 제품 정보 (1팩 3,500원 / 1상자 70,000원, 1팩 6장, 1상자 20팩)", url: "https://pokemoncard.co.kr/card/960" },
@@ -2183,6 +2396,13 @@ window.POKEMOA_DATA = (function () {
     cardShops: cardShops,
     shortcuts: shortcuts,
     faq: faq,
-    facts: facts
+    facts: facts,
+    KREAM_CHECKED: KREAM_CHECKED,
+    kreamMovers: kreamMovers,
+    cardNumbers: cardNumbers,
+    cardRanges: cardRanges,
+    cardIssues: cardIssues,
+    newReleases: newReleases,
+    popTools: popTools
   };
 })();

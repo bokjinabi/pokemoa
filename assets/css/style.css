@@ -3223,3 +3223,221 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .chip-offline { background: #f0eaff; color: #5334d6; font-weight: 800; }
 .pm-pill.is-offline { border-color: rgba(16, 31, 60, 0.18); }
 .store-item.is-offline .s-name { font-weight: 700; }
+
+/* =========================================================================
+   v4.9 시세·이슈·신규팩·팝수 탭
+   ========================================================================= */
+.trend-stats { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.trend-stat {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 11px; border-radius: 999px;
+  background: #fff; border: 1px solid var(--line);
+  font-size: 12px; font-weight: 700; color: var(--ink-2);
+}
+.trend-stat b { font-size: 14px; font-variant-numeric: tabular-nums; }
+.trend-stat.is-up { background: #fdeceb; border-color: #f6cfcb; color: #b3261e; }
+.trend-stat.is-down { background: var(--blue-soft); border-color: #cadcff; color: #1f4fbe; }
+.trend-stat.is-src { background: transparent; border-style: dashed; font-weight: 600; color: var(--muted); }
+
+/* ---------------------------------------------------- 오늘 오른 카드 */
+.mover-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.mover-empty { margin: 0; padding: 16px; background: #fff; border: 1px dashed var(--line); border-radius: 14px; font-size: 13px; color: var(--muted); }
+.mover-card {
+  position: relative;
+  display: flex; gap: 12px;
+  padding: 14px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.mover-card:first-child { border-color: #f2dfa5; box-shadow: 0 8px 22px rgba(255, 203, 5, 0.16); }
+.mover-rank {
+  position: absolute; top: -8px; left: 12px;
+  min-width: 22px; height: 22px; padding: 0 6px;
+  display: grid; place-items: center;
+  border-radius: 999px;
+  background: var(--navy); color: #fff;
+  font-size: 11.5px; font-weight: 900;
+}
+.mover-art {
+  position: relative; flex-shrink: 0;
+  width: 74px; aspect-ratio: 4 / 5;
+  border-radius: 10px; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: space-between;
+  padding: 6px;
+  background: linear-gradient(150deg, #eef1f7, #dfe6f1);
+}
+.mover-art::after {
+  content: ""; position: absolute; inset: 0;
+  background: repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.32) 0 2px, transparent 2px 10px);
+  mix-blend-mode: overlay;
+}
+.mover-rarity {
+  position: relative; z-index: 1; align-self: flex-start;
+  font-size: 9px; font-weight: 900; letter-spacing: 0.04em;
+  padding: 2px 5px; border-radius: 4px;
+  background: rgba(16, 31, 60, 0.82); color: #fff;
+}
+.mover-num {
+  position: relative; z-index: 1; align-self: flex-end;
+  font-size: 9.5px; font-weight: 800;
+  color: rgba(16, 31, 60, 0.6);
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 4px; padding: 1px 4px;
+}
+.mover-body { flex: 1; min-width: 0; }
+.mover-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.mover-top strong { font-size: 15px; letter-spacing: -0.02em; }
+.mover-kream { font-size: 11.5px; font-weight: 800; color: var(--blue); white-space: nowrap; }
+.mover-price { display: flex; align-items: baseline; gap: 8px; margin-top: 4px; }
+.mover-price b { font-size: 20px; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.mover-delta { font-size: 13px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.mover-delta.is-up { color: #c0392b; }
+.mover-meta { margin: 6px 0 0; font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+.mover-meta b { color: var(--ink-2); }
+.mover-note { margin: 2px 0 0; font-size: 10.5px; color: var(--muted-2); }
+.mover-pop {
+  margin-top: 8px; padding: 5px 9px;
+  border: 1px dashed var(--line); border-radius: 8px;
+  background: var(--paper); color: var(--ink-2);
+  font-size: 11px; font-weight: 800;
+}
+.mover-pop:hover { border-color: var(--navy); background: #fff; }
+
+.kream-board { margin-top: 16px; }
+.kream-board-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.kream-board-head .chip { flex-shrink: 0; }
+.kream-table td small { display: block; margin-top: 2px; font-size: 10.5px; font-weight: 600; color: var(--muted); }
+.kream-name { font-weight: 800; color: var(--navy); }
+.kream-name:hover { text-decoration: underline; }
+.kream-sub { font-variant-numeric: tabular-nums; }
+.kream-pct { font-weight: 800; font-variant-numeric: tabular-nums; }
+.kream-pct.is-up { color: #c0392b; }
+.kream-pct.is-down { color: #1f4fbe; }
+.kream-pct.is-flat { color: var(--green); }
+.kream-page { font-weight: 700; font-size: 12px; font-variant-numeric: tabular-nums; }
+.kream-page.is-up { color: #c0392b; }
+.kream-page.is-down { color: #1f4fbe; }
+.kream-na { font-size: 11.5px; color: var(--muted-2); }
+
+/* ---------------------------------------------------------- 카드 이슈 */
+.issue-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.issue-item {
+  display: grid; grid-template-columns: 78px 1fr; gap: 14px;
+  padding: 14px 16px;
+  background: #fff; border: 1px solid var(--line); border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.issue-side {
+  display: flex; flex-direction: column; gap: 6px; align-items: flex-start;
+  padding-right: 12px; border-right: 1px dashed var(--line);
+}
+.issue-date { font-size: 11.5px; font-weight: 800; color: var(--muted); font-variant-numeric: tabular-nums; }
+.issue-tag { font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: var(--grey-soft); color: var(--ink-2); }
+.issue-item.is-urgent { border-color: #f6cfcb; }
+.issue-item.is-urgent .issue-tag { background: #fdeceb; color: #b3261e; }
+.issue-item.is-release .issue-tag { background: var(--yellow-soft); color: #7a5a00; }
+.issue-item.is-market .issue-tag { background: var(--blue-soft); color: #1f4fbe; }
+.issue-item.is-event .issue-tag { background: var(--green-soft); color: var(--green); }
+.issue-body h3 { margin: 0 0 6px; font-size: 15px; line-height: 1.4; letter-spacing: -0.02em; }
+.issue-body p { margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.65; }
+.issue-links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+.issue-links a { font-size: 11.5px; font-weight: 800; color: var(--blue); }
+
+/* ------------------------------------------------------ 신규 팩 발매 */
+.release-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.release-card {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 16px;
+  background: #fff; border: 1px solid var(--line); border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.release-card.is-soon { border-color: #f2dfa5; box-shadow: 0 8px 20px rgba(255, 203, 5, 0.14); }
+.release-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.release-date { font-size: 11.5px; font-weight: 800; color: var(--muted); font-variant-numeric: tabular-nums; }
+.release-card h3 { margin: 2px 0 0; font-size: 15.5px; line-height: 1.3; letter-spacing: -0.02em; }
+.release-type { margin: 0; font-size: 11.5px; font-weight: 700; color: var(--muted); }
+.release-spec { margin: 8px 0 0; display: grid; gap: 6px; }
+.release-spec div { display: grid; grid-template-columns: 40px 1fr; gap: 8px; font-size: 12px; }
+.release-spec dt { color: var(--muted-2); font-weight: 700; }
+.release-spec dd { margin: 0; font-weight: 600; color: var(--ink-2); line-height: 1.5; }
+.release-note { margin: 2px 0 0; font-size: 11.5px; color: var(--muted); line-height: 1.6; }
+.release-links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: auto; padding-top: 10px; border-top: 1px dashed var(--line); }
+.release-links a { font-size: 11.5px; font-weight: 800; color: var(--blue); }
+
+/* ---------------------------------------------------------- 팝수 조회 */
+.pop-board { padding: 16px; background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow-sm); }
+.pop-label { display: block; margin-bottom: 6px; font-size: 11.5px; font-weight: 800; color: var(--muted); }
+.pop-row { display: flex; gap: 8px; }
+.pop-input {
+  flex: 1; min-width: 0;
+  padding: 12px 14px;
+  border: 1.5px solid var(--line); border-radius: 12px;
+  background: var(--paper); color: var(--ink);
+  font: inherit; font-size: 15px;
+}
+.pop-input:focus { outline: none; border-color: var(--navy); background: #fff; }
+.pop-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.pop-chip { padding: 5px 11px; border: 1px solid var(--line); border-radius: 999px; background: #fff; font-size: 11.5px; font-weight: 700; color: var(--ink-2); }
+.pop-chip:hover { border-color: var(--navy); background: var(--paper); }
+.pop-links { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+.pop-link {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--line); border-radius: 12px;
+  background: var(--paper); text-align: left; text-decoration: none;
+}
+button.pop-link { font: inherit; color: inherit; cursor: pointer; }
+.pop-link b { font-size: 12.5px; }
+.pop-link small { font-size: 10.5px; color: var(--muted); line-height: 1.4; }
+.pop-link:hover { border-color: var(--navy); background: #fff; }
+.pop-results { display: grid; gap: 10px; margin-top: 14px; }
+.pop-empty { margin: 0; padding: 12px; border: 1px dashed var(--line); border-radius: 12px; background: var(--paper); font-size: 12.5px; color: var(--muted); }
+.pop-range { display: flex; flex-direction: column; gap: 4px; padding: 12px; border: 1px solid #f2dfa5; border-radius: 12px; background: var(--yellow-soft); font-size: 12px; color: #6b5200; line-height: 1.55; }
+.pop-range b { font-size: 13px; }
+.pop-card { display: flex; gap: 12px; padding: 10px; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+.pop-art { position: relative; flex-shrink: 0; width: 58px; aspect-ratio: 4 / 5; border-radius: 8px; overflow: hidden; display: flex; padding: 5px; }
+.pop-info { flex: 1; min-width: 0; }
+.pop-name { font-size: 14px; font-weight: 800; letter-spacing: -0.02em; }
+.pop-set { font-size: 11px; font-weight: 700; color: var(--muted); }
+.pop-price { display: block; margin-top: 4px; font-size: 11.5px; color: var(--ink-2); }
+.pop-price.muted { color: var(--muted-2); }
+.pop-note-line { margin: 4px 0 0; font-size: 11px; color: var(--muted); line-height: 1.55; }
+.pop-card-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+.pop-card-links a, .pop-card-links button {
+  padding: 0; border: 0; background: none;
+  font-size: 11px; font-weight: 800; color: var(--blue);
+  text-decoration: underline; cursor: pointer;
+}
+.pop-relay { margin: 12px 0 0; font-size: 11.5px; color: var(--muted); line-height: 1.6; }
+.pop-relay-title { display: block; margin-bottom: 4px; font-weight: 800; color: var(--ink-2); }
+.pop-relay-row { display: block; }
+
+@media (min-width: 720px) {
+  .mover-grid { grid-template-columns: 1fr 1fr; }
+  .release-grid { grid-template-columns: 1fr 1fr; }
+  .pop-links { grid-template-columns: repeat(4, 1fr); }
+}
+@media (max-width: 679px) {
+  .issue-item { grid-template-columns: 1fr; gap: 8px; padding: 13px 14px; }
+  .issue-side { flex-direction: row; align-items: center; gap: 8px; padding: 0 0 8px; border-right: 0; border-bottom: 1px dashed var(--line); }
+  .pop-links { grid-template-columns: 1fr 1fr; }
+  .pop-board { padding: 14px; border-radius: 16px; }
+}
+
+/* 하단 내비게이션 5탭 (390px에서 줄바꿈·잘림 없이) */
+@media (max-width: 679px) {
+  .main-nav { grid-template-columns: repeat(5, 1fr); }
+  .nav-btn { font-size: 10.5px; padding: 7px 2px; letter-spacing: -0.02em; white-space: nowrap; }
+  .nav-btn .nav-ico { line-height: 1; }
+  .nav-btn .nav-ico svg { width: 15px; height: 15px; }
+}
+@media (max-width: 359px) {
+  .nav-btn { font-size: 9.5px; gap: 2px; }
+}
+@media (min-width: 680px) and (max-width: 1119px) {
+  .main-nav { gap: 2px; }
+  .nav-btn { padding: 9px 9px; font-size: 12.5px; }
+  .header-date { display: none; }
+}

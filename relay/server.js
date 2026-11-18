@@ -8,6 +8,8 @@
  *   GET  /health    → { ok, service: "pokemoa-relay", version, time }
  *   GET  /api/nearby?lat=36.07&lng=129.39&keyword=포켓몬
  *                   → 이마트24 · CU · 세븐일레븐의 점포별 실재고를 모아 돌려줍니다.
+ *   GET  /api/kream-movers → (준비 중 · 501) KREAM 시세를 사이트 「시세·팝수」 탭에 공급하는 자리
+ *   GET  /api/pop?q=      → (준비 중 · 501) PSA·BRG 팝수를 공급하는 자리
  *
  * 실행 예:
  *   node server.js                       # 127.0.0.1:3100
@@ -617,13 +619,41 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (path === '/api/kream-movers') {
+      /* 계약(안) — 사이트의 「시세·팝수」 탭이 이 응답이 있으면 정적 값을 대체합니다.
+         { ok: true, checkedAt, items: [{ id, name, num, model, set, lastPrice, lastWhen,
+           prevPrice, prevWhen, trades, dir, pct, diff, url }] }
+         KREAM은 로그인·검색 API 제한이 있어 수집기를 태블릿에서 따로 돌려 붙이는 단계입니다.
+         그 전까지는 명확한 501로 답해 사이트가 정적 데이터를 그대로 쓰게 합니다. */
+      sendJson(res, 501, {
+        ok: false,
+        error: 'kream_movers_not_configured',
+        hint: 'KREAM 시세 수집기를 연결하면 이 경로가 items 배열을 돌려줍니다. 사이트는 이 응답이 없으면 data.js의 2026-11-18 확인값을 그대로 보여 줍니다.'
+      });
+      return;
+    }
+
+    if (path === '/api/pop') {
+      /* 계약(안) — { ok: true, items: [{ name, psa10, psaTotal, brg10, brgTotal }] }
+         PSA Pop Report·BRG 팝 리포트는 CORS·로그인·자동화 차단으로 브라우저에서 직접 읽지 못합니다.
+         태블릿에서 허용된 방식으로 조회할 때만 이 경로를 채우고, 그 전에는 501입니다. */
+      const q = (url.searchParams.get('q') || '').trim().slice(0, 60);
+      sendJson(res, 501, {
+        ok: false,
+        error: 'pop_lookup_not_configured',
+        query: q,
+        hint: 'PSA·BRG 팝수 조회기를 연결하면 이 경로가 카드별 팝수를 돌려줍니다. 그 전까지 사이트는 검색어 복사 + 공식 사이트 바로가기로 동작합니다.'
+      });
+      return;
+    }
+
     if (path === '/' || path === '/index.html') {
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
       res.end(HELP_HTML);
       return;
     }
 
-    sendJson(res, 404, { ok: false, error: '없는 경로입니다. /health, /api/nearby 를 쓰세요.' });
+    sendJson(res, 404, { ok: false, error: '없는 경로입니다. /health, /api/nearby, /api/kream-movers, /api/pop 를 쓰세요.' });
   } catch (err) {
     console.error('[error]', err && err.message);
     sendJson(res, 500, { ok: false, error: (err && err.message) || '서버 오류' });
