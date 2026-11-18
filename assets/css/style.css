@@ -1848,6 +1848,18 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .inquiry-cta { padding: 14px; margin-top: 22px; }
   .inquiry-cta .btn { flex: 1 1 100%; }
   .inquiry-actions .btn { flex: 1 1 100%; }
+  /* 모바일 모달: 화면이 짧아도 주 동작(메일 보내기·복사)이 바닥에 붙어 보이게 */
+  .inquiry-actions {
+    position: sticky;
+    bottom: -18px;
+    z-index: 2;
+    background: #fff;
+    padding: 8px 0 10px;
+    margin-top: -2px;
+    box-shadow: 0 -10px 14px rgba(255, 255, 255, 0.95);
+  }
+  .contact-form { gap: 8px; }
+  .contact-form textarea { min-height: 92px; }
 }
 @media (max-width: 359px) {
   /* 320px 급 화면에서는 헤더 한 줄을 지키기 위해 관리자 문의는 푸터·탭 하단 카드로만 둔다 */

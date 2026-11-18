@@ -1882,6 +1882,18 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .inquiry-cta { padding: 14px; margin-top: 22px; }
   .inquiry-cta .btn { flex: 1 1 100%; }
   .inquiry-actions .btn { flex: 1 1 100%; }
+  /* 모바일 모달: 화면이 짧아도 주 동작(메일 보내기·복사)이 바닥에 붙어 보이게 */
+  .inquiry-actions {
+    position: sticky;
+    bottom: -18px;
+    z-index: 2;
+    background: #fff;
+    padding: 8px 0 10px;
+    margin-top: -2px;
+    box-shadow: 0 -10px 14px rgba(255, 255, 255, 0.95);
+  }
+  .contact-form { gap: 8px; }
+  .contact-form textarea { min-height: 92px; }
 }
 @media (max-width: 359px) {
   /* 320px 급 화면에서는 헤더 한 줄을 지키기 위해 관리자 문의는 푸터·탭 하단 카드로만 둔다 */
@@ -4157,7 +4169,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 <template id="tpl-inquiry">
   <div class="prose">
-    <p>매장 재고·정가 정보 제보, 오류 신고, 광고·제휴 문의를 받습니다. 내용을 적고 <b>메일 앱으로 보내기</b>를 누르면 운영자 메일(<a href="mailto:acewoni3717@gmail.com">acewoni3717@gmail.com</a>)로 보낼 수 있습니다. 메일 앱이 열리지 않으면 <b>운영자 이메일 복사</b>로 주소를 복사해 사용 중인 메일에서 보내주세요.</p>
+    <p>매장 재고·정가 정보 제보, 오류 신고, 광고·제휴 문의를 받습니다. 내용을 적고 아래 버튼을 누르면 운영자 메일(<a href="mailto:acewoni3717@gmail.com">acewoni3717@gmail.com</a>)로 보낼 수 있습니다.</p>
     <form class="contact-form" id="inquiryForm" novalidate>
       <label>문의 유형
         <select id="inquiryType">
@@ -4173,7 +4185,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
       <label>내용
         <textarea id="inquiryBody" maxlength="2000" placeholder="예: GS25 ○○점 / 11-17 09:40 / 낱팩 6개 확인 / 30th CELEBRATION"></textarea>
       </label>
-      <p class="form-note">재고 제보는 매장명 · 확인 시각 · 판매 단위 · 수량을 함께 적어주시면 검수에 도움이 됩니다.</p>
+      <p class="form-note">재고 제보는 매장명 · 확인 시각 · 판매 단위 · 수량을 함께 적어주세요. 메일 앱이 열리지 않으면 <b>운영자 이메일 복사</b>로 주소를 복사해 보내주시면 됩니다.</p>
       <div class="inquiry-actions">
         <button type="submit" class="btn btn-dark" id="inquiryMail">메일 앱으로 보내기</button>
         <button type="button" class="btn btn-ghost" id="inquiryCopyEmail">운영자 이메일 복사</button>
