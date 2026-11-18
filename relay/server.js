@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * 포케모아(PokeMoa) — 집 태블릿 실재고 중계 서버
+ * 포켓몬카드모아(PokemonCardMoa) — 집 태블릿 실재고 중계 서버
  * ---------------------------------------------------------------
  * 태블릿(Termux)에서 `node server.js` 한 줄로 실행하는 무의존 단일 파일 서버입니다.
  * 외부 npm 패키지 없이 Node 18+ 내장 모듈(http, crypto, fetch)만 씁니다.
@@ -560,10 +560,10 @@ function sendJson(res, code, body) {
 }
 
 const HELP_HTML = `<!doctype html><html lang="ko"><meta charset="utf-8">
-<title>포케모아 중계 서버</title>
+<title>포켓몬카드모아 중계 서버</title>
 <body style="font:15px/1.6 -apple-system,system-ui,'Malgun Gothic',sans-serif;max-width:640px;margin:48px auto;padding:0 20px;color:#16233c">
-<h1 style="font-size:20px">포케모아 실재고 중계 서버가 켜져 있습니다</h1>
-<p>이 주소를 포케모아 「동네에서 찾기」 화면의 <b>실시간 중계 연결</b>에 붙여 넣으면 매장별 실제 재고가 표시됩니다.</p>
+<h1 style="font-size:20px">포켓몬카드모아 실재고 중계 서버가 켜져 있습니다</h1>
+<p>이 주소를 포켓몬카드모아 「동네에서 찾기」 화면의 <b>실시간 중계 연결</b>에 붙여 넣으면 매장별 실제 재고가 표시됩니다.</p>
 <ul>
 <li><code>GET /health</code> — 서버 상태</li>
 <li><code>GET /api/nearby?lat=36.07&amp;lng=129.39&amp;keyword=포켓몬</code> — 주변 점포 실재고</li>
@@ -631,7 +631,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, HOST, () => {
-  console.log(`포케모아 중계 서버 v${VERSION} — http://${HOST}:${PORT}`);
+  console.log(`포켓몬카드모아 중계 서버 v${VERSION} — http://${HOST}:${PORT}`);
   console.log(`  상태 확인: curl http://${HOST}:${PORT}/health`);
   console.log(`  실재고:    curl "http://${HOST}:${PORT}/api/nearby?lat=${DEFAULT_LAT}&lng=${DEFAULT_LNG}&keyword=포켓몬"`);
   console.log('  바깥에서 쓰려면: cloudflared tunnel --url http://' + HOST + ':' + PORT);

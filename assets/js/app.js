@@ -1,5 +1,5 @@
 /* =========================================================================
- * 포케모아 — 화면 동작 (탭 · 지도 연동 · 도감 검색 · 모달 · 계산기)
+ * 포켓몬카드모아 — 화면 동작 (탭 · 지도 연동 · 도감 검색 · 모달 · 계산기)
  * ========================================================================= */
 (function () {
   "use strict";
@@ -1491,12 +1491,12 @@
       e.preventDefault();
       var key = btn.getAttribute("data-modal");
       var titles = {
-        about: "포케모아 소개",
+        about: "포켓몬카드모아 소개",
         privacy: "개인정보처리방침",
         terms: "이용약관",
         contact: "운영 문의 · 재고 제보"
       };
-      openModalFromTemplate(key, titles[key] || "포케모아");
+      openModalFromTemplate(key, titles[key] || "포켓몬카드모아");
     });
   });
   if (modalClose) modalClose.addEventListener("click", closeModal);
