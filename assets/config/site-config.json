@@ -109,7 +109,7 @@
       },
       {
         "id": "guide",
-        "label": "도감·시세",
+        "label": "시세·도감",
         "visible": true,
         "order": 4
       },
@@ -201,8 +201,8 @@
     }
   ],
   "meta": {
-    "updatedBy": "moa-admin (@moa-kr)",
-    "updatedAt": "2026-11-18T13:07:36.775Z",
+    "updatedBy": "moa-admin (@Acewoni)",
+    "updatedAt": "2026-11-18T22:09:15.699Z",
     "note": "모아 어드민이 관리하는 공통 설정 파일입니다. 형식: https://moa-kr.github.io/moa-admin/SCHEMA.md"
   }
 }
