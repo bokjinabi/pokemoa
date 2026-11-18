@@ -3110,3 +3110,99 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .status-guide { grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); }
 .status-guide div { flex-direction: column; gap: 3px; }
 .status-guide b { white-space: normal; }
+
+/* =========================================================================
+ * v4.6 — 다른 확장팩·박스 정가 구매처 (#boxStores)
+ * 30th가 아닌 박스를 칩으로 고르면 그 박스의 정가·KREAM 시세와 판매처 카드가 바뀝니다.
+ * 모바일 390px에서는 칩이 가로 스크롤, 판매처 카드는 1열로 쌓입니다.
+ * ========================================================================= */
+.box-picker { margin-bottom: 14px; }
+.box-board {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px;
+  box-shadow: var(--shadow-sm);
+}
+.box-fallback { margin: 0; font-size: 13px; color: var(--muted); }
+.box-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.box-name { margin: 0; font-size: 21px; letter-spacing: -0.03em; }
+.box-sub { margin: 6px 0 14px; font-size: 12.5px; color: var(--muted); }
+.box-price {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 14px;
+}
+.box-price > div { background: var(--paper); border-radius: 10px; padding: 9px 11px; min-width: 0; }
+.box-price > div.is-key { background: var(--yellow-soft); }
+.box-price dt { font-size: 10.5px; font-weight: 800; color: var(--muted); }
+.box-price dd { margin: 3px 0 0; font-size: 13px; font-weight: 800; color: var(--ink); line-height: 1.4; }
+.box-price dd em { font-style: normal; font-size: 11px; font-weight: 700; color: var(--amber); margin-left: 4px; }
+.box-links { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.box-links a,
+.box-dex-btn {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--navy);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 5px 11px;
+  background: #fff;
+}
+.box-links a:hover,
+.box-dex-btn:hover { border-color: var(--navy); background: var(--paper); }
+.box-store-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.box-store-head h4 { margin: 0; font-size: 15px; letter-spacing: -0.02em; }
+.box-store-head span { font-size: 11px; color: var(--muted); }
+.box-store-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.store-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 14px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  transition: border-color 0.16s, box-shadow 0.16s;
+}
+.store-card:hover { border-color: #d8e0ee; box-shadow: var(--shadow-sm); }
+.store-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.store-state {
+  margin-left: auto;
+  font-size: 10.5px;
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: var(--grey-soft);
+  color: var(--grey);
+}
+.store-state.out { background: #fdeaea; color: #a83232; }
+.store-state.in { background: var(--green-soft); color: var(--green); }
+.store-name { margin: 0; font-size: 14px; font-weight: 800; letter-spacing: -0.01em; line-height: 1.4; }
+.store-note { margin: 0; font-size: 12.5px; color: var(--ink-2); line-height: 1.6; flex: 1; }
+.store-check { margin: 0; font-size: 11px; font-weight: 700; color: var(--muted); }
+.store-link {
+  align-self: flex-start;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--navy);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: #fff;
+}
+.store-link:hover { background: var(--paper); border-color: var(--navy); }
+
+@media (min-width: 720px) {
+  .box-name { font-size: 23px; }
+  .box-price { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .box-store-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 679px) {
+  .box-board { padding: 15px; }
+  .box-name { font-size: 18px; }
+  .box-price dd { font-size: 12.5px; }
+  .box-picker { margin-bottom: 12px; }
+}

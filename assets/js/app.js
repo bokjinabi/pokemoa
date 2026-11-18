@@ -1742,6 +1742,104 @@
     });
   }
 
+  /* ------------------------------------- 다른 확장팩·박스 정가 구매처 (v4.6) */
+  /* 정가 구매처 탭 안에서 30th가 아닌 박스를 골라 그 박스의 정가·KREAM 시세와
+     공식/인증 판매처 링크를 보여 줍니다. 판매처 URL·재고 표시는 data.js의
+     STORE_CHECK(2026-11-18) 기준이고, 실시간 재고·금액은 판매처 페이지에서 확인합니다. */
+  var BOX_SETS = SETS.filter(function (s) { return s.id !== "m6a"; });
+  var boxPicker = $("#boxPicker");
+  var boxBoard = $("#boxBoard");
+  var activeBoxId = BOX_SETS.length ? BOX_SETS[0].id : "";
+
+  function boxSetById(id) {
+    for (var i = 0; i < BOX_SETS.length; i++) if (BOX_SETS[i].id === id) return BOX_SETS[i];
+    return BOX_SETS[0];
+  }
+
+  function renderBoxPicker() {
+    if (!boxPicker) return;
+    boxPicker.innerHTML = "";
+    BOX_SETS.forEach(function (s) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "set-chip" + (s.id === activeBoxId ? " is-active" : "");
+      b.setAttribute("role", "tab");
+      b.setAttribute("aria-selected", s.id === activeBoxId ? "true" : "false");
+      b.innerHTML = "<strong>" + escapeHtml(s.short) + "</strong><small>" +
+        escapeHtml(s.code) + " · " + escapeHtml(won(s.boxPrice)) + "</small>";
+      b.addEventListener("click", function () {
+        if (activeBoxId === s.id) return;
+        activeBoxId = s.id;
+        renderBoxPicker();
+        renderBoxBoard();
+      });
+      boxPicker.appendChild(b);
+    });
+    var act = boxPicker.querySelector(".set-chip.is-active");
+    if (act && boxPicker.scrollWidth > boxPicker.clientWidth + 4) {
+      boxPicker.scrollLeft = Math.max(0, act.offsetLeft - 10);
+    }
+  }
+
+  function renderBoxBoard() {
+    if (!boxBoard) return;
+    var s = boxSetById(activeBoxId);
+    if (!s) return;
+    var deck = isDeck(s);
+    var packs = deck ? 1 : s.packsPerBox;
+    var kream = (s.kream || [])[0];
+    var rate = kream ? ((kream.price - s.boxPrice) / s.boxPrice) * 100 : 0;
+    var cells = [
+      ["발매일", escapeHtml(s.release)],
+      [deck ? "세트 정가" : "1팩 정가", deck ? won(s.boxPrice) : won(s.packPrice), deck],
+      [deck ? "구성" : "1박스 정가", deck ? "카드 " + s.cardsPerPack + "장 + 플레이 용품" : won(s.boxPrice), !deck],
+      deck
+        ? null
+        : ["1박스 구성", packs + "팩 · 카드 " + packs * s.cardsPerPack + "장"],
+      ["KREAM 참고 시세", kream ? won(kream.price) + ' <em>' + signedRate(rate) + "</em>" : "미확인"],
+      ["수록 카드", escapeHtml(s.total)]
+    ].filter(Boolean);
+    var links = [];
+    if (s.official) links.push('<a href="' + s.official + '" target="_blank" rel="noopener">공식 제품 정보 ↗</a>');
+    if (kream) links.push('<a href="' + kream.url + '" target="_blank" rel="noopener">KREAM 시세 ↗</a>');
+    links.push('<button type="button" class="box-dex-btn" data-box-dex="' + s.id + '">이 박스 도감·시세 비교 →</button>');
+
+    var stores = (s.stores || []).map(function (st) {
+      var state = st.state
+        ? '<span class="store-state ' + st.stateKind + '">' + escapeHtml(st.state) + "</span>"
+        : "";
+      var check = st.checkNote ? '<p class="store-check">' + escapeHtml(st.checkNote) + "</p>" : "";
+      return '<article class="store-card" data-store="' + st.id + '">' +
+        '<div class="store-top"><span class="channel-kind ' + st.kindClass + '">' + escapeHtml(st.kind) + "</span>" + state + "</div>" +
+        '<h4 class="store-name">' + escapeHtml(st.name) + "</h4>" +
+        '<p class="store-note">' + escapeHtml(st.note) + "</p>" + check +
+        '<a class="store-link" href="' + st.url + '" target="_blank" rel="noopener">' + escapeHtml(st.label) + " ↗</a>" +
+        "</article>";
+    }).join("");
+
+    boxBoard.innerHTML =
+      '<div class="box-head"><span class="ss-code">' + escapeHtml(s.code + " · " + s.series) + "</span>" +
+      '<h3 class="box-name">' + escapeHtml(s.short) + "</h3></div>" +
+      '<p class="box-sub">' + escapeHtml(s.name) + " · " + escapeHtml(s.release) + " 발매</p>" +
+      '<dl class="box-price">' +
+      cells.map(function (c) {
+        return '<div' + (c[2] ? ' class="is-key"' : '') + "><dt>" + c[0] + "</dt><dd>" + c[1] + "</dd></div>";
+      }).join("") +
+      "</dl>" +
+      '<div class="box-links">' + links.join("") + "</div>" +
+      '<div class="box-store-head"><h4>정가 구매처</h4><span>' + (s.stores || []).length +
+      "곳 · " + escapeHtml((D.STORE_CHECK || "") + " 확인") + "</span></div>" +
+      '<div class="box-store-grid">' + stores + "</div>";
+
+    var dexBtn = boxBoard.querySelector("[data-box-dex]");
+    if (dexBtn) {
+      dexBtn.addEventListener("click", function () {
+        showTab("guide");
+        selectSet(s.id);
+      });
+    }
+  }
+
   /* --------------------------------------------------------------- 초기화 */
   buildCalendar();
   buildScheduleFold();
@@ -1751,19 +1849,27 @@
   renderRarityChips();
   renderDex();
   runCalc();
+  renderBoxPicker();
+  renderBoxBoard();
+
+  /* #stores는 「정가 구매처」 탭의 짧은 주소로 같이 받아 줍니다. */
+  function tabOfHash(h) {
+    if (h === "stores") return "home";
+    if (h === "cards") return "guide";
+    return panels[h] ? h : "";
+  }
 
   var hash = (location.hash || "").replace("#", "");
-  if (hash === "cards") {
-    showTab("guide", { keepScroll: true });
-  } else if (panels[hash]) {
-    showTab(hash, { keepScroll: true });
+  var hashTab = tabOfHash(hash);
+  if (hashTab) {
+    showTab(hashTab, { keepScroll: true });
   } else {
     /* v2: 첫 화면 = 동네 찾기(실제 지도) */
     showTab("map", { keepScroll: true });
   }
 
   window.addEventListener("hashchange", function () {
-    var h = (location.hash || "").replace("#", "");
-    if (panels[h] && h !== currentTab) showTab(h, { keepScroll: true });
+    var h = tabOfHash((location.hash || "").replace("#", ""));
+    if (h && h !== currentTab) showTab(h, { keepScroll: true });
   });
 })();

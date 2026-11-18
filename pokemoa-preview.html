@@ -14,7 +14,7 @@
 </script>
 
 <title>포켓몬카드모아 — 포켓몬 카드 정가·입고·재고 한눈에 (30th CELEBRATION)</title>
-<meta name="description" content="포켓몬카드모아는 포켓몬 카드 확장팩별 도감·가이드(30th CELEBRATION·테라스탈 페스타 ex·배틀 파트너즈·로켓단의 영광·초전 브레이커·열풍의 아레나 등)와 30th CELEBRATION 정가 구매처(포켓몬스토어·SSG·G마켓·티씨지박스·편의점 4사)와 추첨 일정, 입고 기록, 편의점 4사 재고·취급 카드 지도, 수록 카드 도감과 정가·리셀 판단 가이드를 한 곳에 모았습니다.">
+<meta name="description" content="포켓몬카드모아는 포켓몬 카드 확장팩별 도감·가이드(30th CELEBRATION·어비스아이·블랙볼트·테라스탈 페스타 ex·배틀 파트너즈·로켓단의 영광·초전 브레이커·열풍의 아레나·스타터 세트 등)와 30th CELEBRATION 정가 구매처(포켓몬스토어·SSG·G마켓·티씨지박스·편의점 4사), 다른 확장팩·박스별 정가 구매처(포켓몬스토어·네이버 브랜드스토어·G마켓 공식인증샵·SSG·티씨지박스·롯데ON), 추첨 일정, 입고 기록, 편의점 4사 재고·취급 카드 지도, 수록 카드 도감과 정가·리셀 판단 가이드를 한 곳에 모았습니다.">
 <meta name="keywords" content="포켓몬카드, 30th CELEBRATION, 30주년 카드팩, 포켓몬 카드 정가, 포켓몬 카드 재고, 편의점 포켓몬카드, GS25 포켓몬카드, CU 포켓몬카드, 포켓몬스토어 추첨, 포켓몬카드모아, 카드모아">
 <meta name="author" content="포켓몬카드모아">
 <meta name="robots" content="index, follow">
@@ -3151,6 +3151,102 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .status-guide div { flex-direction: column; gap: 3px; }
 .status-guide b { white-space: normal; }
 
+/* =========================================================================
+ * v4.6 — 다른 확장팩·박스 정가 구매처 (#boxStores)
+ * 30th가 아닌 박스를 칩으로 고르면 그 박스의 정가·KREAM 시세와 판매처 카드가 바뀝니다.
+ * 모바일 390px에서는 칩이 가로 스크롤, 판매처 카드는 1열로 쌓입니다.
+ * ========================================================================= */
+.box-picker { margin-bottom: 14px; }
+.box-board {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px;
+  box-shadow: var(--shadow-sm);
+}
+.box-fallback { margin: 0; font-size: 13px; color: var(--muted); }
+.box-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.box-name { margin: 0; font-size: 21px; letter-spacing: -0.03em; }
+.box-sub { margin: 6px 0 14px; font-size: 12.5px; color: var(--muted); }
+.box-price {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 14px;
+}
+.box-price > div { background: var(--paper); border-radius: 10px; padding: 9px 11px; min-width: 0; }
+.box-price > div.is-key { background: var(--yellow-soft); }
+.box-price dt { font-size: 10.5px; font-weight: 800; color: var(--muted); }
+.box-price dd { margin: 3px 0 0; font-size: 13px; font-weight: 800; color: var(--ink); line-height: 1.4; }
+.box-price dd em { font-style: normal; font-size: 11px; font-weight: 700; color: var(--amber); margin-left: 4px; }
+.box-links { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.box-links a,
+.box-dex-btn {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--navy);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 5px 11px;
+  background: #fff;
+}
+.box-links a:hover,
+.box-dex-btn:hover { border-color: var(--navy); background: var(--paper); }
+.box-store-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.box-store-head h4 { margin: 0; font-size: 15px; letter-spacing: -0.02em; }
+.box-store-head span { font-size: 11px; color: var(--muted); }
+.box-store-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.store-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 14px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  transition: border-color 0.16s, box-shadow 0.16s;
+}
+.store-card:hover { border-color: #d8e0ee; box-shadow: var(--shadow-sm); }
+.store-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.store-state {
+  margin-left: auto;
+  font-size: 10.5px;
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: var(--grey-soft);
+  color: var(--grey);
+}
+.store-state.out { background: #fdeaea; color: #a83232; }
+.store-state.in { background: var(--green-soft); color: var(--green); }
+.store-name { margin: 0; font-size: 14px; font-weight: 800; letter-spacing: -0.01em; line-height: 1.4; }
+.store-note { margin: 0; font-size: 12.5px; color: var(--ink-2); line-height: 1.6; flex: 1; }
+.store-check { margin: 0; font-size: 11px; font-weight: 700; color: var(--muted); }
+.store-link {
+  align-self: flex-start;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--navy);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: #fff;
+}
+.store-link:hover { background: var(--paper); border-color: var(--navy); }
+
+@media (min-width: 720px) {
+  .box-name { font-size: 23px; }
+  .box-price { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .box-store-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 679px) {
+  .box-board { padding: 15px; }
+  .box-name { font-size: 18px; }
+  .box-price dd { font-size: 12.5px; }
+  .box-picker { margin-bottom: 12px; }
+}
+
 </style>
 <!-- 단일 파일 미리보기: index.html + assets/css/style.css + data.js/map.js/app.js 를 인라인으로 합친 파일입니다. 지도는 카카오맵 SDK+카카오 장소 검색(CDN·공개 API)을 그대로 사용합니다. -->
 <!-- 카카오맵 JavaScript SDK — autoload=false로 불러 두고 map.js가 kakao.maps.load()로 초기화합니다.
@@ -3344,6 +3440,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
           <h2 id="channels-title">70,000원에 살 수 있는 곳, 채널별 조건까지</h2>
           <p>정가는 모든 채널이 같지만 배송비·판매 단위·추첨 여부가 다릅니다. 결제 전에 총액과 팩당 단가를 확인하세요. 가격은 2026-11-17 확인 기준입니다.</p>
         </div>
+        <a class="head-link" href="#boxStores">다른 박스 정가 구매처 →</a>
       </div>
 
       <div class="channel-grid">
@@ -3464,6 +3561,26 @@ button { font: inherit; color: inherit; cursor: pointer; }
       </div>
 
       <p class="src-note mt-16">출처: 포켓몬 카드 게임 공식 제품 정보(정가·구성), SSG 공식인증샵 상품 페이지(배송비), 편의점 4사 판매 일정 보도(2026-10-09 세계일보 · 10-20 TCG뉴스 정리). 가격·재고는 판매처와 시점에 따라 달라질 수 있습니다.</p>
+    </section>
+
+    <!-- ------------------------------ 다른 확장팩·박스 정가 구매처 (v4.6) -->
+    <section class="section" id="boxStores" aria-labelledby="box-stores-title">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">다른 확장팩 · 박스 정가 구매처</span>
+          <h2 id="box-stores-title">30th 말고 다른 박스, 정가로 사는 곳</h2>
+          <p>30th CELEBRATION을 뺀 8개 박스의 <b>공식 정가·구성</b>과 <b>KREAM 참고 시세</b>를 박스별로 모았습니다. 위 칩에서 박스를 고르면 아래 구매처 목록이 그 박스 기준으로 바뀝니다. 금액은 공식 정가와 2026-11-17 KREAM 시세이고, 실제 재고·결제 금액은 판매처 페이지에서 확인하세요.</p>
+        </div>
+        <a class="head-link" href="#channels">30th CELEBRATION 구매처 →</a>
+      </div>
+
+      <div class="set-picker box-picker" id="boxPicker" role="tablist" aria-label="정가 구매처를 볼 박스 선택"></div>
+
+      <div class="box-board" id="boxBoard">
+        <p class="box-fallback">박스 목록을 불러오는 중입니다…</p>
+      </div>
+
+      <p class="src-note mt-16">출처: 포켓몬 카드 게임 공식 제품 정보(정가·구성), KREAM 한글판 1박스 즉시구매 최저가(2026-11-17), 포켓몬 스토어 · G마켓 포켓몬카드공식인증샵 · 네이버 브랜드스토어 · SSG · 티씨지박스 · 롯데ON 판매처 페이지(2026-11-18 접속 확인). 재고와 가격은 시점·판매처에 따라 달라지므로 구매 전 판매처 페이지에서 확인하세요.</p>
     </section>
 
     <!-- AdSense Slot: home-infeed-1 -->
@@ -4409,7 +4526,7 @@ window.POKEMOA_DATA = (function () {
     tagline: "포켓몬 카드의 정가·입고·재고를 한 곳에 모아",
     dataDate: "2026-11-17",
     dataTime: "11:00",
-    siteUrl: "https://moa-kr.github.io/pokemoa"
+    siteUrl: "https://pokemoa.example"
   };
 
   /* ---------------------------------------------------------------- 세트 */
@@ -6183,6 +6300,147 @@ window.POKEMOA_DATA = (function () {
     }
   ];
 
+  /* --------------------------- 다른 확장팩·박스 정가 구매처 (v4.6 추가)
+   * 판매처·상품 URL과 품절 표시는 2026-11-18 직접 접속해 확인한 값입니다.
+   * 정가는 포켓몬 카드 게임 공식 제품 정보 기준이고, 실제 재고 수량·실시간 가격은
+   * 판매처 페이지에서 확인해야 하므로 사이트에는 재고 수량이나 임의의 가격을 적지 않습니다.
+   *  · 포켓몬스토어: 상품 페이지가 확인된 세트만 productNo로 연결하고,
+   *    상품이 없는 세트(로켓단의 영광·초전 브레이커)는 카드 게임 카테고리로 안내합니다.
+   *  · G마켓 공식인증샵(게임피아): 미니샵 목록 검색 파라미터는 keyword입니다.
+   *  · SSG: search.ssg?target=all&query= / 티씨지박스: /product/search.html?keyword=
+   *  · 롯데ON: /search/search/search.ecn?render=search&q= (토이저러스 몰은 mall_no=9)
+   */
+  var STORE_CHECK = "2026-11-18";
+  var POKEMONSTORE_CARD_CATEGORY =
+    "https://www.pokemonstore.co.kr/pages/product/product-list.html?categoryNo=488339";
+  var NAVER_BRAND_CARD_CATEGORY =
+    "https://brand.naver.com/pokemon/category/c94139abcef14362997090c5da975e28";
+  var BOX_STORE_META = {
+    m5: {
+      product: "https://www.pokemonstore.co.kr/pages/product/product-detail.html?productNo=133843162",
+      query: "어비스아이",
+      state: "품절 표시",
+      stateKind: "out",
+      stateNote: "포켓몬스토어 45,000원 · SOLD OUT 표시 (2026-11-18 확인)"
+    },
+    sv11b: {
+      product: "https://www.pokemonstore.co.kr/pages/product/product-detail.html?productNo=131326182",
+      query: "블랙볼트",
+      stateNote: "포켓몬스토어 40,000원으로 등록 (2026-11-18 확인)"
+    },
+    sv10: {
+      query: "로켓단의 영광",
+      stateNote: "포켓몬스토어에는 현재 상품이 없어 카드 게임 카테고리로 연결합니다"
+    },
+    sv9a: {
+      product: "https://www.pokemonstore.co.kr/pages/product/product-detail.html?productNo=130382695",
+      query: "열풍의 아레나",
+      stateNote: "포켓몬스토어 30,000원으로 등록 (2026-11-18 확인)"
+    },
+    sv9: {
+      product: "https://www.pokemonstore.co.kr/pages/product/product-detail.html?productNo=128841940",
+      query: "배틀 파트너즈",
+      stateNote: "포켓몬스토어 30,000원으로 등록 (2026-11-18 확인)"
+    },
+    sv8a: {
+      product: "https://www.pokemonstore.co.kr/pages/product/product-detail.html?productNo=124381031",
+      query: "테라스탈 페스타 ex",
+      stateNote: "포켓몬스토어 50,000원으로 등록 (2026-11-18 확인)"
+    },
+    sv8: {
+      query: "초전 브레이커",
+      stateNote: "포켓몬스토어에는 현재 상품이 없어 카드 게임 카테고리로 연결합니다"
+    },
+    starter: {
+      product: "https://www.pokemonstore.co.kr/pages/product/product-detail.html?productNo=137272307",
+      query: "스타터 세트 ex",
+      state: "품절 표시",
+      stateKind: "out",
+      stateNote: "포켓몬스토어 17,000원 · SOLD OUT 표시 (2026-11-18 확인)",
+      gmarketState: "17,000원 판매 중",
+      gmarketKind: "in"
+    }
+  };
+
+  /* 판매처 정의 — 정가로 살 수 있는 공식·인증 채널만 넣습니다. */
+  function buildBoxStores(s) {
+    var meta = BOX_STORE_META[s.id] || {};
+    var q = encodeURIComponent(meta.query || s.short);
+    var list = [
+      {
+        id: "pokemonstore",
+        name: "포켓몬 스토어 온라인",
+        kind: "공식 스토어",
+        kindClass: "official",
+        state: meta.state || "",
+        stateKind: meta.stateKind || "none",
+        url: meta.product || POKEMONSTORE_CARD_CATEGORY,
+        label: meta.product ? "이 박스 상품 페이지" : "카드 게임 카테고리",
+        note:
+          "(주)포켓몬코리아가 직접 운영하는 공식 온라인 스토어입니다. 박스 정가가 가장 먼저 공지되는 채널이지만 인기 박스는 품절(SOLD OUT) 표시가 잦습니다. 재입고·추첨 공지는 포켓몬 카드 게임 공지에서 먼저 나옵니다."
+      },
+      {
+        id: "naver",
+        name: "포켓몬 스토어 온라인 (네이버 브랜드스토어)",
+        kind: "브랜드스토어",
+        kindClass: "official",
+        url: NAVER_BRAND_CARD_CATEGORY,
+        label: "카드 게임 카테고리",
+        note:
+          "포켓몬 스토어 온라인의 네이버 브랜드스토어입니다. 카드 게임 카테고리에서 박스 이름을 검색하면 되고, 네이버플러스 멤버십·쿠폰 적용가는 결제 창에서 확인됩니다."
+      },
+      {
+        id: "gmarket",
+        name: "G마켓 포켓몬카드공식인증샵",
+        kind: "공식 인증샵",
+        kindClass: "online",
+        state: meta.gmarketState || "",
+        stateKind: meta.gmarketKind || "none",
+        url: "https://minishop.gmarket.co.kr/pokemoncard/List?keyword=" + q,
+        label: "인증샵에서 이 박스 검색",
+        note:
+          "게임피아(주)가 운영하는 포켓몬 카드 공식 인증샵입니다. 정가로 판매하고, 2026-11-18 확인 시 MEGA 스타터 세트 ex 3종(이브이·조로아크·나오하마스카나)이 17,000원에 올라와 있습니다. 구 확장팩 박스는 입고 때만 상품이 열립니다."
+      },
+      {
+        id: "ssg",
+        name: "SSG 공식인증샵 검색",
+        kind: "온라인몰",
+        kindClass: "online",
+        url: "https://www.ssg.com/search.ssg?target=all&query=" + q,
+        label: "SSG에서 이 박스 검색",
+        note:
+          "SSG에서 포켓몬 카드 게임 공식 인증샵(게임피아) 상품을 찾는 검색입니다. 박스가 없으면 0건으로 나오고, 정가 상품은 배송비 3,000원이 붙습니다."
+      },
+      {
+        id: "tcgbox",
+        name: "티씨지박스 (TCGBOX)",
+        kind: "전문 카드샵",
+        kindClass: "",
+        url: "https://tcgbox.co.kr/product/search.html?banner_action=&keyword=" + q,
+        label: "티씨지박스에서 검색",
+        note:
+          "정가 판매를 하는 온라인 전문 카드샵입니다. 인기 박스는 예약이 열리자마자 마감되는 편이라, 품절이면 목표 카드를 싱글카드로 사는 쪽이 예산을 아낍니다."
+      },
+      {
+        id: "lotteon",
+        name: "롯데ON · 토이저러스",
+        kind: "종합몰",
+        kindClass: "",
+        url: "https://www.lotteon.com/search/search/search.ecn?render=search&q=" + q,
+        label: "롯데ON에서 이 박스 검색",
+        note:
+          "롯데ON 검색에는 토이저러스·롯데마트 상품과 입점 판매자가 함께 나옵니다. 정가보다 비싼 재판매 상품이 섞여 있으므로 판매처와 박스 가격을 꼭 확인하세요."
+      }
+    ];
+    list.forEach(function (st) { st.checkNote = meta.stateNote || ""; });
+    return list;
+  }
+
+  SETS.forEach(function (s) {
+    if (s.id === "m6a") return; /* 30th는 위 정가 구매처 보드에서 다룹니다 */
+    s.stores = buildBoxStores(s);
+  });
+
   /* ------------------------------------------------------ 사실 메모(출처) */
   var facts = [
     { label: "정가·구성", text: "포켓몬 카드 게임 공식 제품 정보 (1팩 3,500원 / 1상자 70,000원, 1팩 6장, 1상자 20팩)", url: "https://pokemoncard.co.kr/card/960" },
@@ -6197,6 +6455,7 @@ window.POKEMOA_DATA = (function () {
     SITE: SITE,
     SET: SET_TARGET,
     SETS: SETS,
+    STORE_CHECK: STORE_CHECK,
     channels: channels,
     trends: trends,
     cards: cards,
@@ -9395,6 +9654,104 @@ window.PokeMoaMap = (function () {
     });
   }
 
+  /* ------------------------------------- 다른 확장팩·박스 정가 구매처 (v4.6) */
+  /* 정가 구매처 탭 안에서 30th가 아닌 박스를 골라 그 박스의 정가·KREAM 시세와
+     공식/인증 판매처 링크를 보여 줍니다. 판매처 URL·재고 표시는 data.js의
+     STORE_CHECK(2026-11-18) 기준이고, 실시간 재고·금액은 판매처 페이지에서 확인합니다. */
+  var BOX_SETS = SETS.filter(function (s) { return s.id !== "m6a"; });
+  var boxPicker = $("#boxPicker");
+  var boxBoard = $("#boxBoard");
+  var activeBoxId = BOX_SETS.length ? BOX_SETS[0].id : "";
+
+  function boxSetById(id) {
+    for (var i = 0; i < BOX_SETS.length; i++) if (BOX_SETS[i].id === id) return BOX_SETS[i];
+    return BOX_SETS[0];
+  }
+
+  function renderBoxPicker() {
+    if (!boxPicker) return;
+    boxPicker.innerHTML = "";
+    BOX_SETS.forEach(function (s) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "set-chip" + (s.id === activeBoxId ? " is-active" : "");
+      b.setAttribute("role", "tab");
+      b.setAttribute("aria-selected", s.id === activeBoxId ? "true" : "false");
+      b.innerHTML = "<strong>" + escapeHtml(s.short) + "</strong><small>" +
+        escapeHtml(s.code) + " · " + escapeHtml(won(s.boxPrice)) + "</small>";
+      b.addEventListener("click", function () {
+        if (activeBoxId === s.id) return;
+        activeBoxId = s.id;
+        renderBoxPicker();
+        renderBoxBoard();
+      });
+      boxPicker.appendChild(b);
+    });
+    var act = boxPicker.querySelector(".set-chip.is-active");
+    if (act && boxPicker.scrollWidth > boxPicker.clientWidth + 4) {
+      boxPicker.scrollLeft = Math.max(0, act.offsetLeft - 10);
+    }
+  }
+
+  function renderBoxBoard() {
+    if (!boxBoard) return;
+    var s = boxSetById(activeBoxId);
+    if (!s) return;
+    var deck = isDeck(s);
+    var packs = deck ? 1 : s.packsPerBox;
+    var kream = (s.kream || [])[0];
+    var rate = kream ? ((kream.price - s.boxPrice) / s.boxPrice) * 100 : 0;
+    var cells = [
+      ["발매일", escapeHtml(s.release)],
+      [deck ? "세트 정가" : "1팩 정가", deck ? won(s.boxPrice) : won(s.packPrice), deck],
+      [deck ? "구성" : "1박스 정가", deck ? "카드 " + s.cardsPerPack + "장 + 플레이 용품" : won(s.boxPrice), !deck],
+      deck
+        ? null
+        : ["1박스 구성", packs + "팩 · 카드 " + packs * s.cardsPerPack + "장"],
+      ["KREAM 참고 시세", kream ? won(kream.price) + ' <em>' + signedRate(rate) + "</em>" : "미확인"],
+      ["수록 카드", escapeHtml(s.total)]
+    ].filter(Boolean);
+    var links = [];
+    if (s.official) links.push('<a href="' + s.official + '" target="_blank" rel="noopener">공식 제품 정보 ↗</a>');
+    if (kream) links.push('<a href="' + kream.url + '" target="_blank" rel="noopener">KREAM 시세 ↗</a>');
+    links.push('<button type="button" class="box-dex-btn" data-box-dex="' + s.id + '">이 박스 도감·시세 비교 →</button>');
+
+    var stores = (s.stores || []).map(function (st) {
+      var state = st.state
+        ? '<span class="store-state ' + st.stateKind + '">' + escapeHtml(st.state) + "</span>"
+        : "";
+      var check = st.checkNote ? '<p class="store-check">' + escapeHtml(st.checkNote) + "</p>" : "";
+      return '<article class="store-card" data-store="' + st.id + '">' +
+        '<div class="store-top"><span class="channel-kind ' + st.kindClass + '">' + escapeHtml(st.kind) + "</span>" + state + "</div>" +
+        '<h4 class="store-name">' + escapeHtml(st.name) + "</h4>" +
+        '<p class="store-note">' + escapeHtml(st.note) + "</p>" + check +
+        '<a class="store-link" href="' + st.url + '" target="_blank" rel="noopener">' + escapeHtml(st.label) + " ↗</a>" +
+        "</article>";
+    }).join("");
+
+    boxBoard.innerHTML =
+      '<div class="box-head"><span class="ss-code">' + escapeHtml(s.code + " · " + s.series) + "</span>" +
+      '<h3 class="box-name">' + escapeHtml(s.short) + "</h3></div>" +
+      '<p class="box-sub">' + escapeHtml(s.name) + " · " + escapeHtml(s.release) + " 발매</p>" +
+      '<dl class="box-price">' +
+      cells.map(function (c) {
+        return '<div' + (c[2] ? ' class="is-key"' : '') + "><dt>" + c[0] + "</dt><dd>" + c[1] + "</dd></div>";
+      }).join("") +
+      "</dl>" +
+      '<div class="box-links">' + links.join("") + "</div>" +
+      '<div class="box-store-head"><h4>정가 구매처</h4><span>' + (s.stores || []).length +
+      "곳 · " + escapeHtml((D.STORE_CHECK || "") + " 확인") + "</span></div>" +
+      '<div class="box-store-grid">' + stores + "</div>";
+
+    var dexBtn = boxBoard.querySelector("[data-box-dex]");
+    if (dexBtn) {
+      dexBtn.addEventListener("click", function () {
+        showTab("guide");
+        selectSet(s.id);
+      });
+    }
+  }
+
   /* --------------------------------------------------------------- 초기화 */
   buildCalendar();
   buildScheduleFold();
@@ -9404,20 +9761,28 @@ window.PokeMoaMap = (function () {
   renderRarityChips();
   renderDex();
   runCalc();
+  renderBoxPicker();
+  renderBoxBoard();
+
+  /* #stores는 「정가 구매처」 탭의 짧은 주소로 같이 받아 줍니다. */
+  function tabOfHash(h) {
+    if (h === "stores") return "home";
+    if (h === "cards") return "guide";
+    return panels[h] ? h : "";
+  }
 
   var hash = (location.hash || "").replace("#", "");
-  if (hash === "cards") {
-    showTab("guide", { keepScroll: true });
-  } else if (panels[hash]) {
-    showTab(hash, { keepScroll: true });
+  var hashTab = tabOfHash(hash);
+  if (hashTab) {
+    showTab(hashTab, { keepScroll: true });
   } else {
     /* v2: 첫 화면 = 동네 찾기(실제 지도) */
     showTab("map", { keepScroll: true });
   }
 
   window.addEventListener("hashchange", function () {
-    var h = (location.hash || "").replace("#", "");
-    if (panels[h] && h !== currentTab) showTab(h, { keepScroll: true });
+    var h = tabOfHash((location.hash || "").replace("#", ""));
+    if (h && h !== currentTab) showTab(h, { keepScroll: true });
   });
 })();
 

@@ -1788,6 +1788,147 @@ window.POKEMOA_DATA = (function () {
     }
   ];
 
+  /* --------------------------- 다른 확장팩·박스 정가 구매처 (v4.6 추가)
+   * 판매처·상품 URL과 품절 표시는 2026-11-18 직접 접속해 확인한 값입니다.
+   * 정가는 포켓몬 카드 게임 공식 제품 정보 기준이고, 실제 재고 수량·실시간 가격은
+   * 판매처 페이지에서 확인해야 하므로 사이트에는 재고 수량이나 임의의 가격을 적지 않습니다.
+   *  · 포켓몬스토어: 상품 페이지가 확인된 세트만 productNo로 연결하고,
+   *    상품이 없는 세트(로켓단의 영광·초전 브레이커)는 카드 게임 카테고리로 안내합니다.
+   *  · G마켓 공식인증샵(게임피아): 미니샵 목록 검색 파라미터는 keyword입니다.
+   *  · SSG: search.ssg?target=all&query= / 티씨지박스: /product/search.html?keyword=
+   *  · 롯데ON: /search/search/search.ecn?render=search&q= (토이저러스 몰은 mall_no=9)
+   */
+  var STORE_CHECK = "2026-11-18";
+  var POKEMONSTORE_CARD_CATEGORY =
+    "https://www.pokemonstore.co.kr/pages/product/product-list.html?categoryNo=488339";
+  var NAVER_BRAND_CARD_CATEGORY =
+    "https://brand.naver.com/pokemon/category/c94139abcef14362997090c5da975e28";
+  var BOX_STORE_META = {
+    m5: {
+      product: "https://www.pokemonstore.co.kr/pages/product/product-detail.html?productNo=133843162",
+      query: "어비스아이",
+      state: "품절 표시",
+      stateKind: "out",
+      stateNote: "포켓몬스토어 45,000원 · SOLD OUT 표시 (2026-11-18 확인)"
+    },
+    sv11b: {
+      product: "https://www.pokemonstore.co.kr/pages/product/product-detail.html?productNo=131326182",
+      query: "블랙볼트",
+      stateNote: "포켓몬스토어 40,000원으로 등록 (2026-11-18 확인)"
+    },
+    sv10: {
+      query: "로켓단의 영광",
+      stateNote: "포켓몬스토어에는 현재 상품이 없어 카드 게임 카테고리로 연결합니다"
+    },
+    sv9a: {
+      product: "https://www.pokemonstore.co.kr/pages/product/product-detail.html?productNo=130382695",
+      query: "열풍의 아레나",
+      stateNote: "포켓몬스토어 30,000원으로 등록 (2026-11-18 확인)"
+    },
+    sv9: {
+      product: "https://www.pokemonstore.co.kr/pages/product/product-detail.html?productNo=128841940",
+      query: "배틀 파트너즈",
+      stateNote: "포켓몬스토어 30,000원으로 등록 (2026-11-18 확인)"
+    },
+    sv8a: {
+      product: "https://www.pokemonstore.co.kr/pages/product/product-detail.html?productNo=124381031",
+      query: "테라스탈 페스타 ex",
+      stateNote: "포켓몬스토어 50,000원으로 등록 (2026-11-18 확인)"
+    },
+    sv8: {
+      query: "초전 브레이커",
+      stateNote: "포켓몬스토어에는 현재 상품이 없어 카드 게임 카테고리로 연결합니다"
+    },
+    starter: {
+      product: "https://www.pokemonstore.co.kr/pages/product/product-detail.html?productNo=137272307",
+      query: "스타터 세트 ex",
+      state: "품절 표시",
+      stateKind: "out",
+      stateNote: "포켓몬스토어 17,000원 · SOLD OUT 표시 (2026-11-18 확인)",
+      gmarketState: "17,000원 판매 중",
+      gmarketKind: "in"
+    }
+  };
+
+  /* 판매처 정의 — 정가로 살 수 있는 공식·인증 채널만 넣습니다. */
+  function buildBoxStores(s) {
+    var meta = BOX_STORE_META[s.id] || {};
+    var q = encodeURIComponent(meta.query || s.short);
+    var list = [
+      {
+        id: "pokemonstore",
+        name: "포켓몬 스토어 온라인",
+        kind: "공식 스토어",
+        kindClass: "official",
+        state: meta.state || "",
+        stateKind: meta.stateKind || "none",
+        url: meta.product || POKEMONSTORE_CARD_CATEGORY,
+        label: meta.product ? "이 박스 상품 페이지" : "카드 게임 카테고리",
+        note:
+          "(주)포켓몬코리아가 직접 운영하는 공식 온라인 스토어입니다. 박스 정가가 가장 먼저 공지되는 채널이지만 인기 박스는 품절(SOLD OUT) 표시가 잦습니다. 재입고·추첨 공지는 포켓몬 카드 게임 공지에서 먼저 나옵니다."
+      },
+      {
+        id: "naver",
+        name: "포켓몬 스토어 온라인 (네이버 브랜드스토어)",
+        kind: "브랜드스토어",
+        kindClass: "official",
+        url: NAVER_BRAND_CARD_CATEGORY,
+        label: "카드 게임 카테고리",
+        note:
+          "포켓몬 스토어 온라인의 네이버 브랜드스토어입니다. 카드 게임 카테고리에서 박스 이름을 검색하면 되고, 네이버플러스 멤버십·쿠폰 적용가는 결제 창에서 확인됩니다."
+      },
+      {
+        id: "gmarket",
+        name: "G마켓 포켓몬카드공식인증샵",
+        kind: "공식 인증샵",
+        kindClass: "online",
+        state: meta.gmarketState || "",
+        stateKind: meta.gmarketKind || "none",
+        url: "https://minishop.gmarket.co.kr/pokemoncard/List?keyword=" + q,
+        label: "인증샵에서 이 박스 검색",
+        note:
+          "게임피아(주)가 운영하는 포켓몬 카드 공식 인증샵입니다. 정가로 판매하고, 2026-11-18 확인 시 MEGA 스타터 세트 ex 3종(이브이·조로아크·나오하마스카나)이 17,000원에 올라와 있습니다. 구 확장팩 박스는 입고 때만 상품이 열립니다."
+      },
+      {
+        id: "ssg",
+        name: "SSG 공식인증샵 검색",
+        kind: "온라인몰",
+        kindClass: "online",
+        url: "https://www.ssg.com/search.ssg?target=all&query=" + q,
+        label: "SSG에서 이 박스 검색",
+        note:
+          "SSG에서 포켓몬 카드 게임 공식 인증샵(게임피아) 상품을 찾는 검색입니다. 박스가 없으면 0건으로 나오고, 정가 상품은 배송비 3,000원이 붙습니다."
+      },
+      {
+        id: "tcgbox",
+        name: "티씨지박스 (TCGBOX)",
+        kind: "전문 카드샵",
+        kindClass: "",
+        url: "https://tcgbox.co.kr/product/search.html?banner_action=&keyword=" + q,
+        label: "티씨지박스에서 검색",
+        note:
+          "정가 판매를 하는 온라인 전문 카드샵입니다. 인기 박스는 예약이 열리자마자 마감되는 편이라, 품절이면 목표 카드를 싱글카드로 사는 쪽이 예산을 아낍니다."
+      },
+      {
+        id: "lotteon",
+        name: "롯데ON · 토이저러스",
+        kind: "종합몰",
+        kindClass: "",
+        url: "https://www.lotteon.com/search/search/search.ecn?render=search&q=" + q,
+        label: "롯데ON에서 이 박스 검색",
+        note:
+          "롯데ON 검색에는 토이저러스·롯데마트 상품과 입점 판매자가 함께 나옵니다. 정가보다 비싼 재판매 상품이 섞여 있으므로 판매처와 박스 가격을 꼭 확인하세요."
+      }
+    ];
+    list.forEach(function (st) { st.checkNote = meta.stateNote || ""; });
+    return list;
+  }
+
+  SETS.forEach(function (s) {
+    if (s.id === "m6a") return; /* 30th는 위 정가 구매처 보드에서 다룹니다 */
+    s.stores = buildBoxStores(s);
+  });
+
   /* ------------------------------------------------------ 사실 메모(출처) */
   var facts = [
     { label: "정가·구성", text: "포켓몬 카드 게임 공식 제품 정보 (1팩 3,500원 / 1상자 70,000원, 1팩 6장, 1상자 20팩)", url: "https://pokemoncard.co.kr/card/960" },
@@ -1802,6 +1943,7 @@ window.POKEMOA_DATA = (function () {
     SITE: SITE,
     SET: SET_TARGET,
     SETS: SETS,
+    STORE_CHECK: STORE_CHECK,
     channels: channels,
     trends: trends,
     cards: cards,
