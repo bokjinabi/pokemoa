@@ -70,6 +70,7 @@ window.PokeMoaMap = (function () {
     geoBusy: false,
     lastError: null,
     fetchedRadius: 0,
+    fetchedBand: "",   /* 마지막으로 조회한 반경 구분(3 / 5 / 20) */
     snapshotLabel: "",
     pendingLive: false,
     badgeWasSnapshot: false,
@@ -933,6 +934,7 @@ window.PokeMoaMap = (function () {
     var center = st.center;
     var radius = st.radius;
     st.fetchedRadius = radius;
+    st.fetchedBand = radiusBand(radius);
 
     var softTimer = setTimeout(function () {
       if (seq !== st.seq) return;
@@ -1134,6 +1136,11 @@ window.PokeMoaMap = (function () {
 
   function allow20() { return st.allow20 !== false; }
 
+  /* 반경 구간 — 구간마다 장소 검색 계획이 달라 그 구분이 바뀌면 다시 조회한다 */
+  function radiusBand(r) {
+    return r >= 20000 ? "20" : r > 3000 ? "5" : "3";
+  }
+
   function fitRing() {
     if (!st.ready || !st.ring) return;
     try { st.map.setBounds(st.ring.getBounds()); } catch (e) {}
@@ -1153,8 +1160,10 @@ window.PokeMoaMap = (function () {
     }
     renderMarkers();
     pushData();
-    /* 조회 범위보다 넓어졌으면(스냅샷 포함) 그 반경으로 다시 조회한다 */
-    if (radius > st.fetchedRadius && radius !== before) {
+    /* 반경 구분(3·5·20km)이 바뀌었거나 조회 범위보다 넓어졌으면(스냅샷 포함)
+       그 반경으로 다시 조회한다 — 격자 조회 방식이 달라 20km 결과를 5km에 그대로 쓰면
+       실제 5km 매장보다 적게 보인다. */
+    if (radius !== before && (radiusBand(radius) !== st.fetchedBand || radius > st.fetchedRadius)) {
       renderMarkers();
       load();
     }
@@ -1180,6 +1189,7 @@ window.PokeMoaMap = (function () {
 
   function resetStateForNewCenter() {
     st.fetchedRadius = st.radius;
+    st.fetchedBand = radiusBand(st.radius);
     st.source = "snapshot";
     st.all = [];
     st.visible = [];
@@ -1272,6 +1282,7 @@ window.PokeMoaMap = (function () {
       st.allow20 = !st.metro;
       if (!st.allow20 && st.radius > 5000) st.radius = 5000;
       st.fetchedRadius = st.radius;
+      st.fetchedBand = radiusBand(st.radius);
       st.regionId = "";
       if (st.ready) {
         st.loading.tiles = false;
