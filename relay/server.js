@@ -1034,8 +1034,11 @@ async function collectSeven(lat, lng, ctx, diag) {
   const nameByCode = {};
   for (const m of metas) nameByCode[m.smCd] = m.name;
 
-  const mode = { batch: true }; /* 02가 한 번 막히면 이후 점포는 01로 */
+  /* 02가 한 번 막히면 이후 점포는 01로. UA 후보까지 모두 막히면(게이트웨이 403)
+     점포마다 같은 요청을 되풀이하지 않고 한 번에 멈춘다(요청 예산·응답 시간 보호). */
+  const mode = { batch: true, blocked: false, lastError: '' };
   const built = await mapLimit(candidates, 3, async (store) => {
+    if (mode.blocked) return null;
     const items = [];
     let byStore = null;
     if (mode.batch) {
@@ -1043,6 +1046,12 @@ async function collectSeven(lat, lng, ctx, diag) {
         byStore = await sevenRealStocksByStore(store.id, metas, diag);
       } catch (err) {
         mode.batch = false;
+        const msg = String((err && err.message) || '');
+        if (/Access Token|Agent Information/i.test(msg)) {
+          mode.blocked = true;
+          mode.lastError = msg.slice(0, 120);
+          return null;
+        }
       }
     }
     if (byStore) {
@@ -1075,7 +1084,11 @@ async function collectSeven(lat, lng, ctx, diag) {
     };
   });
   const out = built.filter(Boolean);
-  const note = out.length ? '' : '점포 ' + candidates.length + '곳은 찾았지만 재고 응답이 비었습니다';
+  let note = '';
+  if (!out.length) {
+    note = '점포 ' + candidates.length + '곳은 찾았지만 재고 응답이 비었습니다';
+    if (mode.lastError) note += ' (' + mode.lastError + ')';
+  }
   return { stores: out, products: metas, queries: report, note };
 }
 
