@@ -3192,6 +3192,17 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .box-links a:hover,
 .box-dex-btn:hover { border-color: var(--navy); background: var(--paper); }
+.box-memo {
+  margin: -6px 0 18px;
+  padding: 9px 12px;
+  border-left: 3px solid var(--yellow);
+  background: var(--yellow-soft);
+  border-radius: 0 10px 10px 0;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+.box-memo b { color: var(--navy); }
 .box-store-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
 .box-store-head h4 { margin: 0; font-size: 15px; letter-spacing: -0.02em; }
 .box-store-head span { font-size: 11px; color: var(--muted); }
@@ -3222,7 +3233,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .store-state.in { background: var(--green-soft); color: var(--green); }
 .store-name { margin: 0; font-size: 14px; font-weight: 800; letter-spacing: -0.01em; line-height: 1.4; }
 .store-note { margin: 0; font-size: 12.5px; color: var(--ink-2); line-height: 1.6; flex: 1; }
-.store-check { margin: 0; font-size: 11px; font-weight: 700; color: var(--muted); }
 .store-link {
   align-self: flex-start;
   font-size: 11.5px;
@@ -6432,13 +6442,13 @@ window.POKEMOA_DATA = (function () {
           "롯데ON 검색에는 토이저러스·롯데마트 상품과 입점 판매자가 함께 나옵니다. 정가보다 비싼 재판매 상품이 섞여 있으므로 판매처와 박스 가격을 꼭 확인하세요."
       }
     ];
-    list.forEach(function (st) { st.checkNote = meta.stateNote || ""; });
     return list;
   }
 
   SETS.forEach(function (s) {
     if (s.id === "m6a") return; /* 30th는 위 정가 구매처 보드에서 다룹니다 */
     s.stores = buildBoxStores(s);
+    s.storeMemo = (BOX_STORE_META[s.id] || {}).stateNote || "";
   });
 
   /* ------------------------------------------------------ 사실 메모(출처) */
@@ -9720,11 +9730,10 @@ window.PokeMoaMap = (function () {
       var state = st.state
         ? '<span class="store-state ' + st.stateKind + '">' + escapeHtml(st.state) + "</span>"
         : "";
-      var check = st.checkNote ? '<p class="store-check">' + escapeHtml(st.checkNote) + "</p>" : "";
       return '<article class="store-card" data-store="' + st.id + '">' +
         '<div class="store-top"><span class="channel-kind ' + st.kindClass + '">' + escapeHtml(st.kind) + "</span>" + state + "</div>" +
         '<h4 class="store-name">' + escapeHtml(st.name) + "</h4>" +
-        '<p class="store-note">' + escapeHtml(st.note) + "</p>" + check +
+        '<p class="store-note">' + escapeHtml(st.note) + "</p>" +
         '<a class="store-link" href="' + st.url + '" target="_blank" rel="noopener">' + escapeHtml(st.label) + " ↗</a>" +
         "</article>";
     }).join("");
@@ -9739,6 +9748,7 @@ window.PokeMoaMap = (function () {
       }).join("") +
       "</dl>" +
       '<div class="box-links">' + links.join("") + "</div>" +
+      (s.storeMemo ? '<p class="box-memo"><b>확인 메모</b> — ' + escapeHtml(s.storeMemo) + "</p>" : "") +
       '<div class="box-store-head"><h4>정가 구매처</h4><span>' + (s.stores || []).length +
       "곳 · " + escapeHtml((D.STORE_CHECK || "") + " 확인") + "</span></div>" +
       '<div class="box-store-grid">' + stores + "</div>";

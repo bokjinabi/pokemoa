@@ -1920,13 +1920,13 @@ window.POKEMOA_DATA = (function () {
           "롯데ON 검색에는 토이저러스·롯데마트 상품과 입점 판매자가 함께 나옵니다. 정가보다 비싼 재판매 상품이 섞여 있으므로 판매처와 박스 가격을 꼭 확인하세요."
       }
     ];
-    list.forEach(function (st) { st.checkNote = meta.stateNote || ""; });
     return list;
   }
 
   SETS.forEach(function (s) {
     if (s.id === "m6a") return; /* 30th는 위 정가 구매처 보드에서 다룹니다 */
     s.stores = buildBoxStores(s);
+    s.storeMemo = (BOX_STORE_META[s.id] || {}).stateNote || "";
   });
 
   /* ------------------------------------------------------ 사실 메모(출처) */

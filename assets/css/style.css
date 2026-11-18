@@ -3152,6 +3152,17 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .box-links a:hover,
 .box-dex-btn:hover { border-color: var(--navy); background: var(--paper); }
+.box-memo {
+  margin: -6px 0 18px;
+  padding: 9px 12px;
+  border-left: 3px solid var(--yellow);
+  background: var(--yellow-soft);
+  border-radius: 0 10px 10px 0;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+.box-memo b { color: var(--navy); }
 .box-store-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
 .box-store-head h4 { margin: 0; font-size: 15px; letter-spacing: -0.02em; }
 .box-store-head span { font-size: 11px; color: var(--muted); }
@@ -3182,7 +3193,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .store-state.in { background: var(--green-soft); color: var(--green); }
 .store-name { margin: 0; font-size: 14px; font-weight: 800; letter-spacing: -0.01em; line-height: 1.4; }
 .store-note { margin: 0; font-size: 12.5px; color: var(--ink-2); line-height: 1.6; flex: 1; }
-.store-check { margin: 0; font-size: 11px; font-weight: 700; color: var(--muted); }
 .store-link {
   align-self: flex-start;
   font-size: 11.5px;

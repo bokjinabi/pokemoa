@@ -1808,11 +1808,10 @@
       var state = st.state
         ? '<span class="store-state ' + st.stateKind + '">' + escapeHtml(st.state) + "</span>"
         : "";
-      var check = st.checkNote ? '<p class="store-check">' + escapeHtml(st.checkNote) + "</p>" : "";
       return '<article class="store-card" data-store="' + st.id + '">' +
         '<div class="store-top"><span class="channel-kind ' + st.kindClass + '">' + escapeHtml(st.kind) + "</span>" + state + "</div>" +
         '<h4 class="store-name">' + escapeHtml(st.name) + "</h4>" +
-        '<p class="store-note">' + escapeHtml(st.note) + "</p>" + check +
+        '<p class="store-note">' + escapeHtml(st.note) + "</p>" +
         '<a class="store-link" href="' + st.url + '" target="_blank" rel="noopener">' + escapeHtml(st.label) + " ↗</a>" +
         "</article>";
     }).join("");
@@ -1827,6 +1826,7 @@
       }).join("") +
       "</dl>" +
       '<div class="box-links">' + links.join("") + "</div>" +
+      (s.storeMemo ? '<p class="box-memo"><b>확인 메모</b> — ' + escapeHtml(s.storeMemo) + "</p>" : "") +
       '<div class="box-store-head"><h4>정가 구매처</h4><span>' + (s.stores || []).length +
       "곳 · " + escapeHtml((D.STORE_CHECK || "") + " 확인") + "</span></div>" +
       '<div class="box-store-grid">' + stores + "</div>";
