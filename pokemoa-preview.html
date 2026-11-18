@@ -3538,6 +3538,11 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
   .brand-text strong { font-size: 16px; }
 }
 
+/* 680~729px — 상단 버튼 두 개까지 넣으면 넘치므로 헤더 버튼만 접고(푸터·탭 하단에 그대로 있음) 탭을 유지 */
+@media (min-width: 680px) and (max-width: 729px) {
+  .header-actions .btn-sm { display: none; }
+}
+
 </style>
 <!-- 단일 파일 미리보기: index.html + assets/css/style.css + data.js/map.js/app.js 를 인라인으로 합친 파일입니다. 지도는 카카오맵 SDK+카카오 장소 검색(CDN·공개 API)을 그대로 사용합니다. -->
 <!-- 카카오맵 JavaScript SDK — autoload=false로 불러 두고 map.js가 kakao.maps.load()로 초기화합니다.
