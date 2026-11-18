@@ -3482,6 +3482,27 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
   .header-date { display: none; }
 }
 
+/* 집 태블릿 중계 프리셋 (모달) */
+.rm-preset-box {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px;
+  margin: 12px 0 4px; padding: 10px 12px;
+  border: 1px solid #f2dfa5; border-radius: 12px;
+  background: var(--yellow-soft);
+}
+.rm-preset-label { font-size: 11px; font-weight: 800; color: #7a5a00; }
+.rm-preset-url {
+  flex: 1 1 100%; order: 3;
+  font-size: 10.5px; color: #6b5200; word-break: break-all;
+  background: rgba(255, 255, 255, 0.65); border-radius: 6px; padding: 4px 6px;
+}
+.rm-preset-actions { display: inline-flex; gap: 6px; margin-left: auto; }
+.rm-preset-actions .btn { padding: 6px 10px; font-size: 11.5px; border-radius: 8px; }
+@media (max-width: 679px) {
+  .rm-preset-actions { margin-left: 0; }
+  .rm-preset-actions .btn { flex: 1; }
+  .rm-preset-actions { width: 100%; }
+}
+
 </style>
 <!-- 단일 파일 미리보기: index.html + assets/css/style.css + data.js/map.js/app.js 를 인라인으로 합친 파일입니다. 지도는 카카오맵 SDK+카카오 장소 검색(CDN·공개 API)을 그대로 사용합니다. -->
 <!-- 카카오맵 JavaScript SDK — autoload=false로 불러 두고 map.js가 kakao.maps.load()로 초기화합니다.
@@ -4724,6 +4745,7 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
         <li>같은 터미널에서 <code>cloudflared tunnel --url http://127.0.0.1:3100</code></li>
         <li>출력된 <code>https://….trycloudflare.com</code> 주소를 아래에 붙여 넣기</li>
       </ol>
+      <div class="rm-preset-box" id="relayPresetBox" hidden></div>
       <label class="rm-label" for="relayUrlInput">중계 서버 주소</label>
       <input type="url" id="relayUrlInput" class="rm-input" inputmode="url" autocomplete="off" spellcheck="false"
              placeholder="https://example.trycloudflare.com">
@@ -4732,7 +4754,7 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
         <button type="button" class="btn btn-dark btn-sm" id="relayConnectBtn">연결 확인</button>
         <button type="button" class="btn btn-ghost btn-sm" id="relayDisconnectBtn">연결 해제</button>
       </div>
-      <p class="rm-help">주소는 이 브라우저(localStorage)에만 저장됩니다. 한 번 저장하면 <code>?relay=주소</code> 링크로 열어도 자동 연결됩니다. 연결이 끊기면 지도는 기존 제보·샘플 모드로 돌아갑니다.</p>
+      <p class="rm-help">최근에 열린 터널 주소는 위에 미리 채워 두었습니다. 주소는 이 브라우저(localStorage)에만 저장됩니다. 한 번 저장하면 <code>?relay=주소</code> 링크로 열어도 자동 연결됩니다. 연결이 끊기면 지도는 기존 제보·샘플 모드로 돌아갑니다.</p>
     </div>
   </div>
 </div>
@@ -7245,6 +7267,16 @@ window.POKEMOA_DATA = (function () {
     }
   ];
 
+  /* ---------------------------------------------- 집 태블릿 중계 프리셋 */
+  /* 2026-11-18 열린 임시 터널 주소입니다. 태블릿에서 cloudflared 터널을 다시 열면
+     주소가 바뀌므로, 그때는 이 값만 고치면 사이트 전체(중계 모달 기본값)에 반영됩니다.
+     주의: 이 페이지는 공개 사이트라 주소도 함께 공개됩니다. 중계 서버는 조회 전용입니다. */
+  var relayPreset = {
+    label: "home-tablet v1.0",
+    url: "https://enhance-factory-likewise-probability.trycloudflare.com",
+    updated: "2026-11-18"
+  };
+
   /* ------------------------------------------------------ 팝수 조회 도구 */
   var popTools = {
     note: "PSA Pop Report와 BRG 팝 리포트는 로그인·CORS·자동화 차단 때문에 이 사이트 안에서 표를 직접 읽어 오지 못합니다. 검색어를 복사해 공식 사이트에서 확인하는 방식이고, 태블릿 중계(/api/pop?q=)가 연결되면 같은 화면에서 결과를 받아 표시합니다.",
@@ -7294,7 +7326,8 @@ window.POKEMOA_DATA = (function () {
     cardRanges: cardRanges,
     cardIssues: cardIssues,
     newReleases: newReleases,
-    popTools: popTools
+    popTools: popTools,
+    relayPreset: relayPreset
   };
 })();
 
@@ -9373,6 +9406,8 @@ window.PokeMoaMap = (function () {
   var relayConnectBtn = $("#relayConnectBtn");
   var relayDisconnectBtn = $("#relayDisconnectBtn");
   var relayModalClose = $("#relayModalClose");
+  var relayPresetBox = $("#relayPresetBox");
+  var RELAY_PRESET = D.relayPreset || null;
 
   var relay = {
     url: "",
@@ -9429,10 +9464,34 @@ window.PokeMoaMap = (function () {
 
   function relayOpen() {
     if (!relayModal) return;
-    relayUrlInput.value = relay.url || relaySaved();
+    /* 저장된 주소가 없으면 최근에 열린 집 태블릿 터널 주소를 미리 채워 둡니다.
+       (자동 연결은 하지 않고, 사용자가 '연결 확인'을 누를 때만 요청을 보냅니다.) */
+    relayUrlInput.value = relay.url || relaySaved() || (RELAY_PRESET && RELAY_PRESET.url) || "";
     relayMsg("");
+    relayRenderPreset();
     relayModal.hidden = false;
     setTimeout(function () { try { relayUrlInput.focus(); } catch (e) {} }, 40);
+  }
+
+  function relayRenderPreset() {
+    if (!relayPresetBox) return;
+    if (!RELAY_PRESET || !RELAY_PRESET.url) { relayPresetBox.hidden = true; return; }
+    relayPresetBox.hidden = false;
+    relayPresetBox.innerHTML =
+      '<span class="rm-preset-label">최근 열린 터널' + (RELAY_PRESET.label ? ' · ' + escapeHtml(RELAY_PRESET.label) : '') + '</span>' +
+      '<code class="rm-preset-url">' + escapeHtml(RELAY_PRESET.url.replace(/^https?:\/\//, '')) + '</code>' +
+      '<span class="rm-preset-actions">' +
+        '<button type="button" class="btn btn-ghost btn-sm" id="relayPresetFill">주소 넣기</button>' +
+        '<button type="button" class="btn btn-dark btn-sm" id="relayPresetConnect">바로 연결</button>' +
+      '</span>';
+    var fill = document.getElementById("relayPresetFill");
+    var go = document.getElementById("relayPresetConnect");
+    if (fill) fill.addEventListener("click", function () {
+      relayUrlInput.value = RELAY_PRESET.url;
+      relayUrlInput.focus();
+      relayMsg("주소를 넣었습니다. '연결 확인'을 누르면 연결합니다.");
+    });
+    if (go) go.addEventListener("click", function () { relayConnect(RELAY_PRESET.url); });
   }
 
   function relayClose() {

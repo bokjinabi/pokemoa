@@ -2354,6 +2354,16 @@ window.POKEMOA_DATA = (function () {
     }
   ];
 
+  /* ---------------------------------------------- 집 태블릿 중계 프리셋 */
+  /* 2026-11-18 열린 임시 터널 주소입니다. 태블릿에서 cloudflared 터널을 다시 열면
+     주소가 바뀌므로, 그때는 이 값만 고치면 사이트 전체(중계 모달 기본값)에 반영됩니다.
+     주의: 이 페이지는 공개 사이트라 주소도 함께 공개됩니다. 중계 서버는 조회 전용입니다. */
+  var relayPreset = {
+    label: "home-tablet v1.0",
+    url: "https://enhance-factory-likewise-probability.trycloudflare.com",
+    updated: "2026-11-18"
+  };
+
   /* ------------------------------------------------------ 팝수 조회 도구 */
   var popTools = {
     note: "PSA Pop Report와 BRG 팝 리포트는 로그인·CORS·자동화 차단 때문에 이 사이트 안에서 표를 직접 읽어 오지 못합니다. 검색어를 복사해 공식 사이트에서 확인하는 방식이고, 태블릿 중계(/api/pop?q=)가 연결되면 같은 화면에서 결과를 받아 표시합니다.",
@@ -2403,6 +2413,7 @@ window.POKEMOA_DATA = (function () {
     cardRanges: cardRanges,
     cardIssues: cardIssues,
     newReleases: newReleases,
-    popTools: popTools
+    popTools: popTools,
+    relayPreset: relayPreset
   };
 })();

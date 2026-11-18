@@ -420,6 +420,8 @@
   var relayConnectBtn = $("#relayConnectBtn");
   var relayDisconnectBtn = $("#relayDisconnectBtn");
   var relayModalClose = $("#relayModalClose");
+  var relayPresetBox = $("#relayPresetBox");
+  var RELAY_PRESET = D.relayPreset || null;
 
   var relay = {
     url: "",
@@ -476,10 +478,34 @@
 
   function relayOpen() {
     if (!relayModal) return;
-    relayUrlInput.value = relay.url || relaySaved();
+    /* 저장된 주소가 없으면 최근에 열린 집 태블릿 터널 주소를 미리 채워 둡니다.
+       (자동 연결은 하지 않고, 사용자가 '연결 확인'을 누를 때만 요청을 보냅니다.) */
+    relayUrlInput.value = relay.url || relaySaved() || (RELAY_PRESET && RELAY_PRESET.url) || "";
     relayMsg("");
+    relayRenderPreset();
     relayModal.hidden = false;
     setTimeout(function () { try { relayUrlInput.focus(); } catch (e) {} }, 40);
+  }
+
+  function relayRenderPreset() {
+    if (!relayPresetBox) return;
+    if (!RELAY_PRESET || !RELAY_PRESET.url) { relayPresetBox.hidden = true; return; }
+    relayPresetBox.hidden = false;
+    relayPresetBox.innerHTML =
+      '<span class="rm-preset-label">최근 열린 터널' + (RELAY_PRESET.label ? ' · ' + escapeHtml(RELAY_PRESET.label) : '') + '</span>' +
+      '<code class="rm-preset-url">' + escapeHtml(RELAY_PRESET.url.replace(/^https?:\/\//, '')) + '</code>' +
+      '<span class="rm-preset-actions">' +
+        '<button type="button" class="btn btn-ghost btn-sm" id="relayPresetFill">주소 넣기</button>' +
+        '<button type="button" class="btn btn-dark btn-sm" id="relayPresetConnect">바로 연결</button>' +
+      '</span>';
+    var fill = document.getElementById("relayPresetFill");
+    var go = document.getElementById("relayPresetConnect");
+    if (fill) fill.addEventListener("click", function () {
+      relayUrlInput.value = RELAY_PRESET.url;
+      relayUrlInput.focus();
+      relayMsg("주소를 넣었습니다. '연결 확인'을 누르면 연결합니다.");
+    });
+    if (go) go.addEventListener("click", function () { relayConnect(RELAY_PRESET.url); });
   }
 
   function relayClose() {
