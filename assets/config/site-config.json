@@ -72,9 +72,9 @@
   },
   "banner": {
     "enabled": false,
-    "text": "30th CELEBRATION 정가 구매처를 새로 정리했어요.",
-    "linkUrl": "https://moa-kr.github.io/pokemoa/#home",
-    "linkLabel": "구매처 보기",
+    "text": "편의점 데이터 확인 중",
+    "linkUrl": "",
+    "linkLabel": "",
     "style": "info",
     "updatedAt": null
   },
@@ -195,15 +195,15 @@
         "tab": "schedule"
       },
       {
-        "id": "rates",
-        "label": "환율 위젯",
+        "id": "market",
+        "label": "PSA·eBay 거래가 조회",
         "visible": true,
         "order": 11,
         "tab": "guide"
       },
       {
-        "id": "market",
-        "label": "PSA·eBay 거래가 조회",
+        "id": "rates",
+        "label": "환율 위젯",
         "visible": true,
         "order": 12,
         "tab": "guide"
@@ -211,14 +211,14 @@
       {
         "id": "cards",
         "label": "수록 카드와 레어도",
-        "visible": true,
+        "visible": false,
         "order": 13,
         "tab": "guide"
       },
       {
         "id": "faq",
         "label": "구매 전에 가장 많이 묻는 것들",
-        "visible": true,
+        "visible": false,
         "order": 14,
         "tab": "guide"
       },
@@ -256,7 +256,7 @@
   ],
   "meta": {
     "updatedBy": "moa-admin (@Acewoni)",
-    "updatedAt": "2026-11-18T22:37:43.126Z",
+    "updatedAt": "2026-11-18T22:56:17.697Z",
     "note": "모아 어드민이 관리하는 공통 설정 파일입니다. 형식: https://moa-kr.github.io/moa-admin/SCHEMA.md"
   }
 }
