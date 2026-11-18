@@ -236,7 +236,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   letter-spacing: 0.09em;
   font-weight: 700;
 }
-.main-nav { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.main-nav { display: flex; align-items: center; gap: 4px; margin-left: auto; --moa-tab-count: 5; }
 .nav-btn {
   border: 0;
   background: none;
@@ -1955,7 +1955,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
     background: #ffffff;
     border-top: 1px solid var(--line);
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(var(--moa-tab-count, 5), minmax(0, 1fr));
     padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
     box-shadow: 0 -6px 20px rgba(16, 31, 60, 0.07);
     margin: 0;
@@ -3429,7 +3429,7 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
 
 /* 하단 내비게이션 5탭 (390px에서 줄바꿈·잘림 없이) */
 @media (max-width: 679px) {
-  .main-nav { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .main-nav { grid-template-columns: repeat(var(--moa-tab-count, 5), minmax(0, 1fr)); }
   .nav-btn { font-size: 10.5px; padding: 7px 2px; letter-spacing: -0.02em; white-space: nowrap; min-width: 0; }
   .nav-btn .nav-ico { line-height: 1; }
   .nav-btn .nav-ico svg { width: 15px; height: 15px; }

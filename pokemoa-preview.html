@@ -276,7 +276,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   letter-spacing: 0.09em;
   font-weight: 700;
 }
-.main-nav { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.main-nav { display: flex; align-items: center; gap: 4px; margin-left: auto; --moa-tab-count: 5; }
 .nav-btn {
   border: 0;
   background: none;
@@ -1995,7 +1995,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
     background: #ffffff;
     border-top: 1px solid var(--line);
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(var(--moa-tab-count, 5), minmax(0, 1fr));
     padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
     box-shadow: 0 -6px 20px rgba(16, 31, 60, 0.07);
     margin: 0;
@@ -3469,7 +3469,7 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
 
 /* 하단 내비게이션 5탭 (390px에서 줄바꿈·잘림 없이) */
 @media (max-width: 679px) {
-  .main-nav { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .main-nav { grid-template-columns: repeat(var(--moa-tab-count, 5), minmax(0, 1fr)); }
   .nav-btn { font-size: 10.5px; padding: 7px 2px; letter-spacing: -0.02em; white-space: nowrap; min-width: 0; }
   .nav-btn .nav-ico { line-height: 1; }
   .nav-btn .nav-ico svg { width: 15px; height: 15px; }
@@ -3708,8 +3708,8 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
         <svg viewBox="0 0 32 32" width="24" height="24" aria-hidden="true"><rect x="7" y="7" width="7.5" height="7.5" rx="2.2" fill="#ffcb05"/><rect x="17.5" y="7" width="7.5" height="7.5" rx="2.2" fill="#ffcb05" opacity=".7"/><rect x="7" y="17.5" width="7.5" height="7.5" rx="2.2" fill="#ffcb05" opacity=".7"/><rect x="17.5" y="17.5" width="7.5" height="7.5" rx="2.2" fill="#ffcb05"/></svg>
       </span>
       <span class="brand-text">
-        <strong>포켓몬카드모아</strong>
-        <span>POKEMON CARD MOA</span>
+        <strong data-copy="siteTitle">포켓몬카드모아</strong>
+        <span data-copy="subtitle">POKEMON CARD MOA</span>
       </span>
     </a>
 
@@ -3766,12 +3766,12 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
 <section class="tab-panel" id="panel-home" aria-labelledby="home-title" hidden>
 
   <div class="wrap">
-    <div class="hero">
+    <div class="hero" data-section="hero">
       <div class="hero-grid">
         <div>
           <span class="hero-tag"><b>30th</b> 2026 MEGA 확장팩 · 30주년 기념</span>
-          <h1 id="home-title">30th CELEBRATION,<br><em>정가</em>로 만나는 방법</h1>
-          <p class="hero-sub">포켓몬 카드 정가 구매처와 추첨 일정, 입고 기록, 편의점 4사 재고와 취급 카드까지 한 화면에 모았습니다. 리셀가에 흔들리지 않도록 기준 가격부터 확인하세요.</p>
+          <h1 id="home-title" data-copy-html="heroTitle">30th CELEBRATION,<br><em>정가</em>로 만나는 방법</h1>
+          <p class="hero-sub" data-copy="heroDescription">포켓몬 카드 정가 구매처와 추첨 일정, 입고 기록, 편의점 4사 재고와 취급 카드까지 한 화면에 모았습니다. 리셀가에 흔들리지 않도록 기준 가격부터 확인하세요.</p>
 
           <div class="price-row">
             <div class="price-box"><span>1팩 (카드 6장)</span><strong>3,500원</strong></div>
@@ -3785,7 +3785,7 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
           </div>
 
           <div class="hero-actions">
-            <a class="btn btn-yellow" href="#channels">정가 구매처 보기</a>
+            <a class="btn btn-yellow" href="#channels" data-copy="ctaLabel">정가 구매처 보기</a>
             <button type="button" class="btn btn-ghost" data-tab="map">지도에서 재고 찾기</button>
           </div>
         </div>
@@ -3802,11 +3802,11 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
 
   <!-- ------------------------------------------------------ 정가 구매처 -->
   <div class="wrap">
-    <section class="section" id="channels" aria-labelledby="channels-title">
+    <section class="section" id="channels" aria-labelledby="channels-title" data-section="pricing">
       <div class="section-head">
         <div>
           <span class="eyebrow">정가 구매처 현황</span>
-          <h2 id="channels-title">70,000원에 살 수 있는 곳, 채널별 조건까지</h2>
+          <h2 id="channels-title" data-section-title>70,000원에 살 수 있는 곳, 채널별 조건까지</h2>
           <p>정가는 모든 채널이 같지만 배송비·판매 단위·추첨 여부가 다릅니다. 결제 전에 총액과 팩당 단가를 확인하세요. 가격은 2026-11-17 확인 기준입니다.</p>
         </div>
         <a class="head-link" href="#boxStores">다른 박스 정가 구매처 →</a>
@@ -3933,11 +3933,11 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
     </section>
 
     <!-- ------------------------------ 다른 확장팩·박스 정가 구매처 (v4.6) -->
-    <section class="section" id="boxStores" aria-labelledby="box-stores-title">
+    <section class="section" id="boxStores" aria-labelledby="box-stores-title" data-section="boxes">
       <div class="section-head">
         <div>
           <span class="eyebrow">다른 확장팩 · 박스 정가 구매처</span>
-          <h2 id="box-stores-title">30th 말고 다른 박스, 정가로 사는 곳</h2>
+          <h2 id="box-stores-title" data-section-title>30th 말고 다른 박스, 정가로 사는 곳</h2>
           <p>30th CELEBRATION을 뺀 8개 박스의 <b>공식 정가·구성</b>과 <b>KREAM 참고 시세</b>를 박스별로 모았습니다. 위 칩에서 박스를 고르면 아래 구매처 목록이 그 박스 기준으로 바뀝니다. 금액은 공식 정가와 2026-11-17 KREAM 시세이고, 실제 재고·결제 금액은 판매처 페이지에서 확인하세요.</p>
         </div>
         <a class="head-link" href="#channels">30th CELEBRATION 구매처 →</a>
@@ -3953,11 +3953,11 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
     </section>
 
     <!-- ------------------------------ 오프라인 · 자판기 정가 구매처 (v4.8) -->
-    <section class="section" id="offlineStores" aria-labelledby="offline-stores-title">
+    <section class="section" id="offlineStores" aria-labelledby="offline-stores-title" data-section="offline">
       <div class="section-head">
         <div>
           <span class="eyebrow">오프라인 · 자판기</span>
-          <h2 id="offline-stores-title">마트·아트박스·자판기·카드샵에서 정가로 사는 곳</h2>
+          <h2 id="offline-stores-title" data-section-title>마트·아트박스·자판기·카드샵에서 정가로 사는 곳</h2>
           <p>온라인 재고가 없어도 오프라인에서 정가로 살 수 있는 채널입니다. 매장·자판기의 <b>재고는 어떤 채널도 공개하지 않아</b> 표시하지 않으니, 방문 전 매장 문의로 확인하세요.</p>
         </div>
         <a class="head-link" href="#map" data-tab="map">지도에서 오프라인 위치 보기 →</a>
@@ -3997,11 +3997,11 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
     </div>
 
     <!-- --------------------------------------------------- 카드팩 트렌드 -->
-    <section class="section" aria-labelledby="trend-title">
+    <section class="section" id="trendSection" aria-labelledby="trend-title" data-section="trend">
       <div class="section-head">
         <div>
           <span class="eyebrow">인기 카드팩 트렌드</span>
-          <h2 id="trend-title">지금 가장 많이 찾는 4개 세트</h2>
+          <h2 id="trend-title" data-section-title>지금 가장 많이 찾는 4개 세트</h2>
           <p>정가와 구성, 주목 카드만 짧게 정리했습니다. 세트마다 팩 수와 카드 매수가 달라 팩당 단가로 비교해야 합니다.</p>
         </div>
         <a class="head-link" href="#cards" data-tab="guide">수록 카드 도감 →</a>
@@ -4063,11 +4063,11 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
     </section>
 
     <!-- --------------------------------------------------- 오늘의 체크 -->
-    <section class="section" aria-labelledby="tip-title">
+    <section class="section" id="tipSection" aria-labelledby="tip-title" data-section="tips">
       <div class="section-head">
         <div>
           <span class="eyebrow">오늘의 체크 포인트</span>
-          <h2 id="tip-title">헛걸음을 줄이는 세 가지 순서</h2>
+          <h2 id="tip-title" data-section-title>헛걸음을 줄이는 세 가지 순서</h2>
         </div>
       </div>
       <div class="tip-grid">
@@ -4538,11 +4538,11 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
       </div>
     </div>
 
-    <section class="section" id="cards" aria-labelledby="cards-title">
+    <section class="section" id="cards" aria-labelledby="cards-title" data-section="cards">
       <div class="section-head">
         <div>
           <span class="eyebrow" id="dexEyebrow">30th CELEBRATION 도감</span>
-          <h2 id="cards-title">수록 카드와 레어도</h2>
+          <h2 id="cards-title" data-section-title>수록 카드와 레어도</h2>
           <p id="dexDesc"><strong>176종(기본 103종)</strong> · 30주년 기념팩. 팩마다 30주년 피카츄 1장과 기본 에너지 1장이 확정 봉입되고, 카드 전 종이 포일입니다.</p>
         </div>
       </div>
@@ -4600,11 +4600,11 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
       </div>
     </div>
 
-    <section class="section" aria-labelledby="faq-title">
+    <section class="section" id="faqSection" aria-labelledby="faq-title" data-section="faq">
       <div class="section-head">
         <div>
           <span class="eyebrow">자주 묻는 질문</span>
-          <h2 id="faq-title">구매 전에 가장 많이 묻는 것들</h2>
+          <h2 id="faq-title" data-section-title>구매 전에 가장 많이 묻는 것들</h2>
         </div>
       </div>
       <div class="faq-list" id="faqList">
@@ -4692,7 +4692,7 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
       <p><b>PSA · CGC · BRG · BGS</b> 가운데 회사를 먼저 고른 뒤 등급카드 넘버(인증서 번호 또는 카드 번호)를 넣으면, 번호를 복사해 그 회사의 팝 리포트·인증서 조회 페이지로 바로 넘겨 줍니다. 팝수는 회사별로 따로 집계되므로 보고 싶은 회사를 먼저 골라야 합니다.</p>
     </div>
 
-    <section class="section" id="popSection" aria-labelledby="pop-title">
+    <section class="section" id="popSection" aria-labelledby="pop-title" data-section="pop">
       <div class="pop-board">
         <form class="pop-form" id="popForm" role="search" aria-label="등급카드 넘버로 팝 리포트 조회">
           <span class="pop-label" id="popCompanyLabel">등급 회사 선택</span>
@@ -4742,7 +4742,7 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
           </span>
           <span class="brand-text"><strong>포켓몬카드모아</strong><span>POKEMON CARD MOA</span></span>
         </a>
-        <p>포켓몬 카드의 정가 구매처, 추첨·입고 일정, 주변 매장 재고, 수록 카드 정보를 한 곳에 모은 비공식 정보 사이트입니다. 데이터 기준일 2026-11-17.</p>
+        <p data-copy="footerText">포켓몬 카드의 정가 구매처, 추첨·입고 일정, 주변 매장 재고, 수록 카드 정보를 한 곳에 모은 비공식 정보 사이트입니다. 데이터 기준일 2026-11-17.</p>
       </div>
 
       <div class="footer-col">
@@ -11705,5 +11705,11 @@ window.PokeMoaMap = (function () {
   });
 })();
 </script>
+<!-- 모아 어드민(moa-kr/moa-admin)이 커밋하는 assets/config/site-config.json 을 화면에 적용합니다.
+     공지 바·팝업·탭/섹션 순서와 노출·문구가 이 파일 값으로 바뀝니다. -->
+<script src="assets/js/site-config-loader.js?v=77" defer
+        data-config="assets/config/site-config.json"
+        data-tab-container=".main-nav"
+        data-banner-host=".site-header"></script>
 </body>
 </html>

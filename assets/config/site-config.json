@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "site": "pokemoa",
+  "siteName": "포켓몬카드모아",
+  "theme": {
+    "accent": "#101f3c",
+    "accentSoft": "#ffcb05",
+    "mode": "dark"
+  },
+  "copy": {
+    "siteTitle": "포켓몬카드모아",
+    "subtitle": "POKEMON CARD MOA",
+    "heroTitle": "30th CELEBRATION,<br><em>정가</em>로 만나는 방법",
+    "heroDescription": "포켓몬 카드 정가 구매처와 추첨 일정, 입고 기록, 편의점 4사 재고와 취급 카드까지 한 화면에 모았습니다. 리셀가에 흔들리지 않도록 기준 가격부터 확인하세요.",
+    "ctaLabel": "정가 구매처 보기",
+    "footerText": "포켓몬 카드의 정가 구매처, 추첨·입고 일정, 주변 매장 재고, 수록 카드 정보를 한 곳에 모은 비공식 정보 사이트입니다. 데이터 기준일 2026-11-17."
+  },
+  "banner": {
+    "enabled": false,
+    "text": "30th CELEBRATION 정가 구매처를 새로 정리했어요.",
+    "linkUrl": "https://moa-kr.github.io/pokemoa/#home",
+    "linkLabel": "구매처 보기",
+    "style": "info",
+    "updatedAt": null
+  },
+  "popup": {
+    "enabled": false,
+    "id": "popup-1",
+    "title": "포켓몬카드모아에 오신 걸 환영해요",
+    "body": "지도에서 내 주변 편의점 재고를 확인하고,\n확장팩별 정가 구매처도 함께 살펴보세요.",
+    "buttonText": "확인",
+    "buttonUrl": "",
+    "startDate": "",
+    "endDate": "",
+    "dismissDays": 1,
+    "updatedAt": null
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "id": "map",
+        "label": "동네에서 찾기",
+        "visible": true,
+        "order": 1
+      },
+      {
+        "id": "home",
+        "label": "정가 구매처",
+        "visible": true,
+        "order": 2
+      },
+      {
+        "id": "schedule",
+        "label": "일정·소식",
+        "visible": true,
+        "order": 3
+      },
+      {
+        "id": "guide",
+        "label": "도감·시세",
+        "visible": true,
+        "order": 4
+      },
+      {
+        "id": "trends",
+        "label": "팝수 조회",
+        "visible": true,
+        "order": 5
+      }
+    ],
+    "sections": [
+      {
+        "id": "hero",
+        "label": "첫 화면 소개",
+        "visible": true,
+        "order": 1
+      },
+      {
+        "id": "pricing",
+        "label": "70,000원에 살 수 있는 곳, 채널별 조건까지",
+        "visible": true,
+        "order": 2
+      },
+      {
+        "id": "boxes",
+        "label": "30th 말고 다른 박스, 정가로 사는 곳",
+        "visible": true,
+        "order": 3
+      },
+      {
+        "id": "offline",
+        "label": "마트·아트박스·자판기·카드샵에서 정가로 사는 곳",
+        "visible": true,
+        "order": 4
+      },
+      {
+        "id": "trend",
+        "label": "지금 가장 많이 찾는 4개 세트",
+        "visible": true,
+        "order": 5
+      },
+      {
+        "id": "tips",
+        "label": "헛걸음을 줄이는 세 가지 순서",
+        "visible": true,
+        "order": 6
+      },
+      {
+        "id": "cards",
+        "label": "수록 카드와 레어도",
+        "visible": true,
+        "order": 7
+      },
+      {
+        "id": "faq",
+        "label": "구매 전에 가장 많이 묻는 것들",
+        "visible": true,
+        "order": 8
+      },
+      {
+        "id": "pop",
+        "label": "팝수 조회",
+        "visible": true,
+        "order": 9
+      }
+    ]
+  },
+  "cards": [
+    {
+      "id": "stock",
+      "title": "실시간 재고",
+      "description": "내 주변 편의점 4사 재고를 지도에서 확인",
+      "visible": true,
+      "order": 1
+    },
+    {
+      "id": "retail",
+      "title": "정가 구매처",
+      "description": "포켓몬스토어·SSG·G마켓 등 정가 판매처 정리",
+      "visible": true,
+      "order": 2
+    },
+    {
+      "id": "pop",
+      "title": "팝수 조회",
+      "description": "카드 번호로 PSA·BRG 팝수 확인",
+      "visible": true,
+      "order": 3
+    }
+  ],
+  "meta": {
+    "updatedBy": "moa-admin",
+    "updatedAt": null,
+    "note": "모아 어드민이 관리하는 공통 설정 파일입니다. 형식: https://moa-kr.github.io/moa-admin/SCHEMA.md"
+  }
+}
