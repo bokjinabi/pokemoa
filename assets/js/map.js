@@ -948,11 +948,12 @@ window.PokeMoaMap = (function () {
     var n = String(p.place_name || "");
     var cat = String(p.category_name || "");
     if (/이마트\s*24|emart\s*24/i.test(n)) return null;
-    /* 편의점·아울렛·주차장·기타 계열점(에브리데이·노브랜드)은 대형마트 정가 판매처로 보지 않는다 */
-    if (/에브리데이|노브랜드|주차장|편의점/.test(n)) return null;
+    /* 편의점·아울렛·주차장·기타 계열점(에브리데이·노브랜드·익스프레스)은 대형마트 정가 판매처로 보지 않는다 */
+    if (/에브리데이|노브랜드|익스프레스|주차장|편의점/.test(n)) return null;
     if (/주차|편의점/.test(cat)) return null;
     if (brandHint === "artbox" || /아트박스|artbox/i.test(n)) return "artbox";
-    if (/이마트|롯데마트|홈플러스|토이저러스/i.test(n)) return "mart";
+    /* 매장 안 임점(點) 매장(예: '바디튠 역삼이마트점')을 걸러내려면 이름이 체인명으로 시작해야 한다 */
+    if (/^(이마트|롯데마트|홈플러스|토이저러스)/.test(n)) return "mart";
     return null;
   }
 
