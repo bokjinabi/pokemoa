@@ -2341,6 +2341,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .geo-btn { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .geo-btn span { font-size: 13px; line-height: 1; }
 .geo-btn.is-busy { opacity: 0.72; pointer-events: none; }
+/* 선택 지역 찾기 + 내 위치로 찾기 — 데스크톱은 같은 줄 오른쪽, 모바일은 두 칸을 나눠 찍는다 */
+.region-actions { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; }
+.region-actions .geo-btn { justify-content: center; }
 
 @media (max-width: 679px) {
   .map-statusbar { font-size: 11.5px; padding: 8px 10px; }
@@ -2349,6 +2352,13 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .pm-card-note { font-size: 11px; }
   .ml-box { padding: 16px 18px; }
   .toolbar-row .geo-btn { padding: 8px 11px; font-size: 12px; }
+  .region-actions { flex: 1 1 100%; margin-left: 0; }
+  .region-actions .geo-btn { flex: 1 1 0; min-width: 0; padding: 8px 6px; font-size: 12px; gap: 4px; }
+  .brand-progress { padding: 10px 11px 11px; }
+  .bp-row { grid-template-columns: 64px minmax(0, 1fr) 32px; gap: 1px 6px; }
+  .bp-name { font-size: 11px; }
+  .bp-status { font-size: 10px; }
+  .bp-region { font-size: 10.5px; }
   .map-toolbar .toolbar-row .row-label { display: none; }
   .map-toolbar { padding: 9px 10px; gap: 7px; }
   .map-toolbar .toolbar-row { gap: 6px; }
@@ -2484,6 +2494,101 @@ button { font: inherit; color: inherit; cursor: pointer; }
 /* =========================================================================
  * v3.2 — PokeConv 스타일: 라이트 지도 · 말풍선 마커 · 개소별 보유 카드 중심
  * ========================================================================= */
+
+/* 편의점 4사 재고 조회 진행률 (매장 탐색 0~40% → 중계 재고 조회 40~100%) */
+.brand-progress {
+  display: grid;
+  gap: 7px;
+  padding: 11px 14px 12px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  border-radius: 16px 16px 0 0;
+  min-width: 0;
+}
+.brand-progress[hidden] { display: none; }
+.brand-progress + .brand-summary { border-radius: 0; }
+.bp-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.bp-title {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 800; color: var(--ink); letter-spacing: -0.01em;
+  white-space: nowrap; flex: none;
+}
+.bp-spin {
+  width: 12px; height: 12px; flex: none;
+  border-radius: 50%;
+  border: 2px solid #dbe4f0;
+  border-top-color: #2f6df6;
+  animation: pm-spin 0.85s linear infinite;
+}
+.brand-progress[data-state="done"] .bp-spin { display: none; }
+.bp-region {
+  min-width: 0; font-size: 11px; font-weight: 700; color: var(--muted-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bp-overall {
+  margin-left: auto; font-size: 12.5px; font-weight: 900; color: var(--navy);
+  font-variant-numeric: tabular-nums; flex: none;
+}
+.bp-toggle {
+  flex: none; border: 0; background: #f2f5fa; color: var(--muted);
+  font-size: 11px; font-weight: 800; padding: 4px 9px; border-radius: 999px;
+  cursor: pointer;
+}
+.bp-toggle:hover { color: var(--ink); background: #e8eef8; }
+.bp-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+.bp-rows[hidden] { display: none; }
+.bp-row {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) 34px;
+  grid-template-areas: "name bar pct" "name status status";
+  align-items: center;
+  gap: 1px 8px;
+  padding: 4px 0;
+}
+.bp-name {
+  grid-area: name;
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11.5px; font-weight: 800; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bp-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--brand, #1b2a4a); flex: none; }
+.bp-bar {
+  grid-area: bar; display: block; height: 6px; border-radius: 999px;
+  background: #eef2f8; overflow: hidden;
+}
+.bp-bar i {
+  display: block; height: 100%; width: 0;
+  border-radius: 999px;
+  background: var(--brand, #2f6df6);
+  transition: width 0.35s ease;
+}
+.bp-pct {
+  grid-area: pct; text-align: right;
+  font-size: 11px; font-weight: 800; color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.bp-status {
+  grid-area: status;
+  font-size: 10.5px; font-weight: 700; color: var(--muted-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bp-row[data-state="done"] .bp-pct,
+.bp-row[data-state="done"] .bp-status { color: var(--green); }
+.bp-row[data-state="err"] .bp-bar i { background: #9aa7b8; }
+.bp-row[data-state="err"] .bp-status { color: #b4541f; }
+.bp-row[data-state="off"] .bp-bar i { background: #c3ccda; }
+.bp-row[data-state="off"] .bp-status { color: #8a6d1f; }
+@media (min-width: 900px) {
+  .bp-rows { grid-template-columns: 1fr 1fr; gap: 3px 22px; }
+}
+.bp-summary {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 3px 12px;
+  font-size: 11px; font-weight: 700; color: var(--muted);
+}
+.bp-summary[hidden] { display: none; }
+.bp-sum-item { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.bp-sum-item b { color: var(--ink); font-weight: 800; }
 
 /* 편의점 4사별 현황 요약 바 */
 .brand-summary {

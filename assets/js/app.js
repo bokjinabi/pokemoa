@@ -109,6 +109,7 @@
   var mapStatusDot = $("#mapStatusDot");
   var mapRetry = $("#mapRetry");
   var geoBtn = $("#geoBtn");
+  var regionBtn = $("#regionBtn");
   var sideSummary = $("#sideSummary");
   var mapCard = $("#mapCard");
   var mapReady = false;
@@ -183,6 +184,297 @@
     if (storeSkeleton) storeSkeleton.hidden = !!(gotFirstData && !isLoadingMap);
     if (storeListEl) storeListEl.hidden = !(gotFirstData && !isLoadingMap);
   }
+
+  /* ------------------------------------- 편의점 4사 조회 진행률 패널 */
+  /* 매장 탐색(카카오 장소 검색) 0→40%, 중계 재고 조회 40→100% 를 4사별로 보여 준다.
+     퍼센트는 실제 응답으로만 올라간다 — 장소 검색은 페이지가 도착할 때마다(map.js 의
+     pokemoa:search-progress), 재고는 중계 sources 가 도착할 때(relayRefresh 의
+     bpRelayDone) 올린다.
+     중계가 없으면 100%로 닫으면서 「중계 미연결 · 위치만」처럼 상태를 분명히 적는다. */
+  var bpEl = $("#brandProgress");
+  var bpRowsEl = $("#bpRows");
+  var bpOverallEl = $("#bpOverall");
+  var bpRegionEl = $("#bpRegion");
+  var bpSummaryEl = $("#bpSummary");
+  var bpToggleEl = $("#bpToggle");
+  var bpTitleEl = $("#bpTitle");
+  var BP_BRANDS = ["gs25", "cu", "seven", "emart24"];
+  var BP_RELAY = { cu: 1, seven: 1, emart24: 1 };   /* GS25는 중계 서버가 재고를 주지 않는다 */
+  var bp = {
+    rows: {},
+    stage: 0,        /* 0 대기 · 1 매장 탐색 · 2 재고 조회 · 3 완료 */
+    active: false,
+    quiet: true,     /* 첫 자동 조회 때는 패널을 띄우지 않는다 */
+    expanded: true,
+    searchDone: false,
+    counts: null,
+    sourceLabel: "",
+    ticker: null,
+    collapseTimer: null
+  };
+
+  function bpMeta(id) { return D.brandMeta[id] || { label: id, color: "#1b2a4a" }; }
+
+  function bpBuildRows() {
+    if (!bpRowsEl) return;
+    bpRowsEl.innerHTML = BP_BRANDS.map(function (id) {
+      var meta = bpMeta(id);
+      return '<li class="bp-row" data-brand="' + id + '" data-state="idle" style="--brand:' + meta.color + '">' +
+        '<span class="bp-name"><i class="bp-dot" aria-hidden="true"></i>' + meta.label + "</span>" +
+        '<span class="bp-bar" role="progressbar" aria-label="' + meta.label +
+          ' 조회 진행률" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i></i></span>' +
+        '<span class="bp-pct">0%</span>' +
+        '<span class="bp-status">대기 중</span></li>';
+    }).join("");
+    bp.rows = {};
+    BP_BRANDS.forEach(function (id) {
+      var li = bpRowsEl.querySelector('.bp-row[data-brand="' + id + '"]');
+      bp.rows[id] = {
+        li: li,
+        bar: li ? li.querySelector(".bp-bar") : null,
+        fill: li ? li.querySelector(".bp-bar i") : null,
+        pct: li ? li.querySelector(".bp-pct") : null,
+        status: li ? li.querySelector(".bp-status") : null,
+        pctVal: 0,
+        state: "idle",
+        text: "대기 중"
+      };
+    });
+  }
+  bpBuildRows();
+
+  function bpSet(id, pct, text, state) {
+    var r = bp.rows[id];
+    if (!r) return;
+    r.pctVal = Math.max(0, Math.min(100, Math.round(pct)));
+    if (state) r.state = state;
+    if (text != null) r.text = text;
+    if (r.fill) r.fill.style.width = r.pctVal + "%";
+    if (r.pct) r.pct.textContent = r.pctVal + "%";
+    if (r.status) r.status.textContent = r.text;
+    if (r.bar) r.bar.setAttribute("aria-valuenow", String(r.pctVal));
+    if (r.li) r.li.setAttribute("data-state", r.state);
+    bpRenderOverall();
+  }
+
+  function bpOverallPct() {
+    var sum = 0;
+    BP_BRANDS.forEach(function (id) { sum += (bp.rows[id] ? bp.rows[id].pctVal : 0); });
+    return Math.round(sum / BP_BRANDS.length);
+  }
+
+  function bpStopTicker() {
+    if (bp.ticker) { clearInterval(bp.ticker); bp.ticker = null; }
+  }
+
+  function bpStartTicker() {
+    if (bp.ticker) return;
+    /* 중계 응답은 한 번에 오므로, 기다리는 동안만 40%→88% 사이를 부드럽게 올린다.
+       100% 는 실제 응답이 왔을 때만 쓴다. */
+    bp.ticker = setInterval(function () {
+      var moved = false;
+      BP_BRANDS.forEach(function (id) {
+        var r = bp.rows[id];
+        if (!r || r.state !== "run") return;
+        if (r.pctVal < 88) { bpSet(id, Math.min(88, r.pctVal + 2), r.text, "run"); moved = true; }
+      });
+      if (!moved) bpStopTicker();
+    }, 380);
+  }
+
+  function bpRenderOverall() {
+    var p = bpOverallPct();
+    if (bpOverallEl) bpOverallEl.textContent = p + "%";
+    var running = BP_BRANDS.some(function (id) { return bp.rows[id] && bp.rows[id].state === "run"; });
+    if (!running) bpStopTicker();
+    if (p >= 100 && bp.stage !== 3) bpFinish();
+  }
+
+  function bpRenderSummary() {
+    if (!bpSummaryEl) return;
+    var c = bp.counts || {};
+    var bits = BP_BRANDS.map(function (id) {
+      var meta = bpMeta(id);
+      var row = c[id];
+      var n = row && isFinite(row.total) ? row.total : null;
+      return '<span class="bp-sum-item"><i class="bp-dot" style="--brand:' + meta.color + '" aria-hidden="true"></i>' +
+        meta.label + " <b>" + (n == null ? "-" : n) + "</b>곳</span>";
+    });
+    bpSummaryEl.innerHTML = '<span class="bp-sum-item"><b>' + escapeHtml(bp.sourceLabel || "조회 완료") + "</b></span>" +
+      bits.join("");
+  }
+
+  function bpCollapse(on) {
+    bp.expanded = !on;
+    if (bpRowsEl) bpRowsEl.hidden = !!on;
+    if (bpSummaryEl) bpSummaryEl.hidden = !on;
+    if (bpToggleEl) {
+      bpToggleEl.textContent = on ? "자세히" : "접기";
+      bpToggleEl.setAttribute("aria-expanded", on ? "false" : "true");
+    }
+  }
+
+  function bpFinish() {
+    bp.stage = 3;
+    if (bpEl) bpEl.setAttribute("data-state", "done");
+    if (bpTitleEl) bpTitleEl.textContent = "재고 조회 완료";
+    bpRenderSummary();
+    clearTimeout(bp.collapseTimer);
+    /* 끝난 뒤에는 지도·브랜드 카드를 가리지 않도록 한 줄 요약으로 접어 둔다 */
+    bp.collapseTimer = setTimeout(function () { bpCollapse(true); }, 2200);
+  }
+
+  function bpShow(force) {
+    if (!bpEl) return;
+    if (bp.quiet && !force) return;
+    bp.quiet = false;
+    bp.active = true;
+    clearTimeout(bp.collapseTimer);
+    bpEl.hidden = false;
+    bpEl.setAttribute("data-state", bp.stage === 3 ? "done" : "running");
+    if (bpTitleEl) bpTitleEl.textContent = bp.stage === 3 ? "재고 조회 완료" : "편의점 4사 재고 조회";
+    bpCollapse(bp.stage === 3);
+  }
+
+  function bpLabel(regionId) {
+    var r = regionId ? regionById(regionId) : null;
+    var km = (filterState.radius || 3000) / 1000;
+    if (r) return r.district ? r.district.replace(/\s*\(.*\)$/, "") + " · " + km + "km" : r.name + " · " + km + "km";
+    return km + "km 반경";
+  }
+
+  function bpReset(regionId) {
+    clearTimeout(bp.collapseTimer);
+    bp.stage = 1;
+    bp.searchDone = false;
+    bp.counts = null;
+    bp.sourceLabel = "";
+    if (bpRegionEl) bpRegionEl.textContent = bpLabel(regionId);
+    if (bpSummaryEl) { bpSummaryEl.hidden = true; bpSummaryEl.innerHTML = ""; }
+    BP_BRANDS.forEach(function (id) { bpSet(id, 0, "매장 탐색 중", "run"); });
+    if (bpEl) bpEl.setAttribute("data-state", "running");
+  }
+
+  function relayStateNow() {
+    return (typeof relay !== "undefined" && relay && relay.state) || "off";
+  }
+
+  function bpRelayDone(sources) {
+    if (!bp.searchDone) return;
+    var src = sources || {};
+    BP_BRANDS.forEach(function (id) {
+      if (!BP_RELAY[id]) return;
+      var s = src[id];
+      if (!s) { bpSet(id, 100, "중계 미지원 · 위치만", "off"); return; }
+      if (s.ok) {
+        var n = Number(s.count) || 0;
+        bpSet(id, 100, n ? n + "곳 확인" : "0곳 · 수량 미확인", "done");
+      } else {
+        bpSet(id, 100, "응답 없음" + (s.upstream ? " (HTTP " + s.upstream + ")" : ""), "err");
+      }
+    });
+    bpRenderOverall();
+  }
+
+  function bpRelayStart(manual) {
+    if (manual) { bp.quiet = false; bpShow(true); }
+    if (bp.stage === 1) return;       /* 아직 매장 탐색 중 — search-done 이 이어받는다 */
+    if (bp.stage === 0) {
+      bp.searchDone = true;
+      bp.sourceLabel = "중계 재고 새로고침";
+      bpSet("gs25", 100, "위치 확인 완료 · 재고 중계 없음", "done");
+    }
+    bp.stage = 2;
+    if (bpEl) bpEl.setAttribute("data-state", "running");
+    if (bpTitleEl) bpTitleEl.textContent = "편의점 4사 재고 조회";
+    BP_BRANDS.forEach(function (id) {
+      if (!BP_RELAY[id]) return;
+      bpSet(id, 40, "재고 조회 중", "run");
+    });
+    bpStartTicker();
+  }
+
+  function bpRelayFail() {
+    if (!bp.searchDone) return;
+    BP_BRANDS.forEach(function (id) {
+      if (!BP_RELAY[id]) return;
+      bpSet(id, 100, "응답 없음 · 위치만", "err");
+    });
+    bpRenderOverall();
+  }
+
+  function bpRelayOff(why) {
+    if (!bp.searchDone) return;
+    BP_BRANDS.forEach(function (id) {
+      if (!BP_RELAY[id]) return;
+      bpSet(id, 100, why === "error" ? "중계 응답 없음 · 위치만" : "중계 미연결 · 위치만", why === "error" ? "err" : "off");
+    });
+    bpRenderOverall();
+  }
+
+  if (bpToggleEl) {
+    bpToggleEl.addEventListener("click", function () {
+      bpCollapse(bp.expanded);
+    });
+  }
+
+  document.addEventListener("pokemoa:search-start", function (e) {
+    var d = e.detail || {};
+    bpReset(d.regionId);
+    if (d.initial) { bp.quiet = true; return; }
+    bpShow(true);
+  });
+
+  document.addEventListener("pokemoa:search-progress", function (e) {
+    if (bp.stage !== 1) return;
+    var d = e.detail || {};
+    var total = Math.max(1, d.total || 1);
+    var pct = Math.min(40, Math.round(40 * (d.resolved || 0) / total));
+    var found = d.found || {};
+    BP_BRANDS.forEach(function (id) {
+      var n = found[id] || 0;
+      bpSet(id, pct, n ? "매장 " + n + "곳 찾는 중" : "매장 탐색 중", "run");
+    });
+  });
+
+  document.addEventListener("pokemoa:search-done", function (e) {
+    var d = e.detail || {};
+    bp.searchDone = true;
+    bp.counts = d.brandCounts || null;
+    if (d.source !== "live") {
+      /* 카카오맵을 못 그리는 주소·검색 제한 — 내장 좌표로 표시했음을 그대로 적는다 */
+      bp.sourceLabel = "내장 좌표로 표시";
+      BP_BRANDS.forEach(function (id) { bpSet(id, 100, "내장 좌표·위치만", "off"); });
+      bpRenderOverall();
+      return;
+    }
+    bp.sourceLabel = "실시간 조회 완료";
+    bp.stage = 2;
+    /* GS25는 중계 서버가 재고를 주지 않는다 — 매장 위치만 확인하고 끝난다 */
+    bpSet("gs25", 100, "위치 확인 완료 · 재고 중계 없음", "done");
+    var rs = relayStateNow();
+    if (rs === "online" || rs === "checking") {
+      BP_BRANDS.forEach(function (id) {
+        if (!BP_RELAY[id]) return;
+        bpSet(id, 40, rs === "online" ? "재고 조회 중" : "중계 연결 확인 중", "run");
+      });
+      bpStartTicker();
+    } else {
+      bpRelayOff(rs === "error" ? "error" : "off");
+    }
+    bpRenderOverall();
+  });
+
+  document.addEventListener("pokemoa:relay-state", function (e) {
+    var s = (e.detail && e.detail.state) || "off";
+    if (s === "online" || s === "checking") return;   /* 그러면 곧 relayRefresh 가 시작된다 */
+    if (!bp.searchDone) return;
+    if (bp.rows.cu && bp.rows.cu.state === "run") bpRelayOff(s);
+  });
+
+  document.addEventListener("pokemoa:loaded", function () {
+    if (regionBtn) regionBtn.classList.remove("is-busy");
+  });
 
   /* 매장별 취급·재고 카드 상품명 태그 */
   function productTagsHtml(s) {
@@ -517,13 +809,15 @@
     }
     if (relayOpenBtn) relayOpenBtn.textContent = relay.state === "online" ? "설정" : relay.state === "error" ? "다시 연결" : "중계 연결";
     if (relayRefreshBtn) relayRefreshBtn.hidden = relay.state !== "online";
+    /* 진행률 패널이 중계 상태 변화(연결·실패·해제)를 바로 반영하도록 알린다 */
+    document.dispatchEvent(new CustomEvent("pokemoa:relay-state", { detail: { state: relay.state } }));
   }
 
   function relayOpen() {
     if (!relayModal) return;
     /* 저장된 주소가 없으면 최근에 열린 집 태블릿 터널 주소를 미리 채워 둡니다.
        (자동 연결은 하지 않고, 사용자가 '연결 확인'을 누를 때만 요청을 보냅니다.) */
-    relayUrlInput.value = relay.url || relaySaved() || (RELAY_PRESET && RELAY_PRESET.url) || "";
+    relayUrlInput.value = relay.url || relayMigrateSaved() || (RELAY_PRESET && RELAY_PRESET.url) || "";
     relayMsg("");
     relayRenderPreset();
     relayModal.hidden = false;
@@ -632,6 +926,7 @@
     var key = lat + "," + lng;
     if (relay.busy) return;
     relay.busy = true;
+    bpRelayStart(!!manual);
     var ctrl = new AbortController();
     var timer = setTimeout(function () { ctrl.abort(); }, 18000);
     /* 검색어는 '포켓몬카드' — '포켓몬'으로 넣으면 CU가 과자(빼빼로)만 잡아 카드 상품이 0건이 된다. */
@@ -648,6 +943,7 @@
         relay.lastCount = n;
         relay.lastKey = key;
         relayRender();
+        bpRelayDone(payload && payload.sources);
         if (!n) {
           if (relay.noticeShown !== "empty:" + key) {
             relay.noticeShown = "empty:" + key;
@@ -662,6 +958,7 @@
         relay.state = "error";
         relay.lastCount = 0;
         relayRender();
+        bpRelayFail();
         if (window.PokeMoaMap) window.PokeMoaMap.clearRelay();
         toast("중계 서버 응답이 없습니다 · 매장 확인 필요로 표시합니다.");
       })
@@ -705,6 +1002,20 @@
   /* ?relay=https://… 로 열면 그 주소를 저장하고 바로 연결한다.
      주소가 없으면 data.js 의 relayPreset(최근 태블릿 터널)으로 조용히 자동 연결한다 —
      방문자가 모달에서 '연결 확인'을 누르지 않아도 실재고가 바로 뜬다. */
+  /* 저장된 중계 주소가 예전 태블릿 터널(*.trycloudflare.com)이면 지금 프리셋 주소로
+     갈아탄다 — 터널은 다시 열 때마다 주소가 바뀌므로 예전 주소는 늘 응답이 없다.
+     사용자가 직접 넣은 비-trycloudflare 주소(개인 도메인 등)는 그대로 둔다. */
+  function relayMigrateSaved() {
+    var saved = relayNormalize(relaySaved());
+    var preset = relayNormalize(RELAY_PRESET && RELAY_PRESET.url);
+    if (!saved || !preset || saved === preset) return saved;
+    var isTunnel = /\.trycloudflare\.com$/i.test(saved.replace(/^https?:\/\//, ""));
+    if (!isTunnel) return saved;
+    relaySave(preset);
+    try { localStorage.setItem(RELAY_PRESET_KEY, preset); } catch (e) {}
+    return preset;
+  }
+
   function relayInit() {
     relayRender();
     var param = "";
@@ -719,7 +1030,7 @@
       return;
     }
     var preset = relayNormalize(RELAY_PRESET && RELAY_PRESET.url);
-    var saved = relayNormalize(relaySaved());
+    var saved = relayMigrateSaved();
     var lastPreset = "";
     try {
       lastPreset = relayNormalize(localStorage.getItem(RELAY_PRESET_KEY) || "");
@@ -749,6 +1060,61 @@
   if (geoBtn) {
     geoBtn.addEventListener("click", function () {
       if (mapReady) window.PokeMoaMap.locate();
+    });
+  }
+
+  /* 선택 지역 찾기 — 지금 고른 시·도/시·군·구(또는 동네 검색어의 결과)로
+     카카오 매장 검색 + 중계 재고 조회를 바로 실행한다. */
+  var regionBtnTimer = null;
+  function regionFromQuery() {
+    var q = regionSearch ? String(regionSearch.value || "").trim() : "";
+    if (!q) return null;
+    if (suggestItems.length) {
+      var item = suggestItems[suggestActive >= 0 ? suggestActive : 0];
+      if (item) return { suggest: item };
+    }
+    var hits = searchRegions(q);
+    if (hits.length) return { regionId: hits[0].id };
+    return null;
+  }
+
+  if (regionBtn) {
+    regionBtn.addEventListener("click", function () {
+      bp.quiet = false;
+      var target = regionFromQuery();
+      if (!target) {
+        var id = districtSelect && districtSelect.value ? districtSelect.value : (filterState.region || "");
+        if (id && regionById(id)) target = { regionId: id };
+      }
+      if (!target) {
+        toast("시·도와 시·군·구를 고르거나 동네 이름을 입력해 주세요.");
+        return;
+      }
+      regionBtn.classList.add("is-busy");
+      clearTimeout(regionBtnTimer);
+      regionBtnTimer = setTimeout(function () { regionBtn.classList.remove("is-busy"); }, 12000);
+      var name = "";
+      if (target.suggest) {
+        var it = target.suggest;
+        if (it.kind === "place") {
+          name = it.place.name;
+          selectPlace(it.place);
+        } else {
+          name = it.region.name;
+          selectRegion(it.region.id);
+        }
+      } else {
+        var r = regionById(target.regionId);
+        name = r ? (r.name + (r.allow20 ? "" : " (도심 5km까지)")) : "";
+        selectRegion(target.regionId);
+      }
+      if (name) {
+        toast("‘" + name + "’ 반경 " + (filterState.radius / 1000) + "km 매장을 찾습니다.");
+      }
+      trackEvent("region_search_click", {
+        region: target.regionId || "kakao-place",
+        radius_km: filterState.radius / 1000
+      });
     });
   }
 
@@ -1018,6 +1384,26 @@
   }
 
   /* 첫 화면: 서울 광화문을 기본 선택 (초기 지도 중심 37.5759, 126.9768) */
+  /* 시·도 목록을 data.js 의 regions 순서·표기로 다시 채운다 — HTML 의 option 이
+     빠지거나 겹쳐도 전국 17개 시·도가 한 번씩만 나오게 한다. */
+  function syncProvinceOptions() {
+    if (!provinceSelect) return;
+    var order = [];
+    D.regions.forEach(function (r) {
+      if (r.province && order.indexOf(r.province) < 0) order.push(r.province);
+    });
+    var current = provinceSelect.value;
+    provinceSelect.innerHTML = "";
+    order.forEach(function (p) {
+      var o = document.createElement("option");
+      o.value = p;
+      o.textContent = p;
+      provinceSelect.appendChild(o);
+    });
+    if (order.indexOf(current) >= 0) provinceSelect.value = current;
+  }
+  syncProvinceOptions();
+
   var initialRegion = regionById(filterState.region) || D.regions[0];
   if (initialRegion) {
     if (provinceSelect) provinceSelect.value = initialRegion.province;

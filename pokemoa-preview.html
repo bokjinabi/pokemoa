@@ -2381,6 +2381,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .geo-btn { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .geo-btn span { font-size: 13px; line-height: 1; }
 .geo-btn.is-busy { opacity: 0.72; pointer-events: none; }
+/* 선택 지역 찾기 + 내 위치로 찾기 — 데스크톱은 같은 줄 오른쪽, 모바일은 두 칸을 나눠 찍는다 */
+.region-actions { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; }
+.region-actions .geo-btn { justify-content: center; }
 
 @media (max-width: 679px) {
   .map-statusbar { font-size: 11.5px; padding: 8px 10px; }
@@ -2389,6 +2392,13 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .pm-card-note { font-size: 11px; }
   .ml-box { padding: 16px 18px; }
   .toolbar-row .geo-btn { padding: 8px 11px; font-size: 12px; }
+  .region-actions { flex: 1 1 100%; margin-left: 0; }
+  .region-actions .geo-btn { flex: 1 1 0; min-width: 0; padding: 8px 6px; font-size: 12px; gap: 4px; }
+  .brand-progress { padding: 10px 11px 11px; }
+  .bp-row { grid-template-columns: 64px minmax(0, 1fr) 32px; gap: 1px 6px; }
+  .bp-name { font-size: 11px; }
+  .bp-status { font-size: 10px; }
+  .bp-region { font-size: 10.5px; }
   .map-toolbar .toolbar-row .row-label { display: none; }
   .map-toolbar { padding: 9px 10px; gap: 7px; }
   .map-toolbar .toolbar-row { gap: 6px; }
@@ -2524,6 +2534,101 @@ button { font: inherit; color: inherit; cursor: pointer; }
 /* =========================================================================
  * v3.2 — PokeConv 스타일: 라이트 지도 · 말풍선 마커 · 개소별 보유 카드 중심
  * ========================================================================= */
+
+/* 편의점 4사 재고 조회 진행률 (매장 탐색 0~40% → 중계 재고 조회 40~100%) */
+.brand-progress {
+  display: grid;
+  gap: 7px;
+  padding: 11px 14px 12px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  border-radius: 16px 16px 0 0;
+  min-width: 0;
+}
+.brand-progress[hidden] { display: none; }
+.brand-progress + .brand-summary { border-radius: 0; }
+.bp-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.bp-title {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 800; color: var(--ink); letter-spacing: -0.01em;
+  white-space: nowrap; flex: none;
+}
+.bp-spin {
+  width: 12px; height: 12px; flex: none;
+  border-radius: 50%;
+  border: 2px solid #dbe4f0;
+  border-top-color: #2f6df6;
+  animation: pm-spin 0.85s linear infinite;
+}
+.brand-progress[data-state="done"] .bp-spin { display: none; }
+.bp-region {
+  min-width: 0; font-size: 11px; font-weight: 700; color: var(--muted-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bp-overall {
+  margin-left: auto; font-size: 12.5px; font-weight: 900; color: var(--navy);
+  font-variant-numeric: tabular-nums; flex: none;
+}
+.bp-toggle {
+  flex: none; border: 0; background: #f2f5fa; color: var(--muted);
+  font-size: 11px; font-weight: 800; padding: 4px 9px; border-radius: 999px;
+  cursor: pointer;
+}
+.bp-toggle:hover { color: var(--ink); background: #e8eef8; }
+.bp-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+.bp-rows[hidden] { display: none; }
+.bp-row {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) 34px;
+  grid-template-areas: "name bar pct" "name status status";
+  align-items: center;
+  gap: 1px 8px;
+  padding: 4px 0;
+}
+.bp-name {
+  grid-area: name;
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11.5px; font-weight: 800; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bp-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--brand, #1b2a4a); flex: none; }
+.bp-bar {
+  grid-area: bar; display: block; height: 6px; border-radius: 999px;
+  background: #eef2f8; overflow: hidden;
+}
+.bp-bar i {
+  display: block; height: 100%; width: 0;
+  border-radius: 999px;
+  background: var(--brand, #2f6df6);
+  transition: width 0.35s ease;
+}
+.bp-pct {
+  grid-area: pct; text-align: right;
+  font-size: 11px; font-weight: 800; color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.bp-status {
+  grid-area: status;
+  font-size: 10.5px; font-weight: 700; color: var(--muted-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bp-row[data-state="done"] .bp-pct,
+.bp-row[data-state="done"] .bp-status { color: var(--green); }
+.bp-row[data-state="err"] .bp-bar i { background: #9aa7b8; }
+.bp-row[data-state="err"] .bp-status { color: #b4541f; }
+.bp-row[data-state="off"] .bp-bar i { background: #c3ccda; }
+.bp-row[data-state="off"] .bp-status { color: #8a6d1f; }
+@media (min-width: 900px) {
+  .bp-rows { grid-template-columns: 1fr 1fr; gap: 3px 22px; }
+}
+.bp-summary {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 3px 12px;
+  font-size: 11px; font-weight: 700; color: var(--muted);
+}
+.bp-summary[hidden] { display: none; }
+.bp-sum-item { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.bp-sum-item b { color: var(--ink); font-weight: 800; }
 
 /* 편의점 4사별 현황 요약 바 */
 .brand-summary {
@@ -3642,6 +3747,7 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
   .sub-tab { padding: 8px 12px; font-size: 12px; }
   .set-search { padding: 12px; }
 }
+
 </style>
 <!-- 단일 파일 미리보기: index.html + assets/css/style.css + data.js/map.js/app.js 를 인라인으로 합친 파일입니다. 지도는 카카오맵 SDK+카카오 장소 검색(CDN·공개 API)을 그대로 사용합니다. -->
 <!-- 카카오맵 JavaScript SDK — autoload=false로 불러 두고 map.js가 kakao.maps.load()로 초기화합니다.
@@ -4153,6 +4259,17 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
       <button type="button" class="relay-action is-quiet" id="relayRefreshBtn" hidden>재고 새로고침</button>
     </div>
 
+    <div class="brand-progress" id="brandProgress" data-state="idle" role="group" aria-label="편의점 4사 재고 조회 진행률" hidden>
+      <div class="bp-head">
+        <span class="bp-title"><span class="bp-spin" aria-hidden="true"></span><b id="bpTitle">편의점 4사 재고 조회</b></span>
+        <span class="bp-region" id="bpRegion"></span>
+        <span class="bp-overall" id="bpOverall">0%</span>
+        <button type="button" class="bp-toggle" id="bpToggle" aria-expanded="true" aria-controls="bpRows">접기</button>
+      </div>
+      <ul class="bp-rows" id="bpRows"></ul>
+      <div class="bp-summary" id="bpSummary" role="status" aria-live="polite" hidden></div>
+    </div>
+
     <div class="brand-summary" id="brandSummary" role="group" aria-label="편의점 4사별 현황"></div>
 
     <div class="offline-bar" id="offlineBar" role="group" aria-label="오프라인 판매처 표시">
@@ -4169,7 +4286,7 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
         <span class="row-label">지역</span>
         <span class="select-wrap select-province">
           <select id="provinceSelect" aria-label="시·도 선택">
-            <option value="서울">서울</option>
+            <option value="서울" selected>서울</option>
             <option value="부산">부산</option>
             <option value="대구">대구</option>
             <option value="인천">인천</option>
@@ -4183,7 +4300,7 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
             <option value="충남">충남</option>
             <option value="전북">전북</option>
             <option value="전남">전남</option>
-            <option value="서울" selected>서울</option>
+            <option value="경북">경북</option>
             <option value="경남">경남</option>
             <option value="제주">제주</option>
           </select>
@@ -4203,9 +4320,14 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
                  aria-controls="regionSuggest" aria-autocomplete="list">
           <ul class="region-suggest" id="regionSuggest" role="listbox" aria-label="지역 검색 결과" hidden></ul>
         </span>
-        <button type="button" class="btn btn-dark btn-sm geo-btn" id="geoBtn">
-          <span aria-hidden="true">◎</span> 내 위치로 찾기
-        </button>
+        <span class="region-actions">
+          <button type="button" class="btn btn-dark btn-sm geo-btn" id="regionBtn">
+            <span aria-hidden="true">🔍</span> 선택 지역 찾기
+          </button>
+          <button type="button" class="btn btn-ghost btn-sm geo-btn" id="geoBtn">
+            <span aria-hidden="true">◎</span> 내 위치로 찾기
+          </button>
+        </span>
       </div>
       <div class="toolbar-row">
         <span class="row-label">반경</span>
@@ -5007,7 +5129,7 @@ window.POKEMOA_DATA = (function () {
     tagline: "포켓몬 카드의 정가·입고·재고를 한 곳에 모아",
     dataDate: "2026-11-17",
     dataTime: "11:00",
-    siteUrl: "https://pokemoa.example"
+    siteUrl: "https://moa-kr.github.io/pokemoa"
   };
 
   /* ---------------------------------------------------------------- 세트 */
@@ -7411,6 +7533,7 @@ window.POKEMOA_DATA = (function () {
     relayPreset: relayPreset
   };
 })();
+
 </script>
 <script>
 /* =========================================================================
@@ -7500,7 +7623,8 @@ window.PokeMoaMap = (function () {
     metro: false,
     allow20: true,
     relay: null,        /* 집 태블릿 중계에서 받은 실재고 요약 { ok, sources, at, count } */
-    relayAt: ""
+    relayAt: "",
+    started: false      /* 첫 자동 조회를 했는지 — 첫 화면은 진행률 패널을 띄우지 않는다 */
   };
 
   var el = {};
@@ -8494,10 +8618,26 @@ window.PokeMoaMap = (function () {
     return pts;
   }
 
-  /* 격자 조회 → id 중복 제거 → 반경 필터 → 빠진 브랜드는 브랜드별 키워드 1페이지로 보충 */
-  function searchNearby(center, radius) {
-    var reqs = searchPlan(center, radius).map(function (pt) {
-      return categoryPage("CS2", pt, pt.radius, pt.page);
+  /* 격자 조회 → id 중복 제거 → 반경 필터 → 빠진 브랜드는 브랜드별 키워드 1페이지로 보충
+     tick({resolved,total,found}) 은 장소 검색 한 페이지가 끝날 때마다 부른다 —
+     화면의 편의점 4사 진행률(0~40%)이 이 실제 응답 수로 움직인다. */
+  function searchNearby(center, radius, tick) {
+    var plan = searchPlan(center, radius);
+    var total = plan.length;
+    var done = 0;
+    var found = { gs25: 0, cu: 0, seven: 0, emart24: 0 };
+    function step(pg) {
+      done += 1;
+      rowsFrom([pg]).forEach(function (r) {
+        if (found[r.brand] != null) found[r.brand] += 1;
+      });
+      if (tick) tick({ resolved: done, total: total, found: found });
+    }
+    var reqs = plan.map(function (pt) {
+      return categoryPage("CS2", pt, pt.radius, pt.page).then(function (pg) {
+        step(pg);
+        return pg;
+      });
     });
     return Promise.all(reqs).then(function (pages) {
       var anyOk = pages.some(function (p) { return p.ok; });
@@ -8507,7 +8647,13 @@ window.PokeMoaMap = (function () {
         return !rows.some(function (r) { return r.brand === b; });
       });
       if (!missing.length) return rows;
-      var extra = missing.map(function (b) { return keywordPage(BRAND_QUERY[b], center, radius, 1); });
+      total += missing.length;
+      var extra = missing.map(function (b) {
+        return keywordPage(BRAND_QUERY[b], center, radius, 1).then(function (pg) {
+          step(pg);
+          return pg;
+        });
+      });
       return Promise.all(extra).then(function (pages2) {
         var more = rowsFrom(pages2).filter(function (r) {
           return missing.indexOf(r.brand) >= 0 && meters(center, r) <= radius + 1;
@@ -8524,6 +8670,16 @@ window.PokeMoaMap = (function () {
     st.pendingLive = false;
     pushLoading();
     pushData();
+    /* 진행률 패널용 — 첫 자동 조회인지 알려 주고, 조회 시작을 알린다 */
+    var initial = !st.started;
+    st.started = true;
+    emit("pokemoa:search-start", {
+      initial: initial,
+      center: st.center,
+      radius: st.radius,
+      regionId: st.regionId,
+      origin: st.origin
+    });
 
     if (!st.ready) {
       /* 지도가 없으면(SDK 미등록 도메인·차단) 스냅샷으로 조용히 표시한다 */
@@ -8544,7 +8700,10 @@ window.PokeMoaMap = (function () {
     }, SEARCH_TIMEOUT);
 
     /* 편의점 4사(카테고리+키워드 보축) · 오프라인 마트·아트박스 · 공인 카드샵 좌표를 함께 받아 합친다 */
-    var convReq = searchNearby(center, radius);
+    var convReq = searchNearby(center, radius, function (p) {
+      if (seq !== st.seq) return;
+      emit("pokemoa:search-progress", p);
+    });
     var offReq = searchOffline(center, radius).catch(function () { return []; });
     var shopReq = resolveCardShops().catch(function () { return {}; });
 
@@ -8591,6 +8750,15 @@ window.PokeMoaMap = (function () {
       markerCap: st.radius >= 20000 ? MAX_MARKERS_20 : st.radius >= 5000 ? MAX_MARKERS_5 : MAX_MARKERS,
       error: st.lastError,
       late: !!liveNow && st.badgeWasSnapshot
+    });
+    /* 진행률 패널용 — 매장 탐색 단계가 끝났고, 이제 중계 재고 조회 단계로 넘어간다 */
+    emit("pokemoa:search-done", {
+      source: st.source,
+      total: st.all.length,
+      radius: st.radius,
+      regionId: st.regionId,
+      brandCounts: brandCounts(),
+      error: st.lastError
     });
     st.badgeWasSnapshot = st.source === "snapshot";
   }
@@ -9012,6 +9180,7 @@ window.PokeMoaMap = (function () {
   };
   return API;
 })();
+
 </script>
 <script>
 /* =========================================================================
@@ -9125,6 +9294,7 @@ window.PokeMoaMap = (function () {
   var mapStatusDot = $("#mapStatusDot");
   var mapRetry = $("#mapRetry");
   var geoBtn = $("#geoBtn");
+  var regionBtn = $("#regionBtn");
   var sideSummary = $("#sideSummary");
   var mapCard = $("#mapCard");
   var mapReady = false;
@@ -9199,6 +9369,297 @@ window.PokeMoaMap = (function () {
     if (storeSkeleton) storeSkeleton.hidden = !!(gotFirstData && !isLoadingMap);
     if (storeListEl) storeListEl.hidden = !(gotFirstData && !isLoadingMap);
   }
+
+  /* ------------------------------------- 편의점 4사 조회 진행률 패널 */
+  /* 매장 탐색(카카오 장소 검색) 0→40%, 중계 재고 조회 40→100% 를 4사별로 보여 준다.
+     퍼센트는 실제 응답으로만 올라간다 — 장소 검색은 페이지가 도착할 때마다(map.js 의
+     pokemoa:search-progress), 재고는 중계 sources 가 도착할 때(relayRefresh 의
+     bpRelayDone) 올린다.
+     중계가 없으면 100%로 닫으면서 「중계 미연결 · 위치만」처럼 상태를 분명히 적는다. */
+  var bpEl = $("#brandProgress");
+  var bpRowsEl = $("#bpRows");
+  var bpOverallEl = $("#bpOverall");
+  var bpRegionEl = $("#bpRegion");
+  var bpSummaryEl = $("#bpSummary");
+  var bpToggleEl = $("#bpToggle");
+  var bpTitleEl = $("#bpTitle");
+  var BP_BRANDS = ["gs25", "cu", "seven", "emart24"];
+  var BP_RELAY = { cu: 1, seven: 1, emart24: 1 };   /* GS25는 중계 서버가 재고를 주지 않는다 */
+  var bp = {
+    rows: {},
+    stage: 0,        /* 0 대기 · 1 매장 탐색 · 2 재고 조회 · 3 완료 */
+    active: false,
+    quiet: true,     /* 첫 자동 조회 때는 패널을 띄우지 않는다 */
+    expanded: true,
+    searchDone: false,
+    counts: null,
+    sourceLabel: "",
+    ticker: null,
+    collapseTimer: null
+  };
+
+  function bpMeta(id) { return D.brandMeta[id] || { label: id, color: "#1b2a4a" }; }
+
+  function bpBuildRows() {
+    if (!bpRowsEl) return;
+    bpRowsEl.innerHTML = BP_BRANDS.map(function (id) {
+      var meta = bpMeta(id);
+      return '<li class="bp-row" data-brand="' + id + '" data-state="idle" style="--brand:' + meta.color + '">' +
+        '<span class="bp-name"><i class="bp-dot" aria-hidden="true"></i>' + meta.label + "</span>" +
+        '<span class="bp-bar" role="progressbar" aria-label="' + meta.label +
+          ' 조회 진행률" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i></i></span>' +
+        '<span class="bp-pct">0%</span>' +
+        '<span class="bp-status">대기 중</span></li>';
+    }).join("");
+    bp.rows = {};
+    BP_BRANDS.forEach(function (id) {
+      var li = bpRowsEl.querySelector('.bp-row[data-brand="' + id + '"]');
+      bp.rows[id] = {
+        li: li,
+        bar: li ? li.querySelector(".bp-bar") : null,
+        fill: li ? li.querySelector(".bp-bar i") : null,
+        pct: li ? li.querySelector(".bp-pct") : null,
+        status: li ? li.querySelector(".bp-status") : null,
+        pctVal: 0,
+        state: "idle",
+        text: "대기 중"
+      };
+    });
+  }
+  bpBuildRows();
+
+  function bpSet(id, pct, text, state) {
+    var r = bp.rows[id];
+    if (!r) return;
+    r.pctVal = Math.max(0, Math.min(100, Math.round(pct)));
+    if (state) r.state = state;
+    if (text != null) r.text = text;
+    if (r.fill) r.fill.style.width = r.pctVal + "%";
+    if (r.pct) r.pct.textContent = r.pctVal + "%";
+    if (r.status) r.status.textContent = r.text;
+    if (r.bar) r.bar.setAttribute("aria-valuenow", String(r.pctVal));
+    if (r.li) r.li.setAttribute("data-state", r.state);
+    bpRenderOverall();
+  }
+
+  function bpOverallPct() {
+    var sum = 0;
+    BP_BRANDS.forEach(function (id) { sum += (bp.rows[id] ? bp.rows[id].pctVal : 0); });
+    return Math.round(sum / BP_BRANDS.length);
+  }
+
+  function bpStopTicker() {
+    if (bp.ticker) { clearInterval(bp.ticker); bp.ticker = null; }
+  }
+
+  function bpStartTicker() {
+    if (bp.ticker) return;
+    /* 중계 응답은 한 번에 오므로, 기다리는 동안만 40%→88% 사이를 부드럽게 올린다.
+       100% 는 실제 응답이 왔을 때만 쓴다. */
+    bp.ticker = setInterval(function () {
+      var moved = false;
+      BP_BRANDS.forEach(function (id) {
+        var r = bp.rows[id];
+        if (!r || r.state !== "run") return;
+        if (r.pctVal < 88) { bpSet(id, Math.min(88, r.pctVal + 2), r.text, "run"); moved = true; }
+      });
+      if (!moved) bpStopTicker();
+    }, 380);
+  }
+
+  function bpRenderOverall() {
+    var p = bpOverallPct();
+    if (bpOverallEl) bpOverallEl.textContent = p + "%";
+    var running = BP_BRANDS.some(function (id) { return bp.rows[id] && bp.rows[id].state === "run"; });
+    if (!running) bpStopTicker();
+    if (p >= 100 && bp.stage !== 3) bpFinish();
+  }
+
+  function bpRenderSummary() {
+    if (!bpSummaryEl) return;
+    var c = bp.counts || {};
+    var bits = BP_BRANDS.map(function (id) {
+      var meta = bpMeta(id);
+      var row = c[id];
+      var n = row && isFinite(row.total) ? row.total : null;
+      return '<span class="bp-sum-item"><i class="bp-dot" style="--brand:' + meta.color + '" aria-hidden="true"></i>' +
+        meta.label + " <b>" + (n == null ? "-" : n) + "</b>곳</span>";
+    });
+    bpSummaryEl.innerHTML = '<span class="bp-sum-item"><b>' + escapeHtml(bp.sourceLabel || "조회 완료") + "</b></span>" +
+      bits.join("");
+  }
+
+  function bpCollapse(on) {
+    bp.expanded = !on;
+    if (bpRowsEl) bpRowsEl.hidden = !!on;
+    if (bpSummaryEl) bpSummaryEl.hidden = !on;
+    if (bpToggleEl) {
+      bpToggleEl.textContent = on ? "자세히" : "접기";
+      bpToggleEl.setAttribute("aria-expanded", on ? "false" : "true");
+    }
+  }
+
+  function bpFinish() {
+    bp.stage = 3;
+    if (bpEl) bpEl.setAttribute("data-state", "done");
+    if (bpTitleEl) bpTitleEl.textContent = "재고 조회 완료";
+    bpRenderSummary();
+    clearTimeout(bp.collapseTimer);
+    /* 끝난 뒤에는 지도·브랜드 카드를 가리지 않도록 한 줄 요약으로 접어 둔다 */
+    bp.collapseTimer = setTimeout(function () { bpCollapse(true); }, 2200);
+  }
+
+  function bpShow(force) {
+    if (!bpEl) return;
+    if (bp.quiet && !force) return;
+    bp.quiet = false;
+    bp.active = true;
+    clearTimeout(bp.collapseTimer);
+    bpEl.hidden = false;
+    bpEl.setAttribute("data-state", bp.stage === 3 ? "done" : "running");
+    if (bpTitleEl) bpTitleEl.textContent = bp.stage === 3 ? "재고 조회 완료" : "편의점 4사 재고 조회";
+    bpCollapse(bp.stage === 3);
+  }
+
+  function bpLabel(regionId) {
+    var r = regionId ? regionById(regionId) : null;
+    var km = (filterState.radius || 3000) / 1000;
+    if (r) return r.district ? r.district.replace(/\s*\(.*\)$/, "") + " · " + km + "km" : r.name + " · " + km + "km";
+    return km + "km 반경";
+  }
+
+  function bpReset(regionId) {
+    clearTimeout(bp.collapseTimer);
+    bp.stage = 1;
+    bp.searchDone = false;
+    bp.counts = null;
+    bp.sourceLabel = "";
+    if (bpRegionEl) bpRegionEl.textContent = bpLabel(regionId);
+    if (bpSummaryEl) { bpSummaryEl.hidden = true; bpSummaryEl.innerHTML = ""; }
+    BP_BRANDS.forEach(function (id) { bpSet(id, 0, "매장 탐색 중", "run"); });
+    if (bpEl) bpEl.setAttribute("data-state", "running");
+  }
+
+  function relayStateNow() {
+    return (typeof relay !== "undefined" && relay && relay.state) || "off";
+  }
+
+  function bpRelayDone(sources) {
+    if (!bp.searchDone) return;
+    var src = sources || {};
+    BP_BRANDS.forEach(function (id) {
+      if (!BP_RELAY[id]) return;
+      var s = src[id];
+      if (!s) { bpSet(id, 100, "중계 미지원 · 위치만", "off"); return; }
+      if (s.ok) {
+        var n = Number(s.count) || 0;
+        bpSet(id, 100, n ? n + "곳 확인" : "0곳 · 수량 미확인", "done");
+      } else {
+        bpSet(id, 100, "응답 없음" + (s.upstream ? " (HTTP " + s.upstream + ")" : ""), "err");
+      }
+    });
+    bpRenderOverall();
+  }
+
+  function bpRelayStart(manual) {
+    if (manual) { bp.quiet = false; bpShow(true); }
+    if (bp.stage === 1) return;       /* 아직 매장 탐색 중 — search-done 이 이어받는다 */
+    if (bp.stage === 0) {
+      bp.searchDone = true;
+      bp.sourceLabel = "중계 재고 새로고침";
+      bpSet("gs25", 100, "위치 확인 완료 · 재고 중계 없음", "done");
+    }
+    bp.stage = 2;
+    if (bpEl) bpEl.setAttribute("data-state", "running");
+    if (bpTitleEl) bpTitleEl.textContent = "편의점 4사 재고 조회";
+    BP_BRANDS.forEach(function (id) {
+      if (!BP_RELAY[id]) return;
+      bpSet(id, 40, "재고 조회 중", "run");
+    });
+    bpStartTicker();
+  }
+
+  function bpRelayFail() {
+    if (!bp.searchDone) return;
+    BP_BRANDS.forEach(function (id) {
+      if (!BP_RELAY[id]) return;
+      bpSet(id, 100, "응답 없음 · 위치만", "err");
+    });
+    bpRenderOverall();
+  }
+
+  function bpRelayOff(why) {
+    if (!bp.searchDone) return;
+    BP_BRANDS.forEach(function (id) {
+      if (!BP_RELAY[id]) return;
+      bpSet(id, 100, why === "error" ? "중계 응답 없음 · 위치만" : "중계 미연결 · 위치만", why === "error" ? "err" : "off");
+    });
+    bpRenderOverall();
+  }
+
+  if (bpToggleEl) {
+    bpToggleEl.addEventListener("click", function () {
+      bpCollapse(bp.expanded);
+    });
+  }
+
+  document.addEventListener("pokemoa:search-start", function (e) {
+    var d = e.detail || {};
+    bpReset(d.regionId);
+    if (d.initial) { bp.quiet = true; return; }
+    bpShow(true);
+  });
+
+  document.addEventListener("pokemoa:search-progress", function (e) {
+    if (bp.stage !== 1) return;
+    var d = e.detail || {};
+    var total = Math.max(1, d.total || 1);
+    var pct = Math.min(40, Math.round(40 * (d.resolved || 0) / total));
+    var found = d.found || {};
+    BP_BRANDS.forEach(function (id) {
+      var n = found[id] || 0;
+      bpSet(id, pct, n ? "매장 " + n + "곳 찾는 중" : "매장 탐색 중", "run");
+    });
+  });
+
+  document.addEventListener("pokemoa:search-done", function (e) {
+    var d = e.detail || {};
+    bp.searchDone = true;
+    bp.counts = d.brandCounts || null;
+    if (d.source !== "live") {
+      /* 카카오맵을 못 그리는 주소·검색 제한 — 내장 좌표로 표시했음을 그대로 적는다 */
+      bp.sourceLabel = "내장 좌표로 표시";
+      BP_BRANDS.forEach(function (id) { bpSet(id, 100, "내장 좌표·위치만", "off"); });
+      bpRenderOverall();
+      return;
+    }
+    bp.sourceLabel = "실시간 조회 완료";
+    bp.stage = 2;
+    /* GS25는 중계 서버가 재고를 주지 않는다 — 매장 위치만 확인하고 끝난다 */
+    bpSet("gs25", 100, "위치 확인 완료 · 재고 중계 없음", "done");
+    var rs = relayStateNow();
+    if (rs === "online" || rs === "checking") {
+      BP_BRANDS.forEach(function (id) {
+        if (!BP_RELAY[id]) return;
+        bpSet(id, 40, rs === "online" ? "재고 조회 중" : "중계 연결 확인 중", "run");
+      });
+      bpStartTicker();
+    } else {
+      bpRelayOff(rs === "error" ? "error" : "off");
+    }
+    bpRenderOverall();
+  });
+
+  document.addEventListener("pokemoa:relay-state", function (e) {
+    var s = (e.detail && e.detail.state) || "off";
+    if (s === "online" || s === "checking") return;   /* 그러면 곧 relayRefresh 가 시작된다 */
+    if (!bp.searchDone) return;
+    if (bp.rows.cu && bp.rows.cu.state === "run") bpRelayOff(s);
+  });
+
+  document.addEventListener("pokemoa:loaded", function () {
+    if (regionBtn) regionBtn.classList.remove("is-busy");
+  });
 
   /* 매장별 취급·재고 카드 상품명 태그 */
   function productTagsHtml(s) {
@@ -9533,13 +9994,15 @@ window.PokeMoaMap = (function () {
     }
     if (relayOpenBtn) relayOpenBtn.textContent = relay.state === "online" ? "설정" : relay.state === "error" ? "다시 연결" : "중계 연결";
     if (relayRefreshBtn) relayRefreshBtn.hidden = relay.state !== "online";
+    /* 진행률 패널이 중계 상태 변화(연결·실패·해제)를 바로 반영하도록 알린다 */
+    document.dispatchEvent(new CustomEvent("pokemoa:relay-state", { detail: { state: relay.state } }));
   }
 
   function relayOpen() {
     if (!relayModal) return;
     /* 저장된 주소가 없으면 최근에 열린 집 태블릿 터널 주소를 미리 채워 둡니다.
        (자동 연결은 하지 않고, 사용자가 '연결 확인'을 누를 때만 요청을 보냅니다.) */
-    relayUrlInput.value = relay.url || relaySaved() || (RELAY_PRESET && RELAY_PRESET.url) || "";
+    relayUrlInput.value = relay.url || relayMigrateSaved() || (RELAY_PRESET && RELAY_PRESET.url) || "";
     relayMsg("");
     relayRenderPreset();
     relayModal.hidden = false;
@@ -9648,6 +10111,7 @@ window.PokeMoaMap = (function () {
     var key = lat + "," + lng;
     if (relay.busy) return;
     relay.busy = true;
+    bpRelayStart(!!manual);
     var ctrl = new AbortController();
     var timer = setTimeout(function () { ctrl.abort(); }, 18000);
     /* 검색어는 '포켓몬카드' — '포켓몬'으로 넣으면 CU가 과자(빼빼로)만 잡아 카드 상품이 0건이 된다. */
@@ -9664,6 +10128,7 @@ window.PokeMoaMap = (function () {
         relay.lastCount = n;
         relay.lastKey = key;
         relayRender();
+        bpRelayDone(payload && payload.sources);
         if (!n) {
           if (relay.noticeShown !== "empty:" + key) {
             relay.noticeShown = "empty:" + key;
@@ -9678,6 +10143,7 @@ window.PokeMoaMap = (function () {
         relay.state = "error";
         relay.lastCount = 0;
         relayRender();
+        bpRelayFail();
         if (window.PokeMoaMap) window.PokeMoaMap.clearRelay();
         toast("중계 서버 응답이 없습니다 · 매장 확인 필요로 표시합니다.");
       })
@@ -9721,6 +10187,20 @@ window.PokeMoaMap = (function () {
   /* ?relay=https://… 로 열면 그 주소를 저장하고 바로 연결한다.
      주소가 없으면 data.js 의 relayPreset(최근 태블릿 터널)으로 조용히 자동 연결한다 —
      방문자가 모달에서 '연결 확인'을 누르지 않아도 실재고가 바로 뜬다. */
+  /* 저장된 중계 주소가 예전 태블릿 터널(*.trycloudflare.com)이면 지금 프리셋 주소로
+     갈아탄다 — 터널은 다시 열 때마다 주소가 바뀌므로 예전 주소는 늘 응답이 없다.
+     사용자가 직접 넣은 비-trycloudflare 주소(개인 도메인 등)는 그대로 둔다. */
+  function relayMigrateSaved() {
+    var saved = relayNormalize(relaySaved());
+    var preset = relayNormalize(RELAY_PRESET && RELAY_PRESET.url);
+    if (!saved || !preset || saved === preset) return saved;
+    var isTunnel = /\.trycloudflare\.com$/i.test(saved.replace(/^https?:\/\//, ""));
+    if (!isTunnel) return saved;
+    relaySave(preset);
+    try { localStorage.setItem(RELAY_PRESET_KEY, preset); } catch (e) {}
+    return preset;
+  }
+
   function relayInit() {
     relayRender();
     var param = "";
@@ -9735,7 +10215,7 @@ window.PokeMoaMap = (function () {
       return;
     }
     var preset = relayNormalize(RELAY_PRESET && RELAY_PRESET.url);
-    var saved = relayNormalize(relaySaved());
+    var saved = relayMigrateSaved();
     var lastPreset = "";
     try {
       lastPreset = relayNormalize(localStorage.getItem(RELAY_PRESET_KEY) || "");
@@ -9765,6 +10245,61 @@ window.PokeMoaMap = (function () {
   if (geoBtn) {
     geoBtn.addEventListener("click", function () {
       if (mapReady) window.PokeMoaMap.locate();
+    });
+  }
+
+  /* 선택 지역 찾기 — 지금 고른 시·도/시·군·구(또는 동네 검색어의 결과)로
+     카카오 매장 검색 + 중계 재고 조회를 바로 실행한다. */
+  var regionBtnTimer = null;
+  function regionFromQuery() {
+    var q = regionSearch ? String(regionSearch.value || "").trim() : "";
+    if (!q) return null;
+    if (suggestItems.length) {
+      var item = suggestItems[suggestActive >= 0 ? suggestActive : 0];
+      if (item) return { suggest: item };
+    }
+    var hits = searchRegions(q);
+    if (hits.length) return { regionId: hits[0].id };
+    return null;
+  }
+
+  if (regionBtn) {
+    regionBtn.addEventListener("click", function () {
+      bp.quiet = false;
+      var target = regionFromQuery();
+      if (!target) {
+        var id = districtSelect && districtSelect.value ? districtSelect.value : (filterState.region || "");
+        if (id && regionById(id)) target = { regionId: id };
+      }
+      if (!target) {
+        toast("시·도와 시·군·구를 고르거나 동네 이름을 입력해 주세요.");
+        return;
+      }
+      regionBtn.classList.add("is-busy");
+      clearTimeout(regionBtnTimer);
+      regionBtnTimer = setTimeout(function () { regionBtn.classList.remove("is-busy"); }, 12000);
+      var name = "";
+      if (target.suggest) {
+        var it = target.suggest;
+        if (it.kind === "place") {
+          name = it.place.name;
+          selectPlace(it.place);
+        } else {
+          name = it.region.name;
+          selectRegion(it.region.id);
+        }
+      } else {
+        var r = regionById(target.regionId);
+        name = r ? (r.name + (r.allow20 ? "" : " (도심 5km까지)")) : "";
+        selectRegion(target.regionId);
+      }
+      if (name) {
+        toast("‘" + name + "’ 반경 " + (filterState.radius / 1000) + "km 매장을 찾습니다.");
+      }
+      trackEvent("region_search_click", {
+        region: target.regionId || "kakao-place",
+        radius_km: filterState.radius / 1000
+      });
     });
   }
 
@@ -10034,6 +10569,26 @@ window.PokeMoaMap = (function () {
   }
 
   /* 첫 화면: 서울 광화문을 기본 선택 (초기 지도 중심 37.5759, 126.9768) */
+  /* 시·도 목록을 data.js 의 regions 순서·표기로 다시 채운다 — HTML 의 option 이
+     빠지거나 겹쳐도 전국 17개 시·도가 한 번씩만 나오게 한다. */
+  function syncProvinceOptions() {
+    if (!provinceSelect) return;
+    var order = [];
+    D.regions.forEach(function (r) {
+      if (r.province && order.indexOf(r.province) < 0) order.push(r.province);
+    });
+    var current = provinceSelect.value;
+    provinceSelect.innerHTML = "";
+    order.forEach(function (p) {
+      var o = document.createElement("option");
+      o.value = p;
+      o.textContent = p;
+      provinceSelect.appendChild(o);
+    });
+    if (order.indexOf(current) >= 0) provinceSelect.value = current;
+  }
+  syncProvinceOptions();
+
   var initialRegion = regionById(filterState.region) || D.regions[0];
   if (initialRegion) {
     if (provinceSelect) provinceSelect.value = initialRegion.province;
@@ -11698,10 +12253,11 @@ window.PokeMoaMap = (function () {
     if (h && h !== currentTab) showTab(h, { keepScroll: true });
   });
 })();
+
 </script>
 <!-- 모아 어드민(moa-kr/moa-admin)이 커밋하는 assets/config/site-config.json 을 화면에 적용합니다.
      공지 바·팝업·탭/섹션 순서와 노출·문구가 이 파일 값으로 바뀝니다. -->
-<script src="assets/js/site-config-loader.js?v=82" defer
+<script src="assets/js/site-config-loader.js" defer
         data-config="assets/config/site-config.json"
         data-tab-container=".main-nav"
         data-banner-host=".site-header"></script>

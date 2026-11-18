@@ -85,7 +85,8 @@ window.PokeMoaMap = (function () {
     metro: false,
     allow20: true,
     relay: null,        /* 집 태블릿 중계에서 받은 실재고 요약 { ok, sources, at, count } */
-    relayAt: ""
+    relayAt: "",
+    started: false      /* 첫 자동 조회를 했는지 — 첫 화면은 진행률 패널을 띄우지 않는다 */
   };
 
   var el = {};
@@ -1079,10 +1080,26 @@ window.PokeMoaMap = (function () {
     return pts;
   }
 
-  /* 격자 조회 → id 중복 제거 → 반경 필터 → 빠진 브랜드는 브랜드별 키워드 1페이지로 보충 */
-  function searchNearby(center, radius) {
-    var reqs = searchPlan(center, radius).map(function (pt) {
-      return categoryPage("CS2", pt, pt.radius, pt.page);
+  /* 격자 조회 → id 중복 제거 → 반경 필터 → 빠진 브랜드는 브랜드별 키워드 1페이지로 보충
+     tick({resolved,total,found}) 은 장소 검색 한 페이지가 끝날 때마다 부른다 —
+     화면의 편의점 4사 진행률(0~40%)이 이 실제 응답 수로 움직인다. */
+  function searchNearby(center, radius, tick) {
+    var plan = searchPlan(center, radius);
+    var total = plan.length;
+    var done = 0;
+    var found = { gs25: 0, cu: 0, seven: 0, emart24: 0 };
+    function step(pg) {
+      done += 1;
+      rowsFrom([pg]).forEach(function (r) {
+        if (found[r.brand] != null) found[r.brand] += 1;
+      });
+      if (tick) tick({ resolved: done, total: total, found: found });
+    }
+    var reqs = plan.map(function (pt) {
+      return categoryPage("CS2", pt, pt.radius, pt.page).then(function (pg) {
+        step(pg);
+        return pg;
+      });
     });
     return Promise.all(reqs).then(function (pages) {
       var anyOk = pages.some(function (p) { return p.ok; });
@@ -1092,7 +1109,13 @@ window.PokeMoaMap = (function () {
         return !rows.some(function (r) { return r.brand === b; });
       });
       if (!missing.length) return rows;
-      var extra = missing.map(function (b) { return keywordPage(BRAND_QUERY[b], center, radius, 1); });
+      total += missing.length;
+      var extra = missing.map(function (b) {
+        return keywordPage(BRAND_QUERY[b], center, radius, 1).then(function (pg) {
+          step(pg);
+          return pg;
+        });
+      });
       return Promise.all(extra).then(function (pages2) {
         var more = rowsFrom(pages2).filter(function (r) {
           return missing.indexOf(r.brand) >= 0 && meters(center, r) <= radius + 1;
@@ -1109,6 +1132,16 @@ window.PokeMoaMap = (function () {
     st.pendingLive = false;
     pushLoading();
     pushData();
+    /* 진행률 패널용 — 첫 자동 조회인지 알려 주고, 조회 시작을 알린다 */
+    var initial = !st.started;
+    st.started = true;
+    emit("pokemoa:search-start", {
+      initial: initial,
+      center: st.center,
+      radius: st.radius,
+      regionId: st.regionId,
+      origin: st.origin
+    });
 
     if (!st.ready) {
       /* 지도가 없으면(SDK 미등록 도메인·차단) 스냅샷으로 조용히 표시한다 */
@@ -1129,7 +1162,10 @@ window.PokeMoaMap = (function () {
     }, SEARCH_TIMEOUT);
 
     /* 편의점 4사(카테고리+키워드 보축) · 오프라인 마트·아트박스 · 공인 카드샵 좌표를 함께 받아 합친다 */
-    var convReq = searchNearby(center, radius);
+    var convReq = searchNearby(center, radius, function (p) {
+      if (seq !== st.seq) return;
+      emit("pokemoa:search-progress", p);
+    });
     var offReq = searchOffline(center, radius).catch(function () { return []; });
     var shopReq = resolveCardShops().catch(function () { return {}; });
 
@@ -1176,6 +1212,15 @@ window.PokeMoaMap = (function () {
       markerCap: st.radius >= 20000 ? MAX_MARKERS_20 : st.radius >= 5000 ? MAX_MARKERS_5 : MAX_MARKERS,
       error: st.lastError,
       late: !!liveNow && st.badgeWasSnapshot
+    });
+    /* 진행률 패널용 — 매장 탐색 단계가 끝났고, 이제 중계 재고 조회 단계로 넘어간다 */
+    emit("pokemoa:search-done", {
+      source: st.source,
+      total: st.all.length,
+      radius: st.radius,
+      regionId: st.regionId,
+      brandCounts: brandCounts(),
+      error: st.lastError
     });
     st.badgeWasSnapshot = st.source === "snapshot";
   }
