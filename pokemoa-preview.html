@@ -9774,9 +9774,9 @@ window.PokeMoaMap = (function () {
   renderBoxPicker();
   renderBoxBoard();
 
-  /* #stores는 「정가 구매처」 탭의 짧은 주소로 같이 받아 줍니다. */
+  /* #stores·#boxStores는 「정가 구매처」 탭의 짧은 주소로 같이 받아 줍니다. */
   function tabOfHash(h) {
-    if (h === "stores") return "home";
+    if (h === "stores" || h === "boxStores") return "home";
     if (h === "cards") return "guide";
     return panels[h] ? h : "";
   }
@@ -9785,6 +9785,12 @@ window.PokeMoaMap = (function () {
   var hashTab = tabOfHash(hash);
   if (hashTab) {
     showTab(hashTab, { keepScroll: true });
+    if (hash === "boxStores") {
+      var boxAnchor = document.getElementById("boxStores");
+      if (boxAnchor && boxAnchor.scrollIntoView) {
+        setTimeout(function () { boxAnchor.scrollIntoView({ block: "start" }); }, 60);
+      }
+    }
   } else {
     /* v2: 첫 화면 = 동네 찾기(실제 지도) */
     showTab("map", { keepScroll: true });
