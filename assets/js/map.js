@@ -944,16 +944,19 @@ window.PokeMoaMap = (function () {
   }
 
   /* 오프라인 판매처(마트·아트박스) 이름 분류 — 이마트24 같은 편의점은 빼고 본다 */
+  /* 오프라인 판매처(마트·아트박스) 이름·업종 분류
+     · 이마트24 같은 편의점, 이마트에브리데이·노브랜드·익스프레스, 주차장은 뺀다
+     · 대형마트는 카카오 업종이 '대형마트'이면서 체인명으로 시작하는 매장만 (매장 안 문화센터·임점 매장 제외) */
   function classifyOffline(p, brandHint) {
     var n = String(p.place_name || "");
     var cat = String(p.category_name || "");
     if (/이마트\s*24|emart\s*24/i.test(n)) return null;
-    /* 편의점·아울렛·주차장·기타 계열점(에브리데이·노브랜드·익스프레스)은 대형마트 정가 판매처로 보지 않는다 */
-    if (/에브리데이|노브랜드|익스프레스|주차장|편의점/.test(n)) return null;
-    if (/주차|편의점/.test(cat)) return null;
-    if (brandHint === "artbox" || /아트박스|artbox/i.test(n)) return "artbox";
-    /* 매장 안 임점(點) 매장(예: '바디튠 역삼이마트점')을 걸러내려면 이름이 체인명으로 시작해야 한다 */
-    if (/^(이마트|롯데마트|홈플러스|토이저러스)/.test(n)) return "mart";
+    if (/편의점/.test(cat)) return null;
+    if (/에브리데이|노브랜드|익스프레스|주차장/.test(n)) return null;
+    if (/주차/.test(cat)) return null;
+    if (/아트박스|artbox/i.test(n)) return "artbox";
+    if (brandHint === "artbox") return null;
+    if (/대형마트/.test(cat) && /^(이마트|롯데마트|홈플러스|토이저러스)/.test(n)) return "mart";
     return null;
   }
 
