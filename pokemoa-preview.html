@@ -9562,7 +9562,6 @@ window.PokeMoaMap = (function () {
   }
 
   function bpRelayStart(manual) {
-    if (manual) { bp.quiet = false; bpShow(true); }
     if (bp.stage === 1) return;       /* 아직 매장 탐색 중 — search-done 이 이어받는다 */
     if (bp.stage === 0) {
       bp.searchDone = true;
@@ -9576,6 +9575,8 @@ window.PokeMoaMap = (function () {
       if (!BP_RELAY[id]) return;
       bpSet(id, 40, "재고 조회 중", "run");
     });
+    /* 완료되어 접혀 있던 패널도 새로고침에서는 다시 펼쳐 보여 준다 */
+    if (manual) { bp.quiet = false; bpShow(true); }
     bpStartTicker();
   }
 
