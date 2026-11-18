@@ -3502,3 +3502,23 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
 @media (min-width: 680px) and (max-width: 729px) {
   .header-actions .btn-sm { display: none; }
 }
+
+/* =========================================================================
+   v4.9.2 매장별 보유 카드 목록 — 모바일은 내부 스크롤 없이 페이지 스크롤에 합류
+   (데스크톱 2열은 기존처럼 목록만 스크롤)
+   ========================================================================= */
+@media (max-width: 979px) {
+  .store-list {
+    max-height: none;
+    overflow-y: visible;
+    padding-bottom: 12px;
+  }
+  .map-side .store-list { flex: 0 0 auto; }
+  .store-more {
+    white-space: normal;
+    line-height: 1.45;
+    padding: 12px 10px;
+    font-size: 12.5px;
+  }
+  .store-more-wrap { padding: 2px 8px 12px; }
+}

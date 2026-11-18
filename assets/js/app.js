@@ -115,8 +115,14 @@
   var mapReady = false;
   var gotFirstData = false;
   var isLoadingMap = true;
-  var LIST_PAGE = 10;
-  var listExpanded = false;
+  /* 매장 목록 노출: 모바일은 처음 3곳 + 더보기 5곳씩, 980px 이상 2열에서는 10곳부터.
+     필터·지역·반경이 바뀌면 처음 값으로 돌아갑니다. */
+  var LIST_START = 3;
+  var LIST_STEP = 5;
+  var LIST_START_WIDE = 10;
+  var visibleCount = LIST_START;
+  function listStartCount() { return window.innerWidth >= 980 ? LIST_START_WIDE : LIST_START; }
+  function resetStoreList() { visibleCount = listStartCount(); }
   var currentStores = [];
   var filterState = {
     region: "pohang-north",
@@ -244,7 +250,10 @@
       return;
     }
 
-    var shown = listExpanded ? list : list.slice(0, LIST_PAGE);
+    var start = listStartCount();
+    if (visibleCount < start) visibleCount = start;
+    if (visibleCount > list.length) visibleCount = list.length;
+    var shown = list.slice(0, visibleCount);
     var selectedId = (window.PokeMoaMap && window.PokeMoaMap.getState) ? window.PokeMoaMap.getState().selectedId : null;
 
     shown.forEach(function (s) {
@@ -289,29 +298,56 @@
     syncMoreButton(list.length);
   }
 
-  /* 더보기 버튼 (목록 스크롤 밖에 고정) */
+  /* 더보기 버튼 — 한 번에 5곳씩 더 보여 주고, 남은 수를 함께 적는다.
+     모두 펼치면 '처음 N곳만 보기'로 접을 수 있다. */
   function syncMoreButton(total) {
     var wrap = $("#storeMoreWrap");
     var more = $("#storeMore");
     if (!wrap || !more) return;
-    if (total <= LIST_PAGE) {
+    var start = listStartCount();
+    if (total <= start) {
       wrap.hidden = true;
       return;
     }
     wrap.hidden = false;
-    more.setAttribute("aria-expanded", listExpanded ? "true" : "false");
-    more.textContent = listExpanded
-      ? "접기 (처음 " + LIST_PAGE + "곳만 보기)"
-      : "더보기 (" + (total - LIST_PAGE) + "개 더 보기)";
+    var remaining = Math.max(0, total - visibleCount);
+    if (remaining > 0) {
+      var step = Math.min(LIST_STEP, remaining);
+      more.setAttribute("aria-expanded", "false");
+      more.textContent = "매장 더보기 (" + step + "곳 더 보기 · " + remaining + "곳 남음)";
+    } else {
+      more.setAttribute("aria-expanded", "true");
+      more.textContent = "접기 (처음 " + start + "곳만 보기)";
+    }
     if (!more.dataset.bound) {
       more.dataset.bound = "1";
       more.addEventListener("click", function () {
-        listExpanded = !listExpanded;
-        drawStoreList();
-        if (!listExpanded && storeListEl) storeListEl.scrollTop = 0;
+        var total2 = sortStores(currentStores).length;
+        if (visibleCount >= total2) {
+          visibleCount = listStartCount();
+          drawStoreList();
+          if (storeListEl) {
+            var anchor = storeListEl.closest(".map-side") || storeListEl;
+            if (anchor && anchor.scrollIntoView) anchor.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        } else {
+          visibleCount = Math.min(total2, visibleCount + LIST_STEP);
+          drawStoreList();
+        }
+        trackEvent("store_list_more", { visible: visibleCount, total: total2 });
       });
     }
   }
+
+  /* 980px 경계를 넘나들면 처음 노출 수를 다시 맞춘다 */
+  var lastWideLayout = window.innerWidth >= 980;
+  window.addEventListener("resize", function () {
+    var wide = window.innerWidth >= 980;
+    if (wide === lastWideLayout) return;
+    lastWideLayout = wide;
+    resetStoreList();
+    drawStoreList();
+  });
 
   document.addEventListener("pokemoa:loading", function (e) { renderLoading(e.detail); });
 
@@ -712,7 +748,7 @@
     if (!r) return;
     filterState.region = r.id;
     gotFirstData = false;
-    listExpanded = false;
+    resetStoreList();
     if (storeSkeleton) storeSkeleton.hidden = false;
     if (storeListEl) storeListEl.hidden = true;
     if (mapReady) window.PokeMoaMap.setRegion(r.id);
@@ -866,7 +902,7 @@
     if (!p) return;
     filterState.region = "";
     gotFirstData = false;
-    listExpanded = false;
+    resetStoreList();
     if (storeSkeleton) storeSkeleton.hidden = false;
     if (storeListEl) storeListEl.hidden = true;
     if (regionSearch) regionSearch.value = p.name;
@@ -1003,7 +1039,7 @@
       if (!next) return;
       if (next === filterState.brand) next = "all";
       filterState.brand = next;
-      listExpanded = false;
+      resetStoreList();
       if (mapReady) window.PokeMoaMap.setBrand(next);
       else renderOfflineChips(null, next, filterState.showOffline);
     });
@@ -1012,7 +1048,7 @@
   if (offlineToggle) {
     offlineToggle.addEventListener("change", function () {
       filterState.showOffline = offlineToggle.checked;
-      listExpanded = false;
+      resetStoreList();
       if (mapReady) window.PokeMoaMap.setShowOffline(filterState.showOffline);
       toast(filterState.showOffline ? "오프라인 판매처(마트·아트박스·자판기·카드샵)를 함께 표시합니다." : "오프라인 판매처를 지도·목록에서 숨겼습니다.");
     });
@@ -1026,7 +1062,7 @@
       if (!next) return;
       if (next !== "all" && next === filterState.brand) next = "all";
       filterState.brand = next;
-      listExpanded = false;
+      resetStoreList();
       if (mapReady) window.PokeMoaMap.setBrand(next);
     });
   }
@@ -1035,7 +1071,7 @@
     sortSelect.value = filterState.sort;
     sortSelect.addEventListener("change", function () {
       filterState.sort = sortSelect.value;
-      listExpanded = false;
+      resetStoreList();
       drawStoreList();
     });
   }
@@ -1043,7 +1079,7 @@
   if (stockToggle) {
     stockToggle.addEventListener("change", function () {
       filterState.stockOnly = stockToggle.checked;
-      listExpanded = false;
+      resetStoreList();
       if (mapReady) window.PokeMoaMap.setStockOnly(filterState.stockOnly);
       toast(stockToggle.checked ? "재고 있는 매장만 보여 드립니다." : "확인 필요·없음 매장도 함께 표시합니다.");
     });
@@ -1054,7 +1090,7 @@
       $$(".radius-btn").forEach(function (b) { b.classList.remove("is-active"); });
       btn.classList.add("is-active");
       filterState.radius = Number(btn.getAttribute("data-radius"));
-      listExpanded = false;
+      resetStoreList();
       if (mapReady) window.PokeMoaMap.setRadius(filterState.radius);
       var r = regionById(filterState.region);
       trackEvent("region_search", {
@@ -1073,7 +1109,7 @@
       filterState.stockOnly = false;
       filterState.showOffline = true;
       filterState.radius = 3000;
-      listExpanded = false;
+      resetStoreList();
       if (sortSelect) sortSelect.value = "stock";
       if (stockToggle) stockToggle.checked = false;
       $$(".radius-btn").forEach(function (b) {
