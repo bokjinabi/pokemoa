@@ -1257,8 +1257,8 @@ window.PokeMoaMap = (function () {
      lat, lng, distanceM, status, items:[{name,qty,code}], updatedAt }] } 로 준다.
      이 값은 실제 재고이므로 같은 자리의 지도 매장이 있으면 그 매장 카드에 얹고,
      없으면 그 점포를 새로 그린다. 응답이 끊기면 「미조회」로 되돌린다. */
-  var RELAY_ORDER = ["emart24", "cu", "seven"];
-  var RELAY_LABEL = { emart24: "이마트24", cu: "CU", seven: "세븐일레븐" };
+  var RELAY_ORDER = ["gs25", "emart24", "cu", "seven"];
+  var RELAY_LABEL = { gs25: "GS25", emart24: "이마트24", cu: "CU", seven: "세븐일레븐" };
 
   function relayTimeLabel(iso) {
     var d = iso ? new Date(iso) : new Date();

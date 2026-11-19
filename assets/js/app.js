@@ -199,7 +199,9 @@
   var bpToggleEl = $("#bpToggle");
   var bpTitleEl = $("#bpTitle");
   var BP_BRANDS = ["gs25", "cu", "seven", "emart24"];
-  var BP_RELAY = { cu: 1, seven: 1, emart24: 1 };   /* GS25는 재고 조회 대상이 아니다 */
+  /* 네 브랜드 모두 중계가 수량을 돌려준다. GS25만 우리동네GS 로그인 세션이 있어야 숫자가 오고,
+     세션이 없으면 중계가 「GS25 로그인 세션 필요」로 답한다(그때는 매장 위치만 보인다). */
+  var BP_RELAY = { gs25: 1, cu: 1, seven: 1, emart24: 1 };
   var bp = {
     rows: {},
     stage: 0,        /* 0 대기 · 1 매장 탐색 · 2 재고 조회 · 3 완료 */
@@ -395,7 +397,14 @@
         var n = row.stores;
         if (!n && isFinite(Number(s.count))) n = Number(s.count);
         if (!n) {
-          bpSet(id, 100, "조회 완료 · 0곳 확인", "done");
+          var why = String(s.note || "");
+          if (/GS25|로그인 세션|GS25_ACCESS_TOKEN/.test(why)) {
+            bpSet(id, 100, "로그인 연동 전 · 매장 위치만", "off");
+          } else if (/차단|403/.test(why)) {
+            bpSet(id, 100, "일시 차단 · 매장 위치만", "off");
+          } else {
+            bpSet(id, 100, "조회 완료 · 0곳 확인", "done");
+          }
           return;
         }
         bpSet(id, 100, "조회 완료 · " + n + "곳 확인(재고 " + row.qty + ")", "done");
@@ -411,7 +420,6 @@
     if (bp.stage === 0) {
       bp.searchDone = true;
       bp.sourceLabel = "재고 새로고침";
-      bpSet("gs25", 100, "미연동 · 매장 위치만", "off");
     }
     bp.stage = 2;
     if (bpEl) bpEl.setAttribute("data-state", "running");
@@ -483,8 +491,6 @@
     }
     bp.sourceLabel = "실시간 조회 완료";
     bp.stage = 2;
-    /* GS25는 재고 조회 대상이 아니다 — 매장 위치만 확인하고 끝난다 */
-    bpSet("gs25", 100, "미연동 · 매장 위치만", "off");
     var rs = relayStateNow();
     if (rs === "online" || rs === "checking") {
       BP_BRANDS.forEach(function (id) {

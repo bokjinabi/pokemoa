@@ -24,7 +24,12 @@
  *   RELAY_CACHE_MS           같은 좌표 응답 캐시 (기본 60000, 0이면 끔)
  *   EMART24_BASE / CU_BASE / SEVEN_BASE   업체 주소가 바뀌었을 때 덮어쓰기
  *   EMART24_COOKIE           이마트24 웹뷰 세션 쿠키(있으면 그대로 사용)
- *   CU_COOKIE                포켓CU 로그인 세션 쿠키(있으면 매장별 수량까지 시도)
+ *   CU_COOKIE                포켓CU 쿠키(지금은 없어도 매장별 수량이 내려옵니다 — 예전 호환용)
+ *   GS25_ACCESS_TOKEN        우리동네GS 로그인 access 토큰(재고 조회에 필요)
+ *   GS25_REFRESH_TOKEN       우리동네GS refresh 토큰(있으면 만료 시 자동 갱신)
+ *   GS25_SESSION_FILE        위 두 토큰·deviceId 를 담은 세션 파일 경로(0600) — 있으면 이 파일을 씁니다
+ *   GS25_DEVICE_ID           세션을 만들 때 쓴 기기 ID(파일에 없을 때만)
+ *   GS25_RADIUS              GS25 재고 조회 반경(m, 기본 1000 · 앱 기본값과 같게)
  *   SEVEN_AREA               세븐일레븐 점포 검색에 쓸 지역명(예: "포항" — 시/군 이름 하나가 잘 걸립니다)
  *   SEVEN_ITEM_CDS           세븐일레븐에 물어볼 상품 바코드(쉼표 구분, 없으면 자동)
  *   EMART24_AREA             이마트24 공개 매장 API 에 넣을 지역명(비우면 좌표를 주소로 바꿔 자동)
@@ -70,6 +75,23 @@
  *   · 세븐일레븐 지역명도 같은 역지오코딩 결과를 먼저 씁니다(CU 점포 목록이 비어도 동작).
  *   · `GET /api/emart24`, `GET /api/geo` 진단 경로 추가.
  *
+ * 2026-11-19 개정(v1.6) — GS25 연동 + CU 매장별 수량 개통
+ *   · CU: 앱 점포 조회 `POST /api/store` 에 `jipCd`(상품코드)·`recommendId:"stock"` 을 넣어야
+ *     `storeList[].stock` 에 매장별 수량이 실려 옵니다(태블릿 밖에서 실측 확인: 같은 조건에서
+ *     이 두 값이 없으면 stock=null, 넣으면 '0'·'12' 같은 실제 수량). 로그인 쿠키는 필요 없습니다.
+ *     그래서 이제 CU도 상품별로 점포 수량을 모두 물어 「없음/미조회」를 구분합니다.
+ *   · GS25: 상품은 공개 검색 `POST https://b2c-apigw.woodongs.com/search/v3/totalSearch`
+ *     (본문 {"query":"…"}, 인증 없음)로 찾고, 매장별 수량은 우리동네GS 앱이 쓰는
+ *     `GET https://b2c-bff.woodongs.com/api/bff/v2/store/stock?…&itemCode=바코드&…` 에
+ *     정상 네이버 로그인으로 받은 `Authorization: Bearer <GS 토큰>` + `appinfo_*` 헤더를
+ *     붙여 받습니다. 토큰이 없으면 401 `인증키가 제공되지 않음` 이므로, 세션이 없을 때는
+ *     오류 대신 sources.gs25 = { ok:true, count:0, note:"GS25 로그인 세션(GS25_ACCESS_TOKEN) 필요" }
+ *     로 조용히 알립니다.
+ *   · 토큰 만료 1분 전이거나 재고가 401/403이면 `POST /api/bff/v4/auth/tokenReissue`
+ *     (헤더 `Refresh: <refresh 토큰>`, 본문 없음)로 한 번 갱신하고 재시도합니다.
+ *     `GS25_SESSION_FILE` 을 주면 회전된 두 토큰을 같은 파일에 0600으로 되씁니다.
+ *   · 새 진단 경로 `GET /api/gs25?...` — 상품 검색·세션 상태·매장별 수량을 한 번에 보여 줍니다.
+ *
  * 2026-11-18 개정(v1.3) — 세븐일레븐 재고 경로
  *   · 점포 검색은 v1.2에서 정상 동작(태블릿 실측: 포항 84건·반경 3km 17곳)하지만
  *     재고 경로가 403 `Access Denied: Invalid Access Token or Agent Information` 로 막힙니다.
@@ -84,8 +106,9 @@
 
 const http = require('node:http');
 const crypto = require('node:crypto');
+const fs = require('node:fs');
 
-const VERSION = '1.5';
+const VERSION = '1.6';
 const SERVICE = 'pokemoa-relay';
 
 const PORT = Number(process.env.PORT || 3100);
@@ -97,7 +120,9 @@ const BASE = {
   emart24: process.env.EMART24_BASE || 'https://everse.emart24.co.kr',
   emart24Open: process.env.EMART24_OPEN_BASE || 'https://emart24.co.kr',
   cu: process.env.CU_BASE || 'https://www.pocketcu.co.kr',
-  seven: process.env.SEVEN_BASE || 'https://new.7-elevenapp.co.kr'
+  seven: process.env.SEVEN_BASE || 'https://new.7-elevenapp.co.kr',
+  gs25Bff: (process.env.GS25_BFF_BASE || 'https://b2c-bff.woodongs.com').replace(/\/+$/, ''),
+  gs25Apigw: (process.env.GS25_APIGW_BASE || 'https://b2c-apigw.woodongs.com').replace(/\/+$/, '')
 };
 
 const DEFAULT_LAT = 36.0733;   // 포항 북구 환호동
@@ -106,6 +131,8 @@ const DEFAULT_KEYWORD = '포켓몬카드';
 const DEFAULT_RADIUS = 3000;   // m — 사이트가 ?radius= 로 덮어쓸 수 있다
 
 const MAX_PRODUCTS = 5;        // 체인당 재고를 물어볼 상품 수 (요청 예산 보호)
+const GS25_MAX_ITEMS = Number(process.env.GS25_MAX_ITEMS || 3);   // GS25는 상품 1개당 요청 1번
+const GS25_RADIUS = Number(process.env.GS25_RADIUS || 1000);       // m — 우리동네GS 앱 기본 반경
 const GEO_TTL_MS = 6 * 3600e3; // 좌표→주소 캐시 (같은 동네를 다시 물을 때 외부 호출을 아낀다)
 const MAX_STORES = 40;         // 응답에 담는 점포 수
 const SEVEN_STORE_LIMIT = 8;   // 세븐일레븐은 점포 1곳당 요청 1번이라 더 좁게
@@ -229,6 +256,28 @@ function plainBrief(text) {
     .slice(0, 90);
 }
 
+/** 응답 본문에 섞여 오는 토큰(JWT·Bearer·Refresh 값)을 로그·진단에서 가린다.
+    GS25 갱신 실패 응답은 `reqParams.Refresh` 에 refresh 토큰 일부를 되돌려 준다. */
+function redactSecrets(text) {
+  return String(text || '')
+    .replace(/eyJ[A-Za-z0-9_-]{4,}\.[A-Za-z0-9_-]{4,}\.[A-Za-z0-9_-]*/g, 'eyJ…<가림>')
+    .replace(
+      /("(?:Refresh|refresh|refreshToken|accessToken|token|authorization|Authorization)"\s*:\s*")[^"]*(")/g,
+      '$1<가림>$2'
+    )
+    .replace(/(Bearer\s+)[A-Za-z0-9._-]+/gi, '$1<가림>');
+}
+
+/** 오류 메시지용 한 줄본문 — 토큰을 먼저 가린 뒤 줄인다(가림 전에 잘리면 값이 남는다). */
+function briefOf(text) {
+  const flat = String(text || '')
+    .replace(/<(style|script)[\s\S]*?<\/\1>/gi, ' ')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return redactSecrets(flat).slice(0, 90);
+}
+
 /**
  * 업체 응답은 HTML 오류 페이지(403 등)일 수 있으므로 본문을 먼저 확인한다.
  * diag를 넘기면 마지막 응답 상태·본문 머리를 그 object에 남긴다.
@@ -242,6 +291,10 @@ async function request(url, init, label, jar, diag) {
   const opts = Object.assign({}, init, { headers });
   delete opts.tms;
   const res = await fetch(url, Object.assign({ signal: AbortSignal.timeout(tms) }, opts));
+  if (process.env.RELAY_DEBUG_HTTP) {
+    console.log('[http]', label, res.status, url.slice(0, 150), '| server=' + (res.headers.get('server') || ''), '| cf=' + (res.headers.get('x-amz-cf-id') || ''));
+    if (!res.ok && process.env.RELAY_DEBUG_HTTP === '2') console.log('[http-headers]', JSON.stringify([...res.headers]));
+  }
   jarRemember(jar, res);
   const text = await res.text();
   if (diag) {
@@ -250,11 +303,11 @@ async function request(url, init, label, jar, diag) {
       url: url.replace(/\?.*$/, ''),
       status: res.status,
       bytes: text.length,
-      head: text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120)
+      head: redactSecrets(text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()).slice(0, 120)
     });
   }
   if (!res.ok) {
-    const brief = plainBrief(text);
+    const brief = briefOf(text);
     const err = new Error(`${label} HTTP ${res.status}${brief ? ' · ' + brief : ''}`);
     err.upstreamStatus = res.status;
     throw err;
@@ -263,7 +316,7 @@ async function request(url, init, label, jar, diag) {
   try {
     return JSON.parse(text);
   } catch (err) {
-    const brief = plainBrief(text);
+    const brief = briefOf(text);
     const e = new Error(`${label} JSON 아님${brief ? ' · ' + brief : ''}`);
     e.upstreamStatus = res.status;
     throw e;
@@ -796,7 +849,9 @@ function emart24Queries(ctx) {
 /* --------------------------------------------------------------- CU */
 /* 앱 웹뷰 API: 재고 검색 POST /api/search/rest/stock/main,
    좌표 기반 점포 POST /api/store. 앱 식별자(BGFCU) User-Agent가 있어야 응답한다.
-   매장별 수량(storeList[].stock)은 로그인 세션에서만 채워지므로, 없으면 0으로 바꾸지 않는다. */
+   매장별 수량(storeList[].stock)은 `jipCd`(상품코드) + `recommendId:"stock"` 을 함께 넣어야
+   내려온다. 이 두 값이 없으면 stock 은 null(미확인)이고, 넣으면 취급 점포마다 '0'·'12' 처럼
+   실제 수량이 온다. 로그인 쿠키(CU_COOKIE)는 필요하지 않다 — 2026-11-19 실측. */
 
 const CU_UA =
   'Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/138.0.0.0 Mobile Safari/537.36;BGFCU';
@@ -872,12 +927,12 @@ async function cuStoresForItem(lat, lng, item, diag) {
     baseLatVal: String(lat),
     baseLongVal: String(lng),
     items: '',
-    jipCd: '',
+    jipCd: item.code,
     voucher_cd: '',
     exPin: '',
     custId: '',
     isRecommend: 'Y',
-    recommendId: '',
+    recommendId: 'stock',
     cateTyp: '',
     pageType: 'search_improve stock_sch_improve',
     item_cd: item.code,
@@ -941,9 +996,9 @@ async function collectCu(lat, lng, keyword, diag) {
   const products = await cuSearch(keyword, diag);
   if (!products.length) return { stores: [], products: [], note: '카드 상품 검색 0건' };
 
-  /* 비로그인 응답에는 수량이 없으므로, 세션 쿠키가 없을 때는 점포 목록을 한 번만 받아
-     지역명·점포 힌트로만 쓴다(체인 요청 예산 절약). CU_COOKIE가 있으면 상품별로 모두 묻는다. */
-  const targets = process.env.CU_COOKIE ? products : products.slice(0, 1);
+  /* 매장별 수량은 로그인 없이도 내려오므로(jipCd + recommendId:"stock") 카드 상품을 모두 물어
+     「0으로 확인된 점포」와 「수량 미확인 점포」를 나눈다. */
+  const targets = products.slice(0, MAX_PRODUCTS);
   const lists = await mapLimit(targets, 5, async (item) => {
     try {
       return await cuStoresForItem(lat, lng, item, diag);
@@ -970,8 +1025,8 @@ async function collectCu(lat, lng, keyword, diag) {
   const stores = Array.from(byStore.values()).map((s) => Object.assign(s, { brand: 'cu' }));
   const note = withQty
     ? ''
-    : 'CU는 앱 로그인 세션에서만 매장별 수량을 내려줍니다(비로그인 응답 stock=null). ' +
-      '상품은 ' + products.length + '종 확인. CU_COOKIE를 넣으면 수량까지 조회합니다.';
+    : 'CU 점포는 찾았지만 매장별 수량이 비어 있습니다(상품 ' + products.length + '종 확인). ' +
+      '잠시 뒤 다시 조회하거나 매장에 확인해 주세요.';
   return { stores, products, hints, note };
 }
 
@@ -1344,6 +1399,402 @@ async function collectSeven(lat, lng, ctx, diag) {
   return { stores: out, products: metas, queries: report, note };
 }
 
+/* ------------------------------------------------------------- GS25 */
+/* 우리동네GS 앱이 재고를 볼 때 쓰는 두 경로.
+
+   ① 상품 찾기(인증 없음)  POST https://b2c-apigw.woodongs.com/search/v3/totalSearch
+                            본문 {"query":"포켓몬카드"}
+        → SearchQueryResult.Collection[] 중 `offlineItem` 에 편의점 판매 상품이 옵니다
+          (field.itemCode=바코드, itemName="포켓몬카드)닌자스피너", sellPrice).
+   ② 매장별 수량(로그인 필요) GET https://b2c-bff.woodongs.com/api/bff/v2/store/stock
+        serviceCode=01, realTimeStockYn=Y, itemCode=바코드,
+        myPosition/centerPosition X·Y 좌표, radiusCondition(앱 기본 1000m), pickupStoreYn=N …
+        헤더 Authorization: Bearer <GS access 토큰> + appinfo_* + request_id
+        → { stores:[ { storeCode, storeName, storeAddress, storeX/YCoordination,
+                       realStockQuantity, searchItemName, searchItemSellPrice, … } ] }
+        토큰이 없거나 만료면 401 { "인증키가 제공되지 않음" }.
+   ③ 토큰 갱신           POST https://b2c-bff.woodongs.com/api/bff/v4/auth/tokenReissue
+        헤더 `Refresh: <refresh 토큰>` + 같은 appinfo_*, 본문 없음
+        → { resultCode:"0000", data:{ access, refresh } } (두 토큰이 함께 교체된다)
+
+   토큰은 정상 네이버 로그인으로 받은 GS 토큰입니다(네이버 토큰을 그대로 쓰는 것이 아님).
+   발급 절차는 relay/GS25-로그인-안내.md 에 적어 두었습니다. */
+
+const GS25_APP = {
+  version: process.env.GS25_APP_VERSION || '5.3.61',
+  build: process.env.GS25_APP_BUILD || '2132',
+  model: process.env.GS25_APP_MODEL || 'sdk_gphone64_arm64',
+  os: process.env.GS25_APP_OS || '14'
+};
+
+const gs25Session = {
+  loaded: false,
+  access: '',
+  refresh: '',
+  deviceId: '',
+  accessExp: 0,
+  refreshExp: 0,
+  source: '',           // 'file' | 'env' | ''
+  revoked: false,
+  lastError: '',
+  refreshing: null,
+  refreshedAt: 0
+};
+
+/** JWT의 exp(ms). 형식이 아니면 0 — 서명 검증은 하지 않는다(GS 응답이 최종 판정). */
+function jwtExpMs(token) {
+  try {
+    const part = String(token || '').split('.')[1];
+    if (!part) return 0;
+    const json = Buffer.from(part.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8');
+    const exp = Number(JSON.parse(json).exp);
+    return Number.isFinite(exp) && exp > 0 ? exp * 1000 : 0;
+  } catch (err) {
+    return 0;
+  }
+}
+
+function gs25ApplySession(access, refresh, deviceId, source) {
+  gs25Session.access = String(access || '').replace(/^Bearer\s+/i, '').trim();
+  gs25Session.refresh = String(refresh || '').replace(/^Bearer\s+/i, '').trim();
+  gs25Session.deviceId = String(deviceId || '').trim() || gs25Session.deviceId || crypto.randomUUID();
+  gs25Session.accessExp = jwtExpMs(gs25Session.access);
+  gs25Session.refreshExp = jwtExpMs(gs25Session.refresh);
+  gs25Session.source = source;
+  gs25Session.revoked = false;
+}
+
+function gs25Load() {
+  if (gs25Session.loaded) return gs25Session;
+  gs25Session.loaded = true;
+  const file = String(process.env.GS25_SESSION_FILE || '').trim();
+  if (file) {
+    try {
+      const raw = fs.readFileSync(file, 'utf8');
+      const data = JSON.parse(raw);
+      if (data && (data.accessToken || data.access) && (data.refreshToken || data.refresh)) {
+        gs25ApplySession(
+          data.accessToken || data.access,
+          data.refreshToken || data.refresh,
+          data.deviceId,
+          'file'
+        );
+        return gs25Session;
+      }
+    } catch (err) {
+      /* 파일이 없거나 깨졌으면 환경 변수로 넘어간다 */
+    }
+  }
+  if (process.env.GS25_ACCESS_TOKEN) {
+    gs25ApplySession(
+      process.env.GS25_ACCESS_TOKEN,
+      process.env.GS25_REFRESH_TOKEN || '',
+      process.env.GS25_DEVICE_ID || '',
+      'env'
+    );
+  }
+  return gs25Session;
+}
+
+/** 회전된 토큰을 세션 파일에 다시 쓴다(같은 폴더 임시 파일 → rename, 0600). */
+function gs25SaveSession() {
+  const file = String(process.env.GS25_SESSION_FILE || '').trim();
+  if (!file || gs25Session.source !== 'file') return;
+  const body = JSON.stringify({
+    accessToken: gs25Session.access,
+    refreshToken: gs25Session.refresh,
+    deviceId: gs25Session.deviceId
+  });
+  const tmp = file + '.' + process.pid + '.tmp';
+  try {
+    fs.writeFileSync(tmp, body, { mode: 0o600 });
+    fs.renameSync(tmp, file);
+  } catch (err) {
+    try {
+      fs.unlinkSync(tmp);
+    } catch (e2) {
+      /* 무시 */
+    }
+    console.error('[gs25] 세션 파일 저장 실패:', (err && err.message) || err);
+  }
+}
+
+function gs25Headers(extra) {
+  const s = gs25Session;
+  return Object.assign(
+    {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      'user-agent': `woodongs-app/${GS25_APP.version} (Android; ${GS25_APP.os}; ${GS25_APP.model})`,
+      'accept-language': 'ko-KR,ko;q=0.9',
+      request_id: crypto.randomUUID(),
+      appinfo_device_id: s.deviceId || crypto.randomUUID(),
+      appinfo_model_name: GS25_APP.model,
+      appinfo_os_version: GS25_APP.os,
+      appinfo_app_version: GS25_APP.version,
+      appinfo_app_build_number: GS25_APP.build,
+      appinfo_os_type: 'android'
+    },
+    extra || {}
+  );
+}
+
+/** access가 만료(1분 여유)됐거나 force면 refresh로 한 번 갱신한다. 동시 갱신은 하나로 합친다. */
+async function gs25Ready(force, diag) {
+  gs25Load();
+  if (!gs25Session.access) {
+    throw new Error('GS25 로그인 세션(GS25_ACCESS_TOKEN) 필요');
+  }
+  const fresh = gs25Session.accessExp && gs25Session.accessExp - Date.now() > 60000;
+  if (!force && fresh) return gs25Session;
+  if (gs25Session.revoked) throw new Error('GS25 토큰이 거절됐습니다 — 다시 로그인해 주세요');
+  if (!gs25Session.refresh) {
+    if (fresh) return gs25Session;
+    throw new Error('GS25 access 토큰이 만료됐고 refresh 토큰이 없습니다 — 다시 로그인해 주세요');
+  }
+  if (gs25Session.refreshing) return gs25Session.refreshing;
+
+  gs25Session.refreshing = (async () => {
+    let body;
+    try {
+      body = await request(
+        BASE.gs25Bff + '/api/bff/v4/auth/tokenReissue',
+        { method: 'POST', headers: gs25Headers({ Refresh: gs25Session.refresh }) },
+        'GS25 토큰 갱신',
+        null,
+        diag
+      );
+    } catch (err) {
+      if (err && (err.upstreamStatus === 401 || err.upstreamStatus === 403)) {
+        gs25Session.revoked = true;
+        gs25Session.lastError = 'refresh 토큰이 거절됐습니다';
+        throw new Error('GS25 로그인 세션이 만료됐습니다 — 다시 로그인해 세션을 발급해 주세요');
+      }
+      throw err;
+    }
+    const data = (body && body.data) || {};
+    if (!body || body.resultCode !== '0000' || !data.access || !data.refresh) {
+      gs25Session.revoked = true;
+      gs25Session.lastError = 'resultCode=' + ((body && body.resultCode) || '?');
+      throw new Error('GS25 토큰 갱신 응답이 올바르지 않습니다');
+    }
+    gs25ApplySession(data.access, data.refresh, gs25Session.deviceId, gs25Session.source);
+    gs25Session.refreshedAt = Date.now();
+    gs25SaveSession();
+    return gs25Session;
+  })()
+    .catch((err) => {
+      gs25Session.lastError = ((err && err.message) || String(err)).slice(0, 160);
+      throw err;
+    })
+    .finally(() => {
+      gs25Session.refreshing = null;
+    });
+  return gs25Session.refreshing;
+}
+
+/** ① 상품 검색 — 인증 없이 열려 있다. 편의점 판매 카드 상품만 추린다. */
+async function gs25Search(keyword, diag) {
+  const body = await request(
+    BASE.gs25Apigw + '/search/v3/totalSearch',
+    {
+      method: 'POST',
+      headers: {
+        accept: 'application/json, text/plain, */*',
+        'content-type': 'application/json',
+        'accept-language': 'ko-KR,ko;q=0.9',
+        origin: 'https://woodongs.com',
+        referer: 'https://woodongs.com/',
+        'user-agent':
+          'Mozilla/5.0 (Linux; Android 15; SM-S928N) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/124.0 Mobile Safari/537.36'
+      },
+      body: JSON.stringify({ query: keyword })
+    },
+    'GS25 상품 검색',
+    null,
+    diag
+  );
+
+  const collections = (body && body.SearchQueryResult && body.SearchQueryResult.Collection) || [];
+  const rows = [];
+  for (const col of collections) {
+    const docs = (col && col.Documentset && col.Documentset.Document) || [];
+    for (const doc of docs) {
+      const f = doc && doc.field;
+      if (!f || !f.itemCode) continue;
+      const name = String(f.itemName || f.itemNameSp || f.indItemNm || '').trim();
+      if (!name) continue;
+      rows.push({
+        code: String(f.itemCode),
+        name,
+        price: num(f.sellPrice, null),
+        collection: String(col.CollectionId || ''),
+        stockCheck: String(f.stockCheckYn || '').toUpperCase() === 'Y'
+      });
+    }
+  }
+
+  /* 편의점에서 파는 포켓몬 카드만 — 교통카드(이즐·캐시비)·문구 콜라보는 뺀다. */
+  const cards = rows.filter(
+    (r) =>
+      !/이즐|교통카드|캐시비|빼빼로|과자|음료|우유|아이스크림|젤리|초콜릿/.test(r.name) &&
+      (/포켓몬\s*카드|포켓몬.*카드/i.test(r.name) || looksLikeCard(r.name))
+  );
+
+  /* 30주년 상품 → 포켓몬카드) 라인 → 나머지 순으로 앞세운다(앞의 것부터 재고를 묻는다). */
+  const rank = (r) => (/(30\s*주년|celebration)/i.test(r.name) ? 0 : /^포켓몬\s*카드/.test(r.name) ? 1 : 2);
+  return uniqBy(
+    cards.sort((a, b) => rank(a) - rank(b)),
+    (r) => r.code
+  );
+}
+
+/** CloudFront 가 "Request blocked" 로 끊은 응답 — 토큰 문제가 아니라 일시 차단이다. */
+function gs25Blocked(err) {
+  const m = String((err && err.message) || '');
+  return /Request could not be satisfied|Request blocked|cloudfront/i.test(m);
+}
+
+/** ② 매장별 수량 — 401/403이면 토큰을 한 번 갱신해 다시 시도한다. */
+async function gs25StockOnce(url, diag) {
+  const session = await gs25Ready(false, diag);
+  const call = (token, label) =>
+    request(url, { method: 'GET', headers: gs25Headers({ authorization: 'Bearer ' + token }) }, label, null, diag);
+
+  let first;
+  try {
+    first = await call(session.access, 'GS25 재고');
+  } catch (err) {
+    if (gs25Blocked(err)) {
+      /* 아주 짧게 쉬었다 한 번만 더 — 반복하면 차단이 길어진다. */
+      await new Promise((r) => setTimeout(r, 800));
+      try {
+        return await call(session.access, 'GS25 재고(차단 후 재시도)');
+      } catch (err2) {
+        if (gs25Blocked(err2)) {
+          throw new Error('GS25 재고 요청이 잠시 차단됐습니다(CloudFront) — 조금 뒤 다시 시도해 주세요');
+        }
+        throw err2;
+      }
+    }
+    const status = err && err.upstreamStatus;
+    if (status !== 401 && status !== 403) throw err;
+    const next = await gs25Ready(true, diag);
+    try {
+      return await call(next.access, 'GS25 재고(재시도)');
+    } catch (err2) {
+      if (gs25Blocked(err2)) {
+        throw new Error('GS25 재고 요청이 잠시 차단됐습니다(CloudFront) — 조금 뒤 다시 시도해 주세요');
+      }
+      if (err2 && (err2.upstreamStatus === 401 || err2.upstreamStatus === 403)) {
+        gs25Session.revoked = true;
+        gs25Session.lastError = 'GS25 재고 401/403 — 로그인 세션을 다시 발급해 주세요';
+      }
+      throw err2;
+    }
+  }
+  return first;
+}
+
+async function gs25StockForItem(lat, lng, item, radius, diag) {
+  /* 엣지가 radiusCondition 2000 이상인 요청을 403으로 끊는다(500·1000·1500은 통과, 2000부터 차단 — 2026-11-19 실측).
+     앱 기본값도 1000이라 그 값을 쓴다. 지도 반경(radius)은 결과를 거르는 데만 쓴다. */
+  const r = Math.max(300, Math.min(1500, Number(GS25_RADIUS) || 1000));
+  const params = new URLSearchParams({
+    serviceCode: '01',
+    realTimeStockYn: 'Y',
+    itemCode: item.code,
+    myPositionYCoordination: String(lat),
+    centerPositionYCoordination: String(lat),
+    myPositionXCoordination: String(lng),
+    centerPositionXCoordination: String(lng),
+    radiusCondition: String(r),
+    pickupStoreYn: 'N',
+    isSuperDlvyStoreSelected: 'N',
+    isGs25DlvyStoreSelected: 'N'
+  });
+  const body = await gs25StockOnce(BASE.gs25Bff + '/api/bff/v2/store/stock?' + params.toString(), diag);
+  const rows = (body && body.stores) || [];
+  const out = [];
+  for (const raw of rows) {
+    if (!raw) continue;
+    const sLat = num(pick(raw, ['storeYCoordination', 'latitude', 'y']), NaN);
+    const sLng = num(pick(raw, ['storeXCoordination', 'longitude', 'x']), NaN);
+    const code = String(pick(raw, ['storeCode', 'shopCode']) || '');
+    if (!code || !Number.isFinite(sLat) || !Number.isFinite(sLng)) continue;
+    const qtyRaw = pick(raw, ['realStockQuantity', 'realStockQty']);
+    const qty = qtyRaw === undefined || qtyRaw === null || qtyRaw === '' ? null : Number(qtyRaw);
+    /* 수량이 비어 있으면 「미확인」 — 0으로 속이지 않고 점포도 넣지 않는다 */
+    if (qty === null || !Number.isFinite(qty)) continue;
+    out.push({
+      id: code,
+      name: String(pick(raw, ['storeName', 'shopName']) || ''),
+      address: String(pick(raw, ['storeAddress', 'address']) || ''),
+      lat: sLat,
+      lng: sLng,
+      tel: String(pick(raw, ['storeTelephoneNumber', 'tel']) || ''),
+      item: { name: item.name, qty, code: item.code }
+    });
+  }
+  return out;
+}
+
+async function collectGs25(lat, lng, keyword, radius, diag) {
+  gs25Load();
+  if (!gs25Session.access) {
+    /* 세션이 아직 없으면 오류가 아니라 「아직 연동 전」으로 조용히 알린다(사이트 UI 유지). */
+    return {
+      stores: [],
+      products: [],
+      note: 'GS25 로그인 세션(GS25_ACCESS_TOKEN) 필요',
+      sessionNeeded: true
+    };
+  }
+
+  const products = await gs25Search(keyword, diag);
+  if (!products.length) return { stores: [], products: [], note: 'GS25 카드 상품 검색 0건' };
+
+  const targets = products.slice(0, Math.max(1, GS25_MAX_ITEMS));
+  let lists;
+  try {
+    lists = await mapLimit(targets, 1, async (item) => {
+      try {
+        return await gs25StockForItem(lat, lng, item, radius, diag);
+      } catch (err) {
+        if (err && (err.upstreamStatus === 401 || err.upstreamStatus === 403)) throw err;
+        if (gs25Session.revoked) throw err;   // 세션 만료 사유를 note 로 올리기 위해
+        return [];
+      }
+    });
+  } catch (err) {
+    /* 토큰 거절·응답 오류는 점포 0 + 사유로 돌려준다(화면을 비우지 않는다) */
+    return {
+      stores: [],
+      products: targets,
+      note: 'GS25 재고를 받지 못했습니다 — ' + ((err && err.message) || String(err)).slice(0, 120)
+    };
+  }
+
+  const byStore = new Map();
+  for (const list of lists) {
+    for (const row of list) {
+      const cur = byStore.get(row.id) || Object.assign({}, row, { items: [], brand: 'gs25' });
+      const idx = cur.items.findIndex((i) => i.code === row.item.code);
+      if (idx >= 0) cur.items[idx] = row.item;
+      else cur.items.push(row.item);
+      byStore.set(row.id, cur);
+    }
+  }
+
+  const stores = Array.from(byStore.values());
+  const note = stores.length
+    ? ''
+    : 'GS25 점포 재고 응답이 비었습니다(상품 ' + targets.length + '종 확인 · 반경 ' +
+      Math.round(Math.max(300, Math.min(1500, Number(GS25_RADIUS) || 1000))) +
+      'm). 반경 안에 재고가 잡힌 점포가 없을 수 있습니다.';
+  return { stores, products: targets, note };
+}
+
 /* --------------------------------------------------------- 결과 조립 */
 
 function mergeStores(stores, lat, lng, nowIso) {
@@ -1417,7 +1868,7 @@ async function nearby(lat, lng, keyword, radius) {
   if (hit && Date.now() - hit.at < CACHE_MS) return Object.assign({}, hit.value, { cached: true });
 
   const nowIso = new Date().toISOString();
-  const diag = { emart24: [], cu: [], seven: [], geo: [] };
+  const diag = { emart24: [], cu: [], seven: [], gs25: [], geo: [] };
 
   /* CU(상품 바코드·점포 주소)와 좌표→주소 변환을 함께 본다.
      지역명을 CU 응답에만 기대면 CU 가 그 상품을 취급하는 점포를 안 줄 때(청림동)
@@ -1438,14 +1889,15 @@ async function nearby(lat, lng, keyword, radius) {
     barcodes: uniqBy(cu.value.products || [], (p) => p.code).map((p) => p.code)
   };
 
-  const [em, se] = await Promise.all([
+  const [em, se, gs] = await Promise.all([
     runChain('emart24', () => collectEmart24(lat, lng, keyword, diag.emart24, ctx), diag.emart24),
-    runChain('seven', () => collectSeven(lat, lng, ctx, diag.seven), diag.seven)
+    runChain('seven', () => collectSeven(lat, lng, ctx, diag.seven), diag.seven),
+    runChain('gs25', () => collectGs25(lat, lng, keyword, radius, diag.gs25), diag.gs25)
   ]);
 
   const sources = {};
   const stores = [];
-  for (const [name, res] of [['emart24', em], ['cu', cu], ['seven', se]]) {
+  for (const [name, res] of [['gs25', gs], ['emart24', em], ['cu', cu], ['seven', se]]) {
     const list = res.value.stores || [];
     const entry = { ok: res.ok, count: list.length };
     if (res.ok) {
@@ -1493,7 +1945,7 @@ async function nearby(lat, lng, keyword, radius) {
 
 /* 체인별로 "어디까지 됐는지"만 보여 주는 진단 — 태블릿에서 원인 확인용 */
 async function diagnose(lat, lng, keyword, radius) {
-  const diag = { emart24: [], cu: [], seven: [], geo: [] };
+  const diag = { emart24: [], cu: [], seven: [], gs25: [], geo: [] };
   const steps = {};
   const safe = async (name, task) => {
     try {
@@ -1559,6 +2011,22 @@ async function diagnose(lat, lng, keyword, radius) {
     };
   });
 
+  await safe('gs25', async () => {
+    gs25Load();
+    const value = await collectGs25(lat, lng, keyword, radius, diag.gs25);
+    const first = (value.stores || [])[0];
+    return {
+      session: gs25Session.access ? gs25Session.source || 'set' : 'none',
+      tokenExpiresAt: gs25Session.accessExp ? new Date(gs25Session.accessExp).toISOString() : null,
+      revoked: gs25Session.revoked || false,
+      lastError: gs25Session.lastError || '',
+      products: (value.products || []).map((p) => ({ code: p.code, name: p.name })),
+      stores: (value.stores || []).length,
+      sampleStore: first ? { name: first.name, items: (first.items || []).slice(0, 2) } : null,
+      note: value.note || ''
+    };
+  });
+
   return { ok: true, version: VERSION, lat, lng, keyword, radius, steps, upstream: diag };
 }
 
@@ -1592,6 +2060,7 @@ const HELP_HTML = `<!doctype html><html lang="ko"><meta charset="utf-8">
 <li><code>GET /api/diag</code> — 체인별 조회 진단(어디서 막히는지)</li>
 <li><code>GET /api/emart24</code> — 이마트24만 따로(점포 목록·점포별 수량)</li>
 <li><code>GET /api/seven</code> — 세븐일레븐만 따로(지역명·점포·수량)</li>
+<li><code>GET /api/gs25</code> — GS25만 따로(로그인 세션 상태·상품·매장별 수량)</li>
 </ul>
 <p style="color:#5b6b85">조회 전용입니다. 주문·결제·선점 요청은 만들지 않습니다.</p>
 </body></html>`;
@@ -1638,6 +2107,7 @@ const server = http.createServer(async (req, res) => {
       console.log(
         `[nearby] ${lat.toFixed(4)},${lng.toFixed(4)} "${keyword}" r=${radius} ` +
           `emart24=${value.sources.emart24.count} cu=${value.sources.cu.count} seven=${value.sources.seven.count} ` +
+          `gs25=${(value.sources.gs25 || {}).count || 0} ` +
           `→ ${value.stores.length}곳 ${Date.now() - started}ms${value.cached ? ' (cache)' : ''}`
       );
       return;
@@ -1705,6 +2175,74 @@ const server = http.createServer(async (req, res) => {
         upstream: diag
       });
       console.log(`[seven] ${lat.toFixed(4)},${lng.toFixed(4)} → ${(value.stores || []).length}곳`);
+      return;
+    }
+
+    if (path === '/api/gs25') {
+      /* GS25만 따로 — 세션 상태·상품 검색·매장별 수량을 한 번에 확인합니다.
+         /api/gs25?lat=36.0733&lng=129.3947&keyword=포켓몬카드&item=바코드 */
+      const lat = num(url.searchParams.get('lat'), DEFAULT_LAT);
+      const lng = num(url.searchParams.get('lng'), DEFAULT_LNG);
+      const radius = Math.min(20000, Math.max(300, num(url.searchParams.get('radius'), DEFAULT_RADIUS)));
+      const keyword = (url.searchParams.get('keyword') || DEFAULT_KEYWORD).trim().slice(0, 40) || DEFAULT_KEYWORD;
+      const item = (url.searchParams.get('item') || '').trim();
+      const dg = [];
+      gs25Load();
+      let products = [];
+      let stores = [];
+      let note = '';
+      try {
+        products = item
+          ? [{ code: item, name: '(직접 지정한 상품)', price: null }]
+          : await gs25Search(keyword, dg);
+        if (!gs25Session.access) {
+          note = 'GS25 로그인 세션(GS25_ACCESS_TOKEN) 필요';
+        } else if (products.length) {
+          const lists = await mapLimit(products.slice(0, Math.max(1, GS25_MAX_ITEMS)), 1, (p) =>
+            gs25StockForItem(lat, lng, p, radius, dg)
+          );
+          const byStore = new Map();
+          for (const list of lists) {
+            for (const row of list) {
+              const cur = byStore.get(row.id) || Object.assign({}, row, { items: [] });
+              cur.items.push(row.item);
+              byStore.set(row.id, cur);
+            }
+          }
+          stores = Array.from(byStore.values());
+          if (!stores.length) note = '반경 안에서 수량이 확인된 GS25 점포가 없습니다';
+        }
+      } catch (err) {
+        note = '오류: ' + ((err && err.message) || String(err)).slice(0, 160);
+      }
+      sendJson(res, 200, {
+        ok: true,
+        version: VERSION,
+        lat,
+        lng,
+        radius,
+        keyword,
+        session: {
+          configured: !!gs25Session.access,
+          source: gs25Session.source || 'none',
+          deviceIdSet: !!gs25Session.deviceId,
+          accessExpiresAt: gs25Session.accessExp ? new Date(gs25Session.accessExp).toISOString() : null,
+          refreshExpiresAt: gs25Session.refreshExp ? new Date(gs25Session.refreshExp).toISOString() : null,
+          revoked: gs25Session.revoked || false,
+          lastError: gs25Session.lastError || ''
+        },
+        products: products.map((p) => ({ code: p.code, name: p.name, price: p.price })),
+        stores: stores.map((s) => ({
+          id: s.id,
+          name: s.name,
+          address: s.address,
+          distanceM: distanceM(lat, lng, s.lat, s.lng),
+          items: s.items
+        })),
+        note,
+        upstream: dg
+      });
+      console.log(`[gs25] ${lat.toFixed(4)},${lng.toFixed(4)} → ${stores.length}곳 (session ${gs25Session.access ? 'O' : 'X'})`);
       return;
     }
 
@@ -1825,6 +2363,11 @@ module.exports = {
   sevenStoreSearch,
   sevenAreaQueries,
   collectEmart24,
+  collectGs25,
+  gs25Search,
+  gs25StockForItem,
+  gs25Session,
+  gs25Load,
   emart24StoresPublic,
   emart24Queries,
   reverseGeocode,
