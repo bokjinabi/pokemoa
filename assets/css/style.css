@@ -3602,6 +3602,69 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
 }
 .fx-refresh:hover { border-color: var(--navy); color: var(--navy); }
 
+/* ---- 해외직구 카드값 계산기 (환율 위젯 안쪽) ---- */
+.fx-calc { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.fx-calc-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 8px; flex-wrap: wrap; margin-bottom: 8px;
+}
+.fx-calc-title { font-size: 12px; font-weight: 900; letter-spacing: 0.01em; color: var(--ink); }
+.fx-calc-rate { font-size: 10.5px; font-weight: 700; color: var(--muted-2); font-variant-numeric: tabular-nums; }
+.fx-calc-rate.is-warn { color: #b45309; }
+.fx-calc-cur { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+.fx-cur-btn {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 1px;
+  padding: 8px 10px; border: 1px solid var(--line); border-radius: 11px;
+  background: #fff; cursor: pointer; font-family: inherit; text-align: left;
+}
+.fx-cur-btn b { font-size: 12px; font-weight: 900; color: var(--ink-2); }
+.fx-cur-btn small { font-size: 10px; font-weight: 700; color: var(--muted-2); }
+.fx-cur-btn:hover { border-color: var(--navy); }
+.fx-cur-btn.is-active { border-color: var(--navy); background: var(--blue-soft); box-shadow: inset 0 0 0 1px var(--navy); }
+.fx-cur-btn.is-active b { color: var(--navy); }
+.fx-cur-btn.is-active small { color: var(--navy-3); }
+.fx-calc-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.fx-field { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.fx-field.is-wide { grid-column: 1 / -1; }
+.fx-field-label { font-size: 10.5px; font-weight: 800; color: var(--muted); }
+.fx-field input,
+.fx-field select {
+  width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px;
+  background: #fff; font-family: inherit; font-size: 13px; font-weight: 800; color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.fx-field input::placeholder { color: #a7b0c0; font-weight: 600; }
+.fx-field input:focus,
+.fx-field select:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rgba(16, 31, 60, 0.08); }
+.fx-calc-hint { margin: 7px 0 0; font-size: 10.5px; line-height: 1.55; color: var(--muted); }
+.fx-calc-hint b { color: var(--ink-2); }
+.fx-calc-out { margin-top: 9px; }
+.fx-calc-empty { margin: 0; padding: 8px 0 2px; font-size: 11.5px; line-height: 1.6; color: var(--muted-2); }
+.fx-verdict {
+  display: flex; align-items: flex-start; gap: 6px;
+  padding: 8px 11px; margin-bottom: 8px; border-radius: 11px;
+  font-size: 11.5px; font-weight: 900; line-height: 1.45;
+}
+.fx-verdict.is-free { background: var(--green-soft); border: 1px solid #bbe6cb; color: var(--green); }
+.fx-verdict.is-taxed { background: var(--amber-soft); border: 1px solid #ffd9a8; color: var(--amber); }
+.fx-verdict small { display: block; margin-top: 2px; font-size: 10px; font-weight: 700; opacity: 0.9; }
+.fx-out-rows { display: grid; gap: 4px; }
+.fx-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 11.5px; line-height: 1.5; }
+.fx-row-label { color: var(--muted); font-weight: 700; }
+.fx-row-val { font-weight: 900; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.fx-row.is-sub .fx-row-label { padding-left: 8px; font-weight: 600; color: var(--muted-2); }
+.fx-row.is-sub .fx-row-val { color: var(--muted); }
+.fx-row.is-zero .fx-row-val { color: var(--green); }
+.fx-row.is-sum { margin-top: 2px; padding-top: 5px; border-top: 1px solid var(--line-2); }
+.fx-row.is-sum .fx-row-label { color: var(--ink-2); font-weight: 800; }
+.fx-total {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+  margin-top: 8px; padding: 9px 12px; border-radius: 12px; background: var(--navy); color: #fff;
+}
+.fx-total-label { font-size: 11px; font-weight: 800; opacity: 0.85; }
+.fx-total-val { font-size: 18px; font-weight: 900; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.fx-calc-note { margin: 8px 0 0; font-size: 10px; line-height: 1.55; color: var(--muted-2); }
+
 .market-tools {
   margin: 12px 0 14px;
   padding: 16px;
@@ -3660,4 +3723,7 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
 @media (max-width: 420px) {
   .mt-links { grid-template-columns: 1fr; }
   .fx-cards { grid-template-columns: 1fr; }
+  .fx-calc-fields { grid-template-columns: 1fr; }
+  .fx-calc-head { gap: 2px; }
+  .fx-total-val { font-size: 17px; }
 }

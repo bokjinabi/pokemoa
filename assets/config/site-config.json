@@ -123,6 +123,8 @@
     "fxJpyLabel": "JPY",
     "fxJpyCap": "100 JPY =",
     "fxRefresh": "새로고침",
+    "fxCalcTitle": "해외직구 카드값 계산기 (원화 · 관부가세)",
+    "fxCalcNote": "참고용 예상치입니다. 실제 통관은 관세청 고시환율·HS코드·목록통관 여부에 따라 다를 수 있습니다.",
     "marketEyebrow": "시세 · 거래가 조회",
     "marketTitle": "PSA 거래 내역 조회 (경매가·즉구가)",
     "marketLead": "버튼을 누르면 PSA 공식 페이지로 바로 이동합니다. <b>PSA 공식 경매가(APR)</b>로 등급별 낙찰 기록을, <b>PSA 샵</b>으로 등급 카드 즉구 매물을, <b>PSA 가격 가이드</b>로 세트별 가이드 가격을 봅니다.",

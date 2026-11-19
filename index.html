@@ -37,7 +37,7 @@
 <meta name="twitter:image:alt" content="포켓몬카드모아 — 내 주변 편의점 재고 · 인기 카드 시세 · 도감">
 <meta name="theme-color" content="#101f3c">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23101f3c'/%3E%3Crect x='7' y='7' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05'/%3E%3Crect x='17.5' y='7' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05' opacity='.7'/%3E%3Crect x='7' y='17.5' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05' opacity='.7'/%3E%3Crect x='17.5' y='17.5' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="assets/css/style.css?v=94">
+<link rel="stylesheet" href="assets/css/style.css?v=95">
 <!-- 카카오맵 JavaScript SDK — autoload=false로 불러 두고 map.js가 kakao.maps.load()로 초기화합니다.
      JavaScript 키 도메인에는 https://moa-kr.github.io 만 등록되어 있어, 그 밖의 주소(미등록 프리뷰)에서는
      지도 대신 내장 좌표 스냅샷 안내가 표시됩니다. -->
@@ -894,6 +894,49 @@
         <span class="fx-note" id="fxNote">해외 시세(PSA·eBay·SNKRDUNK)를 원화로 환산할 때 참고하세요.</span>
         <button type="button" class="fx-refresh" id="fxRefresh" data-copy="fxRefresh">새로고침</button>
       </div>
+
+      <!-- 해외직구 카드값 계산기 — 위 실시간 환율을 그대로 써서 원화 카드값과 관부가세를 계산합니다. -->
+      <div class="fx-calc" id="fxCalc">
+        <div class="fx-calc-head">
+          <span class="fx-calc-title" data-copy="fxCalcTitle">해외직구 카드값 계산기 (원화 · 관부가세)</span>
+          <span class="fx-calc-rate" id="fxCalcRate">환율 불러오는 중…</span>
+        </div>
+
+        <div class="fx-calc-cur" role="group" aria-label="직구 국가 선택">
+          <button type="button" class="fx-cur-btn is-active" data-fxcur="JPY" aria-pressed="true">
+            <b>일본 · 엔화</b><small>면세 한도 $150</small>
+          </button>
+          <button type="button" class="fx-cur-btn" data-fxcur="USD" aria-pressed="false">
+            <b>미국 · 달러</b><small>면세 한도 $200</small>
+          </button>
+        </div>
+
+        <div class="fx-calc-fields">
+          <label class="fx-field">
+            <span class="fx-field-label" id="fxPriceLabel">카드 가격 (엔)</span>
+            <input type="text" id="fxPrice" inputmode="decimal" autocomplete="off" enterkeyhint="done" placeholder="예: 25,000">
+          </label>
+          <label class="fx-field">
+            <span class="fx-field-label" id="fxShipLabel">국제 배송비 (엔, 선택)</span>
+            <input type="text" id="fxShip" inputmode="decimal" autocomplete="off" enterkeyhint="done" placeholder="0">
+          </label>
+          <label class="fx-field is-wide">
+            <span class="fx-field-label" id="fxDutyLabel">관세율 (오락용 카드 기본 8%)</span>
+            <select id="fxDutyRate">
+              <option value="0.08" selected>8% · 완구·오락용 카드 기본세율</option>
+              <option value="0">0% · 한미 FTA 등 원산지 인정 품목</option>
+            </select>
+          </label>
+        </div>
+
+        <p class="fx-calc-hint" id="fxCalcHint">일본 직구는 물품가 <b>$150 이하</b>까지 면세입니다. 한도를 넘으면 카드값과 배송비 전체에 관세·부가세가 붙습니다.</p>
+
+        <div class="fx-calc-out" id="fxCalcOut" aria-live="polite">
+          <p class="fx-calc-empty">카드 가격을 넣으면 원화 금액과 관부가세를 바로 계산합니다.</p>
+        </div>
+
+        <p class="fx-calc-note" data-copy="fxCalcNote">참고용 예상치입니다. 실제 통관은 관세청 고시환율·HS코드·목록통관 여부에 따라 다를 수 있습니다.</p>
+      </div>
     </section>
 
     <!-- 시세 조회 1: PSA 공식 거래 내역 (경매 낙찰가 · 샵·즉구가) — 버튼으로 PSA 공식 페이지에 바로 갑니다. -->
@@ -1458,12 +1501,12 @@
   </div>
 </template>
 
-<script src="assets/js/data.js?v=94"></script>
-<script src="assets/js/map.js?v=94"></script>
-<script src="assets/js/app.js?v=94"></script>
+<script src="assets/js/data.js?v=95"></script>
+<script src="assets/js/map.js?v=95"></script>
+<script src="assets/js/app.js?v=95"></script>
 <!-- 모아 어드민(moa-kr/moa-admin)이 커밋하는 assets/config/site-config.json 을 화면에 적용합니다.
      공지 바·팝업·탭/섹션 순서와 노출·문구가 이 파일 값으로 바뀝니다. -->
-<script src="assets/js/site-config-loader.js?v=94" defer
+<script src="assets/js/site-config-loader.js?v=95" defer
         data-config="assets/config/site-config.json"
         data-track-site="pokemoa"
         data-tab-container=".main-nav"

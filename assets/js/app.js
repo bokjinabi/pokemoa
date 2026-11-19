@@ -2905,6 +2905,7 @@
       fxNoteEl.classList.remove("is-warn");
       fxNoteEl.textContent = "해외 시세(PSA·eBay·SNKRDUNK)를 원화로 환산할 때 참고하세요. 10분마다 새로 받습니다.";
     }
+    fxCalcSetRates(data);
   }
   function fxFail(msg) {
     if (fxUsdEl) fxUsdEl.textContent = "불러오지 못함";
@@ -2915,6 +2916,7 @@
       fxNoteEl.classList.add("is-warn");
       fxNoteEl.textContent = msg || "환율을 불러오지 못했습니다. 잠시 후 '새로고침'을 눌러 주세요.";
     }
+    fxCalcSetRates(null);
   }
   function fxFromCache(force) {
     if (force) return null;
@@ -2976,6 +2978,146 @@
         fxRefreshEl.disabled = true;
         fxFetch(true);
         setTimeout(function () { fxRefreshEl.disabled = false; }, 1200);
+      });
+    }
+  }
+
+  /* ------------------------ 해외직구 카드값 원화 · 관부가세 계산기 */
+  /* 위 환율 위젯이 받은 USD/KRW · 100JPY/KRW 를 그대로 쓴다. 환율을 못 받으면 계산하지 않고 그렇다고 적는다.
+     · 면세 판정은 '물품가격(국제배송비 제외)'을 미화로 환산해 일본 $150 / 미국 $200 과 비교한다.
+     · 한도를 넘으면 과세가격(상품가 + 국제배송비) 전체에 관세 8%(원산지 인정 시 0%) + 부가세 10% 를 더한다.
+     · 실제 통관은 관세청 고시환율·HS코드에 따라 다르므로 화면에도 '참고용'이라고 적는다. */
+  var FX_FREE_LIMIT = { JPY: 150, USD: 200 };
+  var FX_CALC_CUR = { JPY: { unit: "엔", toKrw: function (v, r) { return v * r.jpy100 / 100; },
+    toUsd: function (v, r) { return v * r.jpy100 / (100 * r.usdKrw); } },
+    USD: { unit: "$", toKrw: function (v, r) { return v * r.usdKrw; },
+    toUsd: function (v) { return v; } } };
+  var FX_CALC_HINT = {
+    JPY: "일본 직구는 물품가 <b>$150 이하</b>까지 면세입니다. 한도를 넘으면 카드값과 배송비 전체에 관세·부가세가 붙습니다.",
+    USD: "미국 직구는 물품가 <b>$200 이하</b>까지 면세(목록통관)입니다. 한미 FTA 원산지가 인정되면 관세율을 0%로 고르세요."
+  };
+  var fxCalcRateEl = $("#fxCalcRate");
+  var fxCalcOutEl = $("#fxCalcOut");
+  var fxCalcHintEl = $("#fxCalcHint");
+  var fxPriceEl = $("#fxPrice");
+  var fxShipEl = $("#fxShip");
+  var fxDutyEl = $("#fxDutyRate");
+  var fxPriceLabelEl = $("#fxPriceLabel");
+  var fxShipLabelEl = $("#fxShipLabel");
+  var fxCurBtns = $$("[data-fxcur]");
+  var fxCalcCur = "JPY";
+  var fxCalcRates = null;
+  var fxCalcFailed = false;
+
+  function fxParseNum(v) {
+    var m = String(v == null ? "" : v).replace(/,/g, "").match(/\d+(\.\d+)?/);
+    return m ? Number(m[0]) : 0;
+  }
+  function fxWon(n) {
+    if (!isFinite(n) || n <= 0) return "0원";
+    return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") + "원";
+  }
+  function fxUsd(n) {
+    return "$" + fxNum(n, 2);
+  }
+  function fxCalcCurSet(cur) {
+    if (!FX_CALC_CUR[cur]) return;
+    fxCalcCur = cur;
+    fxCurBtns.forEach(function (b) {
+      var on = b.getAttribute("data-fxcur") === cur;
+      b.classList.toggle("is-active", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+    var unit = FX_CALC_CUR[cur].unit;
+    if (fxPriceLabelEl) fxPriceLabelEl.textContent = "카드 가격 (" + unit + ")";
+    if (fxShipLabelEl) fxShipLabelEl.textContent = "국제 배송비 (" + unit + ", 선택)";
+    if (fxPriceEl) fxPriceEl.setAttribute("placeholder", cur === "JPY" ? "예: 25,000" : "예: 180");
+    if (fxCalcHintEl) fxCalcHintEl.innerHTML = FX_CALC_HINT[cur];
+    fxCalcRender();
+  }
+  function fxCalcRender() {
+    if (!fxCalcOutEl) return;
+    var price = fxParseNum(fxPriceEl && fxPriceEl.value);
+    var ship = fxParseNum(fxShipEl && fxShipEl.value);
+    if (!fxCalcRates) {
+      fxCalcOutEl.innerHTML = fxCalcFailed
+        ? '<p class="fx-calc-empty">환율을 불러오지 못해 계산할 수 없습니다. 위 <b>새로고침</b>을 한 번 눌러 주세요.</p>'
+        : '<p class="fx-calc-empty">환율을 불러오는 중입니다… 금액을 넣어두면 환율이 도착하는 대로 바로 계산됩니다.</p>';
+      return;
+    }
+    if (!(price > 0)) {
+      fxCalcOutEl.innerHTML = '<p class="fx-calc-empty">카드 가격을 넣으면 원화 금액과 관부가세를 바로 계산합니다.</p>';
+      return;
+    }
+    var conv = FX_CALC_CUR[fxCalcCur];
+    var priceKrw = conv.toKrw(price, fxCalcRates);
+    var shipKrw = ship > 0 ? conv.toKrw(ship, fxCalcRates) : 0;
+    var priceUsd = conv.toUsd(price, fxCalcRates);
+    var limit = FX_FREE_LIMIT[fxCalcCur];
+    var taxed = priceUsd > limit + 1e-9;
+    var taxable = priceKrw + shipKrw;
+    var dutyRate = fxDutyEl ? Number(fxDutyEl.value) : 0.08;
+    if (!isFinite(dutyRate) || dutyRate < 0) dutyRate = 0.08;
+    var duty = taxed ? taxable * dutyRate : 0;
+    var vat = taxed ? (taxable + duty) * 0.1 : 0;
+    var total = taxable + duty + vat;
+    var pctLabel = Math.round(dutyRate * 1000) / 10;
+
+    var verdict = taxed
+      ? '<div class="fx-verdict is-taxed">한도 초과 · 과세 대상<small>물품가 ' + fxUsd(priceUsd) + ' · 한도 ' + fxUsd(limit) + ' 초과 ' + fxUsd(priceUsd - limit) + '</small></div>'
+      : '<div class="fx-verdict is-free">면세 한도 안 · 관세·부가세 0원<small>물품가 ' + fxUsd(priceUsd) + ' · 한도 ' + fxUsd(limit) + ' 이하</small></div>';
+
+    var rows = '';
+    rows += '<div class="fx-row"><span class="fx-row-label">상품가</span><span class="fx-row-val">' + fxWon(priceKrw) + '</span></div>';
+    rows += '<div class="fx-row"><span class="fx-row-label">국제 배송비</span><span class="fx-row-val">' + fxWon(shipKrw) + '</span></div>';
+    rows += '<div class="fx-row is-sum"><span class="fx-row-label">원화 카드값 (상품 + 배송)</span><span class="fx-row-val">' + fxWon(taxable) + '</span></div>';
+    rows += '<div class="fx-row' + (taxed ? '' : ' is-zero') + '"><span class="fx-row-label">예상 관세 (' + pctLabel + '%)</span><span class="fx-row-val">' + (taxed ? fxWon(duty) : '0원 (면세)') + '</span></div>';
+    if (taxed) rows += '<div class="fx-row is-sub"><span class="fx-row-label">과세가격 × ' + pctLabel + '%</span><span class="fx-row-val">' + fxWon(taxable) + '</span></div>';
+    rows += '<div class="fx-row' + (taxed ? '' : ' is-zero') + '"><span class="fx-row-label">예상 부가세 (10%)</span><span class="fx-row-val">' + (taxed ? fxWon(vat) : '0원 (면세)') + '</span></div>';
+    if (taxed) rows += '<div class="fx-row is-sub"><span class="fx-row-label">(과세가격 + 관세) × 10%</span><span class="fx-row-val">' + fxWon(taxable + duty) + '</span></div>';
+
+    fxCalcOutEl.innerHTML = verdict + '<div class="fx-out-rows">' + rows + '</div>' +
+      '<div class="fx-total"><span class="fx-total-label">최종 예상 총액</span><span class="fx-total-val">' + fxWon(total) + '</span></div>';
+  }
+  function fxCalcSetRates(data) {
+    var usd = data && Number(data.usdKrw);
+    var jpy100 = data && Number(data.jpy100);
+    if (isFinite(usd) && isFinite(jpy100) && usd > 0 && jpy100 > 0) {
+      fxCalcRates = { usdKrw: usd, jpy100: jpy100 };
+      fxCalcFailed = false;
+      if (fxCalcRateEl) {
+        fxCalcRateEl.classList.remove("is-warn");
+        fxCalcRateEl.textContent = "적용 환율 1 USD = " + fxNum(usd, 2) + "원 · 100 JPY = " + fxNum(jpy100, 1) + "원";
+      }
+    } else {
+      fxCalcRates = null;
+      fxCalcFailed = true;
+      if (fxCalcRateEl) {
+        fxCalcRateEl.classList.add("is-warn");
+        fxCalcRateEl.textContent = "환율 조회 실패";
+      }
+    }
+    fxCalcRender();
+  }
+  function initFxCalc() {
+    if (!fxCalcOutEl) return;
+    fxCalcFailed = false;
+    fxCalcCurSet("JPY");
+    fxCurBtns.forEach(function (b) {
+      b.addEventListener("click", function () {
+        fxCalcCurSet(b.getAttribute("data-fxcur"));
+        trackEvent("fx_calc", { currency: fxCalcCur, duty_rate: fxDutyEl ? fxDutyEl.value : "" });
+      });
+    });
+    [fxPriceEl, fxShipEl].forEach(function (el) {
+      if (!el) return;
+      el.addEventListener("input", fxCalcRender);
+      el.addEventListener("change", fxCalcRender);
+    });
+    if (fxDutyEl) {
+      fxDutyEl.addEventListener("change", function () {
+        fxCalcRender();
+        trackEvent("fx_calc", { currency: fxCalcCur, duty_rate: fxDutyEl.value });
       });
     }
   }
@@ -3103,6 +3245,7 @@
   initSetSearch();
   initSubTabs();
   initFx();
+  initFxCalc();
   initMarketTools();
 
   /* #stores·#boxStores는 「정가 구매처」 탭의 짧은 주소로 같이 받아 줍니다. */
