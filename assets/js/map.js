@@ -29,9 +29,9 @@ window.PokeMoaMap = (function () {
     "&libraries=services&autoload=false";
   var SDK_TIMEOUT = 9000;        /* SDK·지도 초기화를 이 시간까지 기다린다 */
   var SEARCH_TIMEOUT = 8000;     /* 다점 격자 조회가 늦으면 내장 좌표로 먼저 표시 */
-  var MAX_MARKERS = 90;          /* 1km·3km */
-  var MAX_MARKERS_5 = 120;       /* 5km — 격자 조회로 받은 외곽 매장까지 넉넉히 */
-  var MAX_MARKERS_20 = 200;      /* 20km — 반경 전역(포항 남구·양덕·유강·오천 등) */
+  var MAX_MARKERS = 180;         /* 1km·3km — 3km는 격자(중심+8방위)로 받은 만큼 보여 준다 */
+  var MAX_MARKERS_5 = 200;       /* 5km — 격자 조회로 받은 외곽 매장까지 넉넉히 */
+  var MAX_MARKERS_20 = 250;      /* 20km — 반경 전역(포항 남구·양덕·유강·오천 등) */
   /* 5km·20km 격자 조회의 방위(도, 북=0·동=90) */
   var DIRS4 = [0, 90, 180, 270];
   var DIRS8 = [0, 45, 90, 135, 180, 225, 270, 315];
@@ -1072,7 +1072,11 @@ window.PokeMoaMap = (function () {
   }
 
   /* 반경별 조회 계획 — {lat,lng,radius,page} 목록
-     · ~3km: 중심 1곳에서 3페이지(최대 45건, 1초 안팎)
+     · 1km: 중심 1곳에서 3페이지(최대 45건) — 1km 안은 45건이면 대개 다 담긴다
+     · 3km: 중심 3페이지 + 8방위 1.7km 지점(반경 1.7km·1p) = 11회
+       → 카카오는 한 번에 45건·가까운 순이라, 중심 한 곳만 조회하면 1km 안이 45건으로
+         가득 차 1~3km 외곽 매장이 통째로 빠진다(도심일수록 심함).
+         1.7km 고리·반경 1.7km 8방위는 3km 원판을 빈틈없이 덮는다.
      · 5km: 중심(반경 3km·2p) + 동·서·남·북 2.8km 지점(반경 2.6km·2p)
      · 20km: 중심(반경 5km·2p) + 반경 5km 고리(8방위 · 4km · 1p) + 반경 13km 고리(8방위 · 7km · 1p)
        → 중심만 조회하면 45건 상한에 가까운 매장이 차서 외곽이 통째로 빠지므로,
@@ -1086,9 +1090,14 @@ window.PokeMoaMap = (function () {
       pushRing(pts, center, 13000, 7000, 1, DIRS8);
       return pts;
     }
-    if (radius > 3000) {
+    if (radius >= 5000) {
       for (p = 1; p <= 2; p++) pts.push({ lat: center.lat, lng: center.lng, radius: 3000, page: p });
       pushRing(pts, center, 2800, 2600, 2, DIRS4);
+      return pts;
+    }
+    if (radius >= 3000) {
+      for (p = 1; p <= 3; p++) pts.push({ lat: center.lat, lng: center.lng, radius: radius, page: p });
+      pushRing(pts, center, 1700, 1700, 1, DIRS8);
       return pts;
     }
     for (p = 1; p <= 3; p++) pts.push({ lat: center.lat, lng: center.lng, radius: radius, page: p });

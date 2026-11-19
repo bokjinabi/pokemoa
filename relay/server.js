@@ -27,6 +27,8 @@
  *   CU_COOKIE                포켓CU 로그인 세션 쿠키(있으면 매장별 수량까지 시도)
  *   SEVEN_AREA               세븐일레븐 점포 검색에 쓸 지역명(예: "포항" — 시/군 이름 하나가 잘 걸립니다)
  *   SEVEN_ITEM_CDS           세븐일레븐에 물어볼 상품 바코드(쉼표 구분, 없으면 자동)
+ *   EMART24_AREA             이마트24 공개 매장 API 에 넣을 지역명(비우면 좌표를 주소로 바꿔 자동)
+ *   GEO_PROVIDER             주소 찾기 우선순위 (기본 nominatim → bigdatacloud, "off"면 끔)
  *   SEVEN_SM_CD / SEVEN_RSA_KEY_B64   예전 방식(암호화 경로) 수동 지정 — 지금은 쓰지 않음
  *
  * 2026-11-18 개정(v1.1)에서 바뀐 점
@@ -53,6 +55,21 @@
  *     막히면 예전 `multi/01/stocks`(점포×상품)로 돌아갑니다.
  *   · `/api/seven` 으로 세븐일레븐만 따로 확인할 수 있게 했습니다.
  *
+ * 2026-11-19 개정(v1.5) — 이마트24 점포 조회 500 제거·지역명 자동 확보
+ *   · 이마트24 `POST /store/getNearStoreList` 는 이제 500(또는 차단 403)을 돌려줍니다.
+ *     재고조회 화면(mapUtil.js)도 점포 목록을 이 API 가 아니라 앱 브리지에서 받아 옵니다.
+ *     즉 이 경로는 사실상 폐기됐습니다. 그래서 점포는 공개 매장 API
+ *     `GET https://emart24.co.kr/api1/store?page=N&search=지역명` 을 첫 순서로 씁니다.
+ *     예전 폴백은 지역명이 비면 전국 5,690곳을 1~2페이지만 훑어 늘 0곳이었고,
+ *     그 지역명을 CU 점포 주소에서만 얻어 CU 응답이 비면(청림동) 500이 그대로 올라갔습니다.
+ *     이제 좌표를 역지오코딩(Nominatim→BigDataCloud)해 동/구/시 이름을 만들고,
+ *     동→시+구→구→시 순으로 좁게 훑으며, 페이지도 count 에 맞춰 끝까지 읽습니다.
+ *   · 재고는 그대로 `GET /api/stock/v3/stock-search/store` 를 씁니다(무로그인, 실측 확인).
+ *     수량 행이 하나도 없을 때는 '생수'로 대조 조회를 한 번 해 보고, 그때도 0이면
+ *     점포만 알려 주고 0으로 단정하지 않습니다(차단과 품절을 구분).
+ *   · 세븐일레븐 지역명도 같은 역지오코딩 결과를 먼저 씁니다(CU 점포 목록이 비어도 동작).
+ *   · `GET /api/emart24`, `GET /api/geo` 진단 경로 추가.
+ *
  * 2026-11-18 개정(v1.3) — 세븐일레븐 재고 경로
  *   · 점포 검색은 v1.2에서 정상 동작(태블릿 실측: 포항 84건·반경 3km 17곳)하지만
  *     재고 경로가 403 `Access Denied: Invalid Access Token or Agent Information` 로 막힙니다.
@@ -68,7 +85,7 @@
 const http = require('node:http');
 const crypto = require('node:crypto');
 
-const VERSION = '1.4';
+const VERSION = '1.5';
 const SERVICE = 'pokemoa-relay';
 
 const PORT = Number(process.env.PORT || 3100);
@@ -78,7 +95,7 @@ const CACHE_MS = Number(process.env.RELAY_CACHE_MS || 60000);
 
 const BASE = {
   emart24: process.env.EMART24_BASE || 'https://everse.emart24.co.kr',
-  emart24Open: 'https://emart24.co.kr',
+  emart24Open: process.env.EMART24_OPEN_BASE || 'https://emart24.co.kr',
   cu: process.env.CU_BASE || 'https://www.pocketcu.co.kr',
   seven: process.env.SEVEN_BASE || 'https://new.7-elevenapp.co.kr'
 };
@@ -89,6 +106,7 @@ const DEFAULT_KEYWORD = '포켓몬카드';
 const DEFAULT_RADIUS = 3000;   // m — 사이트가 ?radius= 로 덮어쓸 수 있다
 
 const MAX_PRODUCTS = 5;        // 체인당 재고를 물어볼 상품 수 (요청 예산 보호)
+const GEO_TTL_MS = 6 * 3600e3; // 좌표→주소 캐시 (같은 동네를 다시 물을 때 외부 호출을 아낀다)
 const MAX_STORES = 40;         // 응답에 담는 점포 수
 const SEVEN_STORE_LIMIT = 8;   // 세븐일레븐은 점포 1곳당 요청 1번이라 더 좁게
 const SEVEN_MAX_ITEMS = 4;     // 세븐일레븐에서 점포마다 물어볼 상품 수(02 경로는 한 번에)
@@ -283,6 +301,107 @@ function looksLikeCard(name) {
   return /카드|card|tcg|확장팩|부스터|celebration|스타터|덱|이브이|피카츄|리자몽|파트너즈/i.test(s);
 }
 
+/* --------------------------------------------------- 좌표 → 주소(지역명)
+   이마트24 공개 매장 API 와 세븐일레븐 점포 검색은 둘 다 '지역명 글자'가 있어야 하고,
+   지역명을 CU 점포 응답에서만 만들면 CU 가 그 상품을 취급하는 점포를 안 줄 때(청림동)
+   두 체인이 통째로 빈다. 그래서 좌표를 직접 주소로 바꾸어 동/구/시 이름을 만든다.
+   (Nominatim 은 UA 를 요구하고 1초 1회 수준을 지키며, 실패하면 BigDataCloud 로 넘어간다) */
+const GEO_CACHE = new Map();
+
+function geoQueries(g) {
+  const out = [];
+  const push = (raw) => {
+    const q = String(raw || '').replace(/\s+/g, ' ').trim();
+    if (q.length >= 2 && !out.includes(q)) out.push(q);
+  };
+  const city = String(g.city || '').trim();
+  const district = String(g.district || '').trim();
+  const dong = String(g.dong || '').trim();
+  const cityBare = city.replace(/(특별시|광역시|특별자치시|특별자치도|도|시|군)$/, '');
+  const dongTok = String(dong || '').split(/\s+/).pop() || '';
+  const dongBare = dongTok.replace(/(동|읍|면)$/, '');
+  /* 좁은 이름부터 — 넓은 이름만 쓰면 옆 동네까지 훑어야 한다 */
+  push(dongBare);
+  push(dongTok);
+  if (cityBare && district) push(cityBare + ' ' + district);
+  push(district);
+  push(cityBare);
+  push(city);
+  return out.slice(0, 5);
+}
+
+async function reverseGeocode(lat, lng, diag) {
+  const key = lat.toFixed(3) + ',' + lng.toFixed(3);
+  const hit = GEO_CACHE.get(key);
+  if (hit && Date.now() - hit.at < GEO_TTL_MS) return hit.value;
+
+  const out = { source: '', city: '', district: '', dong: '', province: '', address: '', queries: [] };
+  const provider = String(process.env.GEO_PROVIDER || 'nominatim').toLowerCase();
+
+  if (provider !== 'off') {
+    try {
+      const body = await request(
+        'https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=16&accept-language=ko&lat=' +
+          encodeURIComponent(lat) +
+          '&lon=' +
+          encodeURIComponent(lng),
+        {
+          method: 'GET',
+          headers: {
+            'user-agent': 'pokemoa-relay/' + VERSION + ' (home-tablet store lookup)',
+            accept: 'application/json'
+          },
+          tms: 4500
+        },
+        '주소 찾기(Nominatim)',
+        null,
+        diag
+      );
+      const a = (body && body.address) || {};
+      out.city = a.city || a.town || a.county || a.municipality || '';
+      out.district = a.borough || a.city_district || a.county || '';
+      out.dong = a.quarter || a.neighbourhood || a.suburb || a.village || a.hamlet || '';
+      out.province = a.province || a.state || '';
+      out.address = body && body.display_name ? String(body.display_name) : '';
+      if (out.city) out.source = 'nominatim';
+    } catch (err) {
+      /* 아래 대체 제공자로 */
+    }
+  }
+
+  if (!out.city) {
+    try {
+      const body = await request(
+        'https://api.bigdatacloud.net/data/reverse-geocode-client?localityLanguage=ko&latitude=' +
+          encodeURIComponent(lat) +
+          '&longitude=' +
+          encodeURIComponent(lng),
+        { method: 'GET', headers: { accept: 'application/json' }, tms: 4000 },
+        '주소 찾기(BigDataCloud)',
+        null,
+        diag
+      );
+      const admin = (body && body.localityInfo && body.localityInfo.administrative) || [];
+      out.city = (body && (body.city || body.locality)) || '';
+      out.district =
+        admin
+          .filter((row) => row && /district|borough|county/i.test(row.adminLevelName || ''))
+          .map((row) => row.name)
+          .pop() || '';
+      out.dong = (body && body.locality) || '';
+      out.province = (body && body.principalSubdivision) || '';
+      if (out.city) out.source = 'bigdatacloud';
+    } catch (err) {
+      /* 지역명 없이 진행 — 호출부가 알아서 넘어간다 */
+    }
+  }
+
+  out.queries = geoQueries(out);
+  GEO_CACHE.set(key, { at: Date.now(), value: out });
+  if (GEO_CACHE.size > 200) GEO_CACHE.delete(GEO_CACHE.keys().next().value);
+  return out;
+}
+
 /** 동시 실행 수를 제한하며 매핑한다 (업체 서버를 두드리는 양 조절) */
 async function mapLimit(list, limit, fn) {
   const out = new Array(list.length);
@@ -468,31 +587,50 @@ async function emart24StockOne(plu, bizNos, diag) {
 }
 
 async function collectEmart24(lat, lng, keyword, diag, ctx) {
-  await emart24Prime(diag);
+  /* ① 점포 — 앱 재고 화면 API 는 지금 500/차단이라 공개 매장 API 를 먼저 쓴다.
+     (재고조회 화면도 점포 목록을 이 API 가 아니라 앱 브리지에서 받는다 — 사실상 폐기 경로) */
   let stores = [];
-  let note = '';
-  try {
-    stores = await emart24Stores(lat, lng, diag);
-  } catch (err) {
-    /* 재고 화면이 막혔을 때: 공개 매장 API로 점포라도 확보한다 */
-    const fallback = await emart24StoresApi1(lat, lng, (ctx && ctx.area) || '', diag).catch(() => []);
-    if (!fallback.length) throw err;
-    stores = fallback;
-    note = '점포는 공개 매장 API에서 받았습니다(앱 재고 화면 차단). 수량은 비어 있을 수 있습니다.';
+  let storeVia = '';
+  stores = await emart24StoresPublic(lat, lng, ctx, diag).catch(() => []);
+  if (stores.length) storeVia = 'public';
+  if (!stores.length) {
+    try {
+      await emart24Prime(diag);
+      stores = await emart24Stores(lat, lng, diag);
+      if (stores.length) storeVia = 'everse';
+    } catch (err) {
+      /* 아래에서 점포 없음으로 정리한다 — 이 실패를 500으로 올리지 않는다 */
+    }
   }
-  if (!stores.length) return { stores: [], products: [], hints: [], note: '점포 목록이 비었습니다' };
+  if (!stores.length)
+    return {
+      stores: [],
+      products: [],
+      hints: [],
+      note: '이마트24 점포를 찾지 못했습니다(공개 매장 API 포함)'
+    };
 
   const keywords = uniqBy([keyword, '포켓몬카드', '포켓몬'], (k) => k).slice(0, 3);
   let products = [];
-  for (const kw of keywords) {
-    products = await emart24Products(kw, diag);
-    const cards = products.filter((p) => looksLikeCard(p.name));
-    if (cards.length) {
-      products = cards;
-      break;
+  try {
+    for (const kw of keywords) {
+      products = await emart24Products(kw, diag);
+      const cards = products.filter((p) => looksLikeCard(p.name));
+      if (cards.length) {
+        products = cards;
+        break;
+      }
     }
+  } catch (err) {
+    return {
+      stores: [],
+      products: [],
+      hints: stores,
+      note: '이마트24 점포 ' + stores.length + '곳은 찾았지만 상품 검색이 막혔습니다(' + (err.message || '').slice(0, 60) + ')'
+    };
   }
-  if (!products.length) return { stores: [], products: [], hints: stores, note: '상품 검색 0건' };
+  if (!products.length)
+    return { stores: [], products: [], hints: stores, note: '이마트24 상품 검색 0건(점포 ' + stores.length + '곳)' };
   products = products.slice(0, MAX_PRODUCTS);
 
   const nameByCode = {};
@@ -500,14 +638,33 @@ async function collectEmart24(lat, lng, keyword, diag, ctx) {
 
   const bizNos = stores.map((s) => s.id);
   const qtyByBiz = new Map();
+  let rowCount = 0;
   for (const p of products) {
     await emart24Prepare(p.code, diag);
-    const rows = await emart24StockOne(p.code, bizNos, diag);
+    let rows = [];
+    try {
+      rows = await emart24StockOne(p.code, bizNos, diag);
+    } catch (err) {
+      rows = [];
+    }
+    rowCount += rows.length;
     for (const row of rows) {
       if (!qtyByBiz.has(row.biz)) qtyByBiz.set(row.biz, []);
       qtyByBiz.get(row.biz).push({ code: p.code, qty: row.qty });
     }
   }
+
+  /* 수량 행이 하나도 없으면 '전 지점 품절'인지 'API 가 막힌 것'인지 구분해야 한다.
+     상시 취급 품목(생수)으로 한 번 대조 조회를 해 보고, 그때도 0이면 점포만 알려 준다. */
+  let verified = rowCount > 0;
+  if (!verified) verified = await emart24StockControl(bizNos, diag);
+  if (!verified)
+    return {
+      stores: [],
+      products,
+      hints: stores,
+      note: '이마트24 점포 ' + stores.length + '곳은 찾았지만 재고 API 가 수량을 주지 않았습니다(0으로 단정하지 않음)'
+    };
 
   const out = [];
   for (const store of stores) {
@@ -523,21 +680,73 @@ async function collectEmart24(lat, lng, keyword, diag, ctx) {
     if (!items.length) continue;
     out.push(Object.assign({}, store, { brand: 'emart24', items }));
   }
+  const note =
+    '점포 ' + out.length + '곳 재고 확인(' +
+    (storeVia === 'public' ? '공개 매장 API' : '앱 매장 API') +
+    ' · 응답에 없는 상품은 0)';
   return { stores: out, products, hints: stores, note };
 }
 
-/** 공개 매장 API(emart24.co.kr/api1/store) — 앱 재고 화면이 막혔을 때 점포만이라도 확보 */
-async function emart24StoresApi1(lat, lng, area, diag) {
-  const query = String(area || '').trim();
-  const rows = [];
-  for (const page of [1, 2]) {
-    const url =
-      BASE.emart24Open + '/api1/store?page=' + page + (query ? '&search=' + encodeURIComponent(query) : '');
-    const body = await request(url, { method: 'GET', headers: { 'user-agent': UA_ANDROID, accept: 'application/json' }, tms: 2500 }, '이마트24 공개 매장', null, diag);
-    const pageRows = (body && body.data) || [];
-    rows.push(...(Array.isArray(pageRows) ? pageRows : []));
-    if (!Array.isArray(pageRows) || pageRows.length < 30) break;
+/** 재고 API 가 살아 있는지 확인하는 대조 조회 — 상시 취급 품목(생수)으로 한 번만 */
+async function emart24StockControl(bizNos, diag) {
+  try {
+    const list = await emart24Products('생수', diag);
+    const pickOne = list.find((p) => /생수|샘물|수\)/.test(p.name)) || list[0];
+    if (!pickOne) return false;
+    await emart24Prepare(pickOne.code, diag);
+    const rows = await emart24StockOne(pickOne.code, bizNos, diag);
+    return rows.some((r) => Number(r.qty) > 0);
+  } catch (err) {
+    return false;
   }
+}
+
+/** 공개 매장 API(emart24.co.kr/api1/store) — 앱 재고 화면(getNearStoreList)이 500/차단일 때 쓴다.
+ *  지역명(search)이 없으면 전국 5,690곳을 앞쪽 페이지만 훑어 늘 0곳이 되므로,
+ *  호출부에서 반드시 지역명 후보를 만들어 넘긴다. */
+async function emart24StoresPublic(lat, lng, ctx, diag) {
+  const radius = (ctx && ctx.radius) || DEFAULT_RADIUS;
+  const queries = emart24Queries(ctx);
+  const rows = [];
+  const seen = new Set();
+  /* 후보 검색어를 모두 돌아 합친다 — 좁은 이름 하나만 쓰면 같은 동네라도 주소가 다른 점포가 빠진다. */
+  for (const q of queries) {
+    let total = null;
+    for (let page = 1; page <= 3; page++) {
+      const url =
+        BASE.emart24Open + '/api1/store?page=' + page + '&search=' + encodeURIComponent(q);
+      let body;
+      try {
+        body = await request(
+          url,
+          { method: 'GET', headers: { 'user-agent': UA_ANDROID, accept: 'application/json' }, tms: 4000 },
+          '이마트24 공개 매장("' + q + '")',
+          null,
+          diag
+        );
+      } catch (err) {
+        break; /* 다음 후보 지역명으로 */
+      }
+      const pageRows = Array.isArray(body && body.data) ? body.data : [];
+      if (total === null && body && Number.isFinite(Number(body.count))) total = Number(body.count);
+      for (const row of pageRows) {
+        const code = String(pick(row, ['CODE', 'code', 'BIZNO']) || '');
+        if (!code || seen.has(code)) continue;
+        seen.add(code);
+        rows.push(row);
+      }
+      if (pageRows.length < 40) break;
+      if (total !== null) {
+        if (page * 40 >= total) break;
+        if (total > 160) break; /* 너무 넓은 검색어(전국구)는 1페이지만 */
+      }
+    }
+  }
+  return emart24PublicNear(rows, lat, lng, radius);
+}
+
+/** 공개 매장 행 → 점포 객체 (반경 안·가까운 순) */
+function emart24PublicNear(rows, lat, lng, radius) {
   return uniqBy(
     rows
       .map((row) => {
@@ -545,7 +754,8 @@ async function emart24StoresApi1(lat, lng, area, diag) {
         const sLat = num(pick(row, ['LATITUDE', 'latitude', 'lat']), NaN);
         const sLng = num(pick(row, ['LONGITUDE', 'longitude', 'lng']), NaN);
         if (!code || !Number.isFinite(sLat) || !Number.isFinite(sLng)) return null;
-        if (distanceM(lat, lng, sLat, sLng) > DEFAULT_RADIUS * 2) return null;
+        const d = distanceM(lat, lng, sLat, sLng);
+        if (d > radius) return null;
         const addr = [pick(row, ['ADDRESS']), pick(row, ['ADDRESS_DE'])].filter(Boolean).join(' ').trim();
         return {
           id: code,
@@ -553,12 +763,31 @@ async function emart24StoresApi1(lat, lng, area, diag) {
           address: addr,
           lat: sLat,
           lng: sLng,
-          tel: String(pick(row, ['PHONE', 'phone']) || '')
+          tel: String(pick(row, ['PHONE', 'phone']) || ''),
+          distance: d
         };
       })
-      .filter(Boolean),
+      .filter(Boolean)
+      .sort((a, b) => a.distance - b.distance),
     (s) => s.id
   );
+}
+
+/** 이마트24 공개 매장 API 검색어 후보 — 좁은 이름(동)부터 넓은 이름(시) 순 */
+function emart24Queries(ctx) {
+  const out = [];
+  const push = (raw) => {
+    const q = String(raw || '').replace(/\s+/g, ' ').trim();
+    if (q.length >= 2 && !out.includes(q)) out.push(q);
+  };
+  if (process.env.EMART24_AREA) push(process.env.EMART24_AREA);
+  for (const q of (ctx && ctx.geoQueries) || []) push(q);
+  const area = (ctx && ctx.area) || areaFromStores(ctx && ctx.addresses);
+  if (area) {
+    push(area);
+    for (const token of String(area).split(/\s+/)) push(token.replace(/(시|군|구|동|읍|면)$/, ''));
+  }
+  return out.slice(0, 5);
 }
 
 /* --------------------------------------------------------------- CU */
@@ -902,10 +1131,10 @@ async function sevenStoreSearch(query, diag) {
   return { stores, docs: (docs.length ? docs : []).length, total };
 }
 
-/** 점포 검색어 후보 — 주소에서 시/군·구·동 이름을 뽑는다 */
+/** 점포 검색어 후보 — 역지오코딩 결과(동·구·시)를 먼저, 그다음 주소 문자열에서 뽑는다 */
 function sevenAreaQueries(ctx) {
   const sources = []
-    .concat(ctx && ctx.addresses ? ctx.addresses : [], (ctx && ctx.area) || '')
+    .concat((ctx && ctx.geoQueries) || [], ctx && ctx.addresses ? ctx.addresses : [], (ctx && ctx.area) || '')
     .filter(Boolean);
   const out = [];
   const push = (raw) => {
@@ -924,16 +1153,17 @@ function sevenAreaQueries(ctx) {
     const district = t.find((x) => x !== city && x !== province && /(구|군)$/.test(x)) || '';
     const dong = t.find((x) => /(동|읍|면)$/.test(x)) || '';
     const cityBare = city.replace(/(시|군)$/, '');
+    const dongBare = dong.replace(/(동|읍|면)$/, '');
     const provinceBare = province.replace(/(특별시|광역시|특별자치시|특별자치도|도)$/, '');
     const before = out.length;
-    /* 넓은 이름부터 — 좁은 이름만 쓰면 옆 동네 점포를 놓친다 */
+    /* 좁은 이름부터 — 반경 안에 점포가 잡히면 거기서 멈춘다(호출부) */
+    push(dongBare);
+    push(dong);
     push(cityBare);
     push(city);
     push(cityBare + district);
     push(district);
-    /* 시/군 이름이 없는 주소(서울 종로구 …)는 시·도 이름도 후보로 둔다 */
     push(provinceBare);
-    push(dong);
     push(province);
     /* "포항"·"강남"처럼 시/군/구/동 꼬리표가 없는 이름은 그대로 쓴다 */
     if (out.length === before) {
@@ -941,7 +1171,7 @@ function sevenAreaQueries(ctx) {
       for (const token of t) push(token);
     }
   }
-  return out.slice(0, 4);
+  return out.slice(0, 5);
 }
 
 /** 점포 한 곳의 여러 상품 재고 (앱이 쓰는 02 경로) — 실패하면 null */
@@ -1184,16 +1414,24 @@ async function nearby(lat, lng, keyword, radius) {
   if (hit && Date.now() - hit.at < CACHE_MS) return Object.assign({}, hit.value, { cached: true });
 
   const nowIso = new Date().toISOString();
-  const diag = { emart24: [], cu: [], seven: [] };
+  const diag = { emart24: [], cu: [], seven: [], geo: [] };
 
-  /* CU를 먼저 본다(상품 바코드·점포 주소가 나온다) → 이마트24·세븐일레븐에 넘긴다 */
-  const cu = await runChain('cu', () => collectCu(lat, lng, keyword, diag.cu), diag.cu);
+  /* CU(상품 바코드·점포 주소)와 좌표→주소 변환을 함께 본다.
+     지역명을 CU 응답에만 기대면 CU 가 그 상품을 취급하는 점포를 안 줄 때(청림동)
+     이마트24·세븐일레븐 점포 검색이 통째로 빈다. */
+  const [cu, geo] = await Promise.all([
+    runChain('cu', () => collectCu(lat, lng, keyword, diag.cu), diag.cu),
+    reverseGeocode(lat, lng, diag.geo).catch(() => ({ queries: [], address: '', city: '', district: '', dong: '' }))
+  ]);
 
   const addressRows = [].concat((cu.value && cu.value.hints) || [], (cu.value && cu.value.stores) || []);
   const ctx = {
     radius,
-    area: areaFromStores(addressRows),
-    addresses: addressRows.map((s) => (s && s.address) || '').filter(Boolean),
+    area: areaFromStores(addressRows) || (geo.queries && geo.queries[0]) || '',
+    addresses: [geo.address || '']
+      .concat(addressRows.map((s) => (s && s.address) || ''))
+      .filter(Boolean),
+    geoQueries: geo.queries || [],
     barcodes: uniqBy(cu.value.products || [], (p) => p.code).map((p) => p.code)
   };
 
@@ -1234,6 +1472,13 @@ async function nearby(lat, lng, keyword, radius) {
     keyword,
     radius,
     generatedAt: nowIso,
+    geo: {
+      source: geo.source || '',
+      city: geo.city || '',
+      district: geo.district || '',
+      dong: geo.dong || '',
+      queries: geo.queries || []
+    },
     sources,
     stores: merged
   };
@@ -1245,7 +1490,7 @@ async function nearby(lat, lng, keyword, radius) {
 
 /* 체인별로 "어디까지 됐는지"만 보여 주는 진단 — 태블릿에서 원인 확인용 */
 async function diagnose(lat, lng, keyword, radius) {
-  const diag = { emart24: [], cu: [], seven: [] };
+  const diag = { emart24: [], cu: [], seven: [], geo: [] };
   const steps = {};
   const safe = async (name, task) => {
     try {
@@ -1255,52 +1500,58 @@ async function diagnose(lat, lng, keyword, radius) {
     }
   };
 
-  await safe('emart24', async () => {
-    await emart24Prime(diag.emart24);
-    const stores = await emart24Stores(lat, lng, diag.emart24);
-    const products = await emart24Products('포켓몬카드', diag.emart24);
-    const cards = products.filter((p) => looksLikeCard(p.name));
-    let stockRows = null;
-    if (cards.length && stores.length) {
-      await emart24Prepare(cards[0].code, diag.emart24);
-      stockRows = await emart24StockOne(cards[0].code, stores.map((s) => s.id), diag.emart24);
-    }
-    return { stores: stores.length, products: products.length, cards: cards.length, sampleStockRows: stockRows ? stockRows.length : null };
-  });
+  const geo = await reverseGeocode(lat, lng, diag.geo).catch(() => ({ queries: [], address: '' }));
+  steps.geo = {
+    ok: !!(geo.queries && geo.queries.length),
+    detail: { source: geo.source || '', city: geo.city, district: geo.district, dong: geo.dong, queries: geo.queries || [] }
+  };
 
-  let cuAreaRows = []; /* CU 점포 주소 — 세븐일레븐 점포 검색어로 쓴다 */
-  await safe('cu', async () => {
-    const products = await cuSearch(keyword, diag.cu);
-    let storesWithQty = null;
-    if (products.length) {
-      const list = await cuStoresForItem(lat, lng, products[0], diag.cu);
-      cuAreaRows = list;
-      storesWithQty = list.filter((r) => r.item.qty !== null).length;
-    }
-    return { cards: products.length, sample: products[0] && products[0].name, storesWithQty };
-  });
-
-  const cuStore = await (async () => {
+  const cuValue = await (async () => {
     try {
-      return await cuSearchOne(keyword, []);
+      return await collectCu(lat, lng, keyword, diag.cu);
     } catch (err) {
-      return [];
+      steps.cu = { ok: false, error: ((err && err.message) || String(err)).slice(0, 200) };
+      return { stores: [], products: [], hints: [] };
     }
   })();
-  const area = process.env.SEVEN_AREA || '';
-  await safe('seven', async () => {
-    const codes = String(process.env.SEVEN_ITEM_CDS || '').split(',').map((s) => s.trim()).filter(Boolean);
-    const itemCode = codes[0] || (cuStore[0] && cuStore[0].code) || '';
-    const barcodes = itemCode ? [itemCode] : [];
-    const cuAddresses = cuAreaRows.map((s) => (s && s.address) || '').filter(Boolean);
-    const value = await collectSeven(lat, lng, { radius, area: area || areaFromStores(cuAreaRows), addresses: cuAddresses, barcodes }, diag.seven);
+
+  const addressRows = [].concat(cuValue.hints || [], cuValue.stores || []);
+  const ctx = {
+    radius,
+    area: areaFromStores(addressRows) || (geo.queries && geo.queries[0]) || '',
+    addresses: [geo.address || ''].concat(addressRows.map((s) => (s && s.address) || '')).filter(Boolean),
+    geoQueries: geo.queries || [],
+    barcodes: uniqBy(cuValue.products || [], (p) => p.code).map((p) => p.code)
+  };
+  if (!steps.cu) {
+    steps.cu = {
+      ok: true,
+      detail: { cards: (cuValue.products || []).length, stores: (cuValue.stores || []).length, note: cuValue.note || '' }
+    };
+  }
+
+  await safe('emart24', async () => {
+    const value = await collectEmart24(lat, lng, keyword, diag.emart24, ctx);
     const first = (value.stores || [])[0];
     return {
-      area: area || '(주소에서 자동)',
-      itemCode,
+      stores: (value.stores || []).length,
+      hints: (value.hints || []).length,
+      products: (value.products || []).length,
+      note: value.note || '',
+      sampleStore: first ? { name: first.name, items: (first.items || []).slice(0, 2) } : null
+    };
+  });
+
+  await safe('seven', async () => {
+    const value = await collectSeven(lat, lng, ctx, diag.seven);
+    const first = (value.stores || [])[0];
+    return {
+      area: ctx.area || '(주소에서 자동)',
       queries: value.queries || [],
       stores: (value.stores || []).length,
-      sampleStore: first ? { name: first.name, distanceM: first.distanceM, items: (first.items || []).slice(0, 2) } : null,
+      sampleStore: first
+        ? { name: first.name, distanceM: distanceM(lat, lng, first.lat, first.lng), items: (first.items || []).slice(0, 2) }
+        : null,
       note: value.note || ''
     };
   });
@@ -1336,6 +1587,8 @@ const HELP_HTML = `<!doctype html><html lang="ko"><meta charset="utf-8">
 <li><code>GET /health</code> — 서버 상태</li>
 <li><code>GET /api/nearby?lat=36.07&amp;lng=129.39&amp;keyword=포켓몬카드&amp;radius=3000</code> — 주변 점포 실재고</li>
 <li><code>GET /api/diag</code> — 체인별 조회 진단(어디서 막히는지)</li>
+<li><code>GET /api/emart24</code> — 이마트24만 따로(점포 목록·점포별 수량)</li>
+<li><code>GET /api/seven</code> — 세븐일레븐만 따로(지역명·점포·수량)</li>
 </ul>
 <p style="color:#5b6b85">조회 전용입니다. 주문·결제·선점 요청은 만들지 않습니다.</p>
 </body></html>`;
@@ -1414,9 +1667,17 @@ const server = http.createServer(async (req, res) => {
             .filter(Boolean);
       if (!barcodes.length) barcodes.push('8800286279372'); /* CU에서 확인한 포켓몬 카드 바코드 */
       const diag = [];
+      const geo = manual
+        ? { queries: [], address: '' }
+        : await reverseGeocode(lat, lng, diag).catch(() => ({ queries: [], address: '' }));
       let value;
       try {
-        value = await collectSeven(lat, lng, { radius, area: manual, addresses: manual ? [manual] : [], barcodes }, diag);
+        value = await collectSeven(
+          lat,
+          lng,
+          { radius, area: manual, addresses: manual ? [manual] : geo.address ? [geo.address] : [], geoQueries: geo.queries || [], barcodes },
+          diag
+        );
       } catch (err) {
         value = { stores: [], products: [], queries: [], note: '오류: ' + ((err && err.message) || String(err)).slice(0, 160) };
       }
@@ -1441,6 +1702,60 @@ const server = http.createServer(async (req, res) => {
         upstream: diag
       });
       console.log(`[seven] ${lat.toFixed(4)},${lng.toFixed(4)} → ${(value.stores || []).length}곳`);
+      return;
+    }
+
+    if (path === '/api/emart24') {
+      /* 이마트24만 따로 — 점포 목록이 어느 경로로 왔는지, 점포별 수량이 어떻게 나오는지 확인용.
+         /api/emart24?lat=36.0016&lng=129.4028  (q 를 주면 그 지역명으로 공개 매장 API 조회) */
+      const lat = num(url.searchParams.get('lat'), DEFAULT_LAT);
+      const lng = num(url.searchParams.get('lng'), DEFAULT_LNG);
+      const radius = Math.min(20000, Math.max(300, num(url.searchParams.get('radius'), DEFAULT_RADIUS)));
+      const manual = (url.searchParams.get('q') || '').trim().slice(0, 40);
+      const keyword = (url.searchParams.get('keyword') || DEFAULT_KEYWORD).trim().slice(0, 40) || DEFAULT_KEYWORD;
+      const diag = [];
+      const geo = await reverseGeocode(lat, lng, diag).catch(() => ({ queries: [], address: '' }));
+      const ctx = {
+        radius,
+        area: manual || (geo.queries && geo.queries[0]) || '',
+        addresses: manual ? [manual] : geo.address ? [geo.address] : [],
+        geoQueries: manual ? [manual] : geo.queries || []
+      };
+      let value;
+      try {
+        value = await collectEmart24(lat, lng, keyword, diag, ctx);
+      } catch (err) {
+        value = { stores: [], products: [], hints: [], note: '오류: ' + ((err && err.message) || String(err)).slice(0, 160) };
+      }
+      sendJson(res, 200, {
+        ok: true,
+        version: VERSION,
+        lat,
+        lng,
+        radius,
+        geo: { source: geo.source || '', queries: geo.queries || [] },
+        note: value.note || '',
+        products: (value.products || []).map((p) => ({ code: p.code, name: p.name })),
+        hints: (value.hints || []).map((s) => ({ id: s.id, name: s.name, distanceM: distanceM(lat, lng, s.lat, s.lng) })),
+        stores: (value.stores || []).map((s) => ({
+          id: s.id,
+          name: s.name,
+          address: s.address,
+          distanceM: distanceM(lat, lng, s.lat, s.lng),
+          items: s.items
+        })),
+        upstream: diag
+      });
+      console.log(`[emart24] ${lat.toFixed(4)},${lng.toFixed(4)} → ${(value.stores || []).length}곳`);
+      return;
+    }
+
+    if (path === '/api/geo') {
+      const lat = num(url.searchParams.get('lat'), DEFAULT_LAT);
+      const lng = num(url.searchParams.get('lng'), DEFAULT_LNG);
+      const diag = [];
+      const geo = await reverseGeocode(lat, lng, diag);
+      sendJson(res, 200, { ok: true, version: VERSION, lat, lng, geo, upstream: diag });
       return;
     }
 
@@ -1494,4 +1809,21 @@ server.listen(PORT, HOST, () => {
 
 if (require.main === module) start();
 
-module.exports = { start, server, nearby, diagnose, mergeStores, distanceM, looksLikeCard, areaFromStores, collectSeven, sevenStoreSearch, sevenAreaQueries };
+module.exports = {
+  start,
+  server,
+  nearby,
+  diagnose,
+  mergeStores,
+  distanceM,
+  looksLikeCard,
+  areaFromStores,
+  collectSeven,
+  sevenStoreSearch,
+  sevenAreaQueries,
+  collectEmart24,
+  emart24StoresPublic,
+  emart24Queries,
+  reverseGeocode,
+  geoQueries
+};
