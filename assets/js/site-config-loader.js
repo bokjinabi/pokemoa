@@ -119,6 +119,17 @@
     document.documentElement.dataset.moaTheme = dark ? "dark" : "light";
   }
 
+  /* 숨김 클래스 규칙은 배너·팝업을 그릴 때만 주입되므로, 기능 스위치·탭/섹션 숨김이
+     배너·팝업 모두 꺼진 화면에서도 동작하도록 규칙 하나를 따로 보장한다. */
+  const HIDDEN_STYLE_ID = "moa-hidden-style";
+  function ensureHiddenStyle() {
+    if (document.getElementById(STYLE_ID) || document.getElementById(HIDDEN_STYLE_ID)) return;
+    const style = document.createElement("style");
+    style.id = HIDDEN_STYLE_ID;
+    style.textContent = `.${HIDDEN_CLASS}{display:none !important}`;
+    document.head.appendChild(style);
+  }
+
   function load(path) {
     const url = path + (path.indexOf("?") === -1 ? "?" : "&") + "_moa=" + Date.now();
     return fetch(url, { cache: "no-store" })
@@ -630,6 +641,7 @@
   function apply(cfg, options) {
     const opts = options || {};
     if (!cfg) return null;
+    ensureHiddenStyle();
     state.config = cfg;
     state.options = opts;
     // 이전에 그린 배너·팝업을 지우고 새 설정으로 다시 그린다(미리보기 갱신 때 중복 방지).
