@@ -515,19 +515,24 @@
     if (regionBtn) regionBtn.classList.remove("is-busy");
   });
 
-  /* 매장별 취급·재고 카드 상품명 태그 */
+  /* 매장별 취급·재고 카드 상품명 태그 — 수량 0개 카드는 숨기고 실제 재고(>0)만 보여 준다.
+     모든 카드가 0개면 태그 줄을 비우고 상태 배지·수량 칩만 남긴다. */
+  function stockedProducts(s) {
+    return (s.products || []).filter(function (p) {
+      var q = Number(p.qty);
+      if (isFinite(q)) return q > 0;
+      return p.state === "in" || p.state === "low";
+    });
+  }
+
   function productTagsHtml(s) {
-    var list = s.products || [];
+    var list = stockedProducts(s);
     if (!list.length) return "";
-    var soldout = list.some(function (p) { return p.state === "soldout"; });
-    var head = s.status === "none" && soldout
-      ? '<span class="p-head">' + (s.relay ? "조회 결과 0개" : "최근 입고 품절") + '</span>'
-      : "";
     var tags = list.map(function (p) {
       return '<span class="p-tag is-' + p.state + '" title="' + p.name + " · " + p.stateLabel + '">' +
         p.short + ' <i>· ' + p.stateLabel + "</i></span>";
     }).join("");
-    return '<span class="s-products">' + head + tags + "</span>";
+    return '<span class="s-products">' + tags + "</span>";
   }
 
   /* 정렬: 재고 우선(재고 있음 → 미조회 → 없음, 각각 가까운 순) / 가까운 거리순 */

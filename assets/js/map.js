@@ -524,9 +524,10 @@ window.PokeMoaMap = (function () {
 
   /* 매장 하나 = 말풍선(알약) 또는 저줌에서는 브랜드 칩·점 */
   function drawPill(s) {
+    var stocked = stockedProducts(s);
     var label = s.name + " · " + placeLabel(s) +
-      (s.products && s.products.length
-        ? " · " + s.products.map(function (p) { return p.short + " " + p.stateLabel; }).join(", ")
+      (stocked.length
+        ? " · " + stocked.map(function (p) { return p.short + " " + p.stateLabel; }).join(", ")
         : "");
     var node = pillNode(s, label);
     var ov = addOverlay(node, s.lat, s.lng, {
@@ -636,20 +637,21 @@ window.PokeMoaMap = (function () {
     return s === "in" ? "재고 있음" : s === "none" ? "없음" : "미조회";
   }
 
+  /* 실제 재고가 있는 카드만 — 수량 0개(품절) 태그는 목록·팝업 어디에도 그리지 않는다.
+     그래서 모든 카드가 0개인 매장은 태그 줄 없이 상태 배지만 남는다. */
+  function stockedProducts(s) {
+    return (s.products || []).filter(function (p) {
+      var q = Number(p.qty);
+      if (isFinite(q)) return q > 0;
+      return p.state === "in" || p.state === "low";
+    });
+  }
+
   /* 취급·재고 카드 상품명 태그 (목록·팝업 공용) */
   function productTagsHtml(s, cls, withHead) {
-    var list = s.products || [];
+    var list = stockedProducts(s);
     if (!list.length) return "";
-    var soldout = list.some(function (p) { return p.state === "soldout"; });
-    var head = "";
-    if (s.status === "none") {
-      /* 실시간 조회로 0을 확인한 매장은 품절 이력이 아니라 '조회 결과 0개'로 적는다 */
-      head = soldout
-        ? '<span class="p-head">' + (s.relay ? "조회 결과 0개" : "최근 입고 품절") + '</span>'
-        : "";
-    } else if (withHead) {
-      head = '<span class="p-head p-head-label">보유 카드</span>';
-    }
+    var head = withHead ? '<span class="p-head p-head-label">보유 카드</span>' : "";
     var tags = list.map(function (p) {
       return '<span class="p-tag is-' + p.state + '" title="' + p.name + " · " + p.stateLabel + '">' +
         p.short + ' <i>· ' + p.stateLabel + "</i></span>";
