@@ -115,6 +115,16 @@
  *     이 경로도 막히면 예전 점포 검색 경로를 세션 쿠키를 먼저 받아 두고(cookie prime) 재시도하고,
  *     그래도 안 되면 왜 막혔는지 `/api/seven` 의 `strategies` 에 그대로 남깁니다.
  *
+ * 2026-11-19 개정(v1.8) — "로딩이 더 걸려도 더 많이" 요청에 맞춘 시간 예산 확대
+ *   · 사이트가 응답을 32초까지 기다리므로, 체인별 소프트 마감 23초 · 전체 마감 27초로 늘렸습니다
+ *     (예전 18초 안에 맞추려고 6~8초에서 끊던 것을 풀었습니다). 마감 직전에는 새 요청을 시작하지 않고,
+ *     이미 나간 요청도 남은 시간만큼만 기다리므로 최악의 경우에도 30초를 넘지 않습니다.
+ *   · CU·GS25 격자를 9점(중심 + 8방위 1.5km)에서 **17점(중심 + 내링 8방위 + 외링 8방위)** 로 늘렸습니다.
+ *     3km 는 내링 1.1km · 외링 2.2km 라 3km 모서리까지 덮습니다. 동시 요청은 4로 유지해 403/429 를 피합니다.
+ *   · 응답 점포 상한 200 → 470(거리순 정렬 후 상한). 지도도 같은 상한을 받습니다.
+ *   · 이마트24 페이지 예산 18 → 36회(검색어당 최대 12페이지)로 늘려 도심에서도 끝까지 읽습니다.
+ *   · 세븐일레븐은 CU 결과(바코드)를 기다려 시작하므로 남은 시간 안에서만 돌고, 늦으면 부분 결과를 냅니다.
+ *
  * 주의: 이 서버는 조회만 합니다. 주문·결제·선점 같은 쓰기 요청은 없습니다.
  */
 
@@ -125,7 +135,7 @@ const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const VERSION = '1.7';
+const VERSION = '1.8';
 const SERVICE = 'pokemoa-relay';
 
 const PORT = Number(process.env.PORT || 3100);
@@ -157,16 +167,28 @@ const GS25_MAX_ITEMS = (() => {
 })();
 const GS25_RADIUS = Number(process.env.GS25_RADIUS || 1000);       // m — 우리동네GS 앱 기본 반경
 const GEO_TTL_MS = 6 * 3600e3; // 좌표→주소 캐시 (같은 동네를 다시 물을 때 외부 호출을 아낀다)
-const MAX_STORES = Number(process.env.RELAY_MAX_STORES || 200);    // 응답에 담는 점포 수(4사 합산)
+const MAX_STORES = Number(process.env.RELAY_MAX_STORES || 470);    // 응답에 담는 점포 수(4사 합산, 거리순 상한)
 const SEVEN_STORE_LIMIT = 40;  // 세븐일레븐 점포 상한(점포 1곳당 요청 1번인 폴백에서만 의미)
 const SEVEN_MAX_ITEMS = 4;     // 세븐일레븐에서 점포마다 물어볼 상품 수(02 경로는 한 번에)
 
-/* 격자 조회 설정 — 사이트가 18초에 응답을 끊으므로 요청 수를 여기서 묶어 둔다. */
+/* 격자 조회 설정 — 사이트가 32초까지 기다리므로 요청 수를 넉넉히 두되, 동시 요청은 4로 묶어
+   편의점 API 가 단시간 과다 요청으로 403/429 를 걸지 않게 한다. */
 const RING_CU_ITEMS = Number(process.env.CU_RING_ITEMS || 2);        // 격자 지점에서 물어볼 상품 수
-const RING_CONCURRENCY = Number(process.env.RING_CONCURRENCY || 8);  // CU 격자 동시 요청
+const RING_CONCURRENCY = Number(process.env.RING_CONCURRENCY || 4);  // CU 격자 동시 요청
 const GS25_RING_CONCURRENCY = Number(process.env.GS25_RING_CONCURRENCY || 4);
-const EMART24_MAX_PAGES = Number(process.env.EMART24_MAX_PAGES || 8); // 검색어당 최대 페이지
-const EMART24_QUERY_BUDGET = Number(process.env.EMART24_QUERY_BUDGET || 18); // 이마트24 점포 요청 총량
+const EMART24_MAX_PAGES = Number(process.env.EMART24_MAX_PAGES || 12); // 검색어당 최대 페이지
+const EMART24_QUERY_BUDGET = Number(process.env.EMART24_QUERY_BUDGET || 36); // 이마트24 점포 요청 총량
+
+/* v1.8 — 응답 시간 예산. 전체 마감(27초) 안에서 체인은 23초까지만 새 요청을 시작하고,
+   마감 1.2초 전부터는 정리에 들어간다. 프론트엔드 요청 타임아웃은 32초다. */
+function envClamp(name, fallback, min, max) {
+  const n = Number(process.env[name]);
+  return Number.isFinite(n) && n > 0 ? Math.min(max, Math.max(min, Math.trunc(n))) : fallback;
+}
+const NEARBY_DEADLINE_MS = envClamp('RELAY_NEARBY_DEADLINE_MS', 27000, 8000, 45000);
+const CHAIN_SOFT_DEADLINE_MS = envClamp('RELAY_CHAIN_SOFT_DEADLINE_MS', 23000, 4000, 40000);
+const RESPONSE_RESERVE_MS = 1200;   // 마감 직전 정리·직렬화 시간
+const MIN_SLICE_MS = 1200;          // 요청 하나에 최소한 주는 시간
 
 /* ------------------------------------------------------------ 공통 도구 */
 
@@ -378,33 +400,60 @@ function distanceM(aLat, aLng, bLat, bLng) {
 }
 
 /* 격자 조회 지점 — 업체 API 가 한 번에 가까운 몇 곳만 주므로, 중심과 주변 지점을 함께 물어 합친다.
-   방향은 위도 기준 각도(북=0, 동=90, 남=180, 서=270)이다. */
-function ringPoints(lat, lng, offsetM, dirs) {
+   방향은 위도 기준 각도(북=0, 동=90, 남=180, 서=270)이다.
+   v1.8 — 링을 둘로 늘려(내링 + 외링, 각 8방위) 3km 모서리 매장까지 덮는다. */
+const DIR_STEPS_8 = [0, 45, 90, 135, 180, 225, 270, 315];
+const DIR_STEPS_4 = [0, 90, 180, 270];
+
+function ringPoints(lat, lng, rings) {
   const points = [{ lat, lng, tag: 'center' }];
-  const n = dirs >= 8 ? 8 : dirs >= 4 ? 4 : 0;
-  if (!n || !(offsetM > 0)) return points;
-  const dLat = offsetM / 111320;
-  const dLng = offsetM / (111320 * Math.cos((lat * Math.PI) / 180));
-  const stepList = n === 8 ? [0, 45, 90, 135, 180, 225, 270, 315] : [0, 90, 180, 270];
-  for (const deg of stepList) {
-    const rad = (deg * Math.PI) / 180;
-    points.push({
-      lat: lat + dLat * Math.cos(rad),
-      lng: lng + dLng * Math.sin(rad),
-      tag: 'ring' + deg
-    });
+  for (const ring of rings || []) {
+    const offsetM = Number(ring && ring.offsetM);
+    if (!(offsetM > 0)) continue;
+    const dirs = ring && ring.dirs >= 8 ? 8 : ring && ring.dirs >= 4 ? 4 : 0;
+    if (!dirs) continue;
+    const dLat = offsetM / 111320;
+    const dLng = offsetM / (111320 * Math.cos((lat * Math.PI) / 180));
+    const steps = dirs === 8 ? DIR_STEPS_8 : DIR_STEPS_4;
+    for (const deg of steps) {
+      const rad = (deg * Math.PI) / 180;
+      points.push({
+        lat: lat + dLat * Math.cos(rad),
+        lng: lng + dLng * Math.sin(rad),
+        tag: 'ring' + Math.round(offsetM) + ':' + deg
+      });
+    }
   }
   return points;
 }
 
-/** 반경에 맞는 격자 크기 — 3km 는 1.5km 링 8방위, 5km 이상은 2.5km 링 하나(요청 예산 보호) */
+/** 반경에 맞는 격자 크기 — 3km 이상은 내링·외링 17점.
+    3km: 내링 1.1km · 외링 2.2km(요청 반경 1.5km 와 겹쳐 빈틈 없음)
+    5km·20km: 내링 1.1km · 외링 2.6km — 기존 9점보다 촘촘하되 요청 수는 17점으로 묶는다. */
 function ringPlan(radius, perQueryCoverM) {
   const r = Number(radius) || DEFAULT_RADIUS;
   const cover = Math.max(500, Number(perQueryCoverM) || 1500);
-  if (r < 1400) return { dirs: 0, offsetM: 0 };
-  if (r < 2100) return { dirs: 4, offsetM: Math.round(Math.min(cover, r * 0.55)) };
-  const offsetM = r >= 4200 ? Math.round(Math.min(2600, cover * 1.7)) : Math.round(Math.min(cover, r * 0.5));
-  return { dirs: 8, offsetM };
+  if (r < 1400) return { rings: [], points: 1 };
+  if (r < 2200) return { rings: [{ offsetM: Math.round(Math.min(cover, r * 0.55)), dirs: 8 }], points: 9 };
+  const inner = Math.round(Math.min(cover * 0.75, r * 0.37));
+  const outer =
+    r >= 4200 ? Math.round(Math.min(2600, cover * 1.7)) : Math.round(Math.min(cover * 1.45, r * 0.72));
+  return { rings: [{ offsetM: inner, dirs: 8 }, { offsetM: outer, dirs: 8 }], points: 17 };
+}
+
+/* v1.8 — 시간 예산 도우미.
+   stopAtFor: 체인이 "새 요청을 시작해도 되는" 마지막 시각(체인 소프트 마감과 전체 마감 중 이른 쪽).
+   sliceTms:  요청 하나에 줄 시간 — 남은 시간을 넘지 않게 잘라 마감을 넘기는 요청을 만들지 않는다. */
+function stopAtFor(deadlineAt, softMs) {
+  const hard = Number.isFinite(deadlineAt) ? deadlineAt : Date.now() + NEARBY_DEADLINE_MS;
+  const soft = Number(softMs) > 0 ? Number(softMs) : CHAIN_SOFT_DEADLINE_MS;
+  return Math.max(Date.now(), Math.min(Date.now() + soft, hard - RESPONSE_RESERVE_MS));
+}
+
+function sliceTms(stopAt, cap) {
+  const left = stopAt - Date.now();
+  const limit = Number(cap) > 0 ? Number(cap) : TIMEOUT_MS;
+  return Math.max(MIN_SLICE_MS, Math.min(limit, left));
 }
 
 /** 상품명이 포켓몬카드(TCG) 상품인지 — 과자·문구 콜라보와 구분한다 */
@@ -618,7 +667,7 @@ async function emart24Stores(lat, lng, diag) {
   );
 }
 
-async function emart24Products(keyword, diag) {
+async function emart24Products(keyword, diag, tms) {
   const body = await request(
     BASE.emart24 + '/stock/stock/search',
     {
@@ -630,7 +679,8 @@ async function emart24Products(keyword, diag) {
         sortType: 'SALE',
         saleProductYn: 'N',
         searchWord: keyword
-      })
+      }),
+      tms: Number(tms) > 0 ? Number(tms) : undefined
     },
     '이마트24 상품',
     emart24Jar,
@@ -647,14 +697,15 @@ async function emart24Products(keyword, diag) {
 }
 
 /** 상품 1개를 재고 조회 화면에 올리는 준비 호출 — 실패해도 무시한다 */
-async function emart24Prepare(plu, diag) {
+async function emart24Prepare(plu, diag, tms) {
   try {
     await request(
       BASE.emart24 + '/api/stock/v1/search/keyword',
       {
         method: 'POST',
         headers: EMART24_HEADERS(),
-        body: formBody({ pluCd: plu, searchPage: 'STOCK_SEARCH_SERVICE' })
+        body: formBody({ pluCd: plu, searchPage: 'STOCK_SEARCH_SERVICE' }),
+        tms: Number(tms) > 0 ? Number(tms) : undefined
       },
       '이마트24 준비',
       emart24Jar,
@@ -665,7 +716,7 @@ async function emart24Prepare(plu, diag) {
   }
 }
 
-async function emart24StockOne(plu, bizNos, diag) {
+async function emart24StockOne(plu, bizNos, diag, tms) {
   const query = 'searchPluCode=' + encodeURIComponent(plu) + '&bizNoArr=' + encodeURIComponent(bizNos.join(','));
   const headers = {
     'user-agent': UA_ANDROID,
@@ -675,10 +726,22 @@ async function emart24StockOne(plu, bizNos, diag) {
   };
   let body;
   try {
-    body = await request(BASE.emart24 + '/api/stock/v3/stock-search/store?' + query, { method: 'GET', headers }, '이마트24 재고', emart24Jar, diag);
+    body = await request(
+      BASE.emart24 + '/api/stock/v3/stock-search/store?' + query,
+      { method: 'GET', headers, tms: Number(tms) > 0 ? Number(tms) : undefined },
+      '이마트24 재고',
+      emart24Jar,
+      diag
+    );
   } catch (err) {
     /* v3가 막히거나 바뀌면 v2로 한 번 더 */
-    body = await request(BASE.emart24 + '/api/stock/v2/stock-search/store?' + query, { method: 'GET', headers }, '이마트24 재고(v2)', emart24Jar, diag);
+    body = await request(
+      BASE.emart24 + '/api/stock/v2/stock-search/store?' + query,
+      { method: 'GET', headers, tms: Number(tms) > 0 ? Number(tms) : undefined },
+      '이마트24 재고(v2)',
+      emart24Jar,
+      diag
+    );
   }
   /* v2는 본문이 문자열로 한 번 더 감싸져 오는 경우가 있다 */
   if (typeof body === 'string') {
@@ -725,9 +788,13 @@ async function collectEmart24(lat, lng, keyword, diag, ctx) {
 
   const keywords = uniqBy([keyword, '포켓몬카드', '포켓몬'], (k) => k).slice(0, 3);
   let products = [];
+  /* 점포를 끝까지 읽는 데 시간을 쓴 뒤에는 상품 검색까지하려다 체인 상한에 걸리지 않도록
+     남은 시간을 보고 검색어 시도를 줄인다. */
+  const productStopAt = stopAtFor(ctx && ctx.deadlineAt, CHAIN_SOFT_DEADLINE_MS - 3000);
   try {
     for (const kw of keywords) {
-      products = await emart24Products(kw, diag);
+      if (Date.now() > productStopAt) break;
+      products = await emart24Products(kw, diag, sliceTms(productStopAt, 6000));
       const cards = products.filter((p) => looksLikeCard(p.name));
       if (cards.length) {
         products = cards;
@@ -752,13 +819,15 @@ async function collectEmart24(lat, lng, keyword, diag, ctx) {
   const bizNos = stores.map((s) => s.id);
   const qtyByBiz = new Map();
   let rowCount = 0;
-  const stockDeadline = Date.now() + 11000;
+  /* v1.8 — 점포를 끝까지 읽게 되었으므로 수량 조회도 체인 소프트 마감까지 쓴다.
+     수량 조회는 점포 목록을 다 읽은 뒤에 시작하므로 마감보다 2초 일찍 끊어 부분 결과를 남긴다. */
+  const stopAt = stopAtFor(ctx && ctx.deadlineAt, CHAIN_SOFT_DEADLINE_MS - 2000);
   for (const p of products) {
-    if (Date.now() > stockDeadline) break;
-    await emart24Prepare(p.code, diag);
+    if (Date.now() > stopAt) break;
+    await emart24Prepare(p.code, diag, sliceTms(stopAt, 5000));
     let rows = [];
     try {
-      rows = await emart24StockOne(p.code, bizNos, diag);
+      rows = await emart24StockOne(p.code, bizNos, diag, sliceTms(stopAt, 6000));
     } catch (err) {
       rows = [];
     }
@@ -772,7 +841,7 @@ async function collectEmart24(lat, lng, keyword, diag, ctx) {
   /* 수량 행이 하나도 없으면 '전 지점 품절'인지 'API 가 막힌 것'인지 구분해야 한다.
      상시 취급 품목(생수)으로 한 번 대조 조회를 해 보고, 그때도 0이면 점포만 알려 준다. */
   let verified = rowCount > 0;
-  if (!verified) verified = await emart24StockControl(bizNos, diag);
+  if (!verified) verified = await emart24StockControl(bizNos, diag, stopAt);
   if (!verified)
     return {
       stores: [],
@@ -803,14 +872,15 @@ async function collectEmart24(lat, lng, keyword, diag, ctx) {
 }
 
 /** 재고 API 가 살아 있는지 확인하는 대조 조회 — 상시 취급 품목으로 한 번만(막히면 한 후보 더) */
-async function emart24StockControl(bizNos, diag) {
+async function emart24StockControl(bizNos, diag, stopAt) {
   for (const keyword of ['생수', '우유']) {
+    if (Number.isFinite(stopAt) && Date.now() > stopAt) return false;
     try {
-      const list = await emart24Products(keyword, diag);
+      const list = await emart24Products(keyword, diag, Number.isFinite(stopAt) ? sliceTms(stopAt, 4000) : undefined);
       const pickOne = list.find((p) => /생수|샘물|삼다수|수\)/.test(p.name)) || list[0];
       if (!pickOne) continue;
-      await emart24Prepare(pickOne.code, diag);
-      const rows = await emart24StockOne(pickOne.code, bizNos, diag);
+      await emart24Prepare(pickOne.code, diag, Number.isFinite(stopAt) ? sliceTms(stopAt, 4000) : undefined);
+      const rows = await emart24StockOne(pickOne.code, bizNos, diag, Number.isFinite(stopAt) ? sliceTms(stopAt, 5000) : undefined);
       if (rows.some((r) => Number(r.qty) > 0)) return true;
     } catch (err) {
       /* 다음 후보 — 둘 다 안 되면 '수량 미확인'으로 남긴다 */
@@ -831,7 +901,9 @@ async function emart24StoresPublic(lat, lng, ctx, diag) {
   const byId = new Map();
   let nearCount = 0;
   let budget = Math.max(2, Math.trunc(EMART24_QUERY_BUDGET));
-  const deadline = Date.now() + 7000;
+  const stopAt = stopAtFor(ctx && ctx.deadlineAt, CHAIN_SOFT_DEADLINE_MS - 3000);
+  /* 상한(470)에 가까운 후보가 모이면 다음 검색어는 건너뛴다 — v1.7 의 60에서 크게 올렸다. */
+  const enough = Math.min(200, Math.max(60, Math.round(MAX_STORES * 0.4)));
   const add = (row) => {
     const code = String(pick(row, ['CODE', 'code', 'BIZNO']) || '');
     if (!code || byId.has(code)) return;
@@ -841,11 +913,11 @@ async function emart24StoresPublic(lat, lng, ctx, diag) {
     if (Number.isFinite(sLat) && Number.isFinite(sLng) && distanceM(lat, lng, sLat, sLng) <= radius) nearCount++;
   };
   for (const q of queries) {
-    if (budget <= 0 || Date.now() > deadline) break;
-    if (nearCount >= 60) break; /* 이미 반경 안 후보가 충분하다 */
+    if (budget <= 0 || Date.now() > stopAt) break;
+    if (nearCount >= enough) break; /* 이미 반경 안 후보가 충분하다 */
     let total = null;
     for (let page = 1; page <= Math.max(1, Math.trunc(EMART24_MAX_PAGES)); page++) {
-      if (budget <= 0 || Date.now() > deadline) break;
+      if (budget <= 0 || Date.now() > stopAt) break;
       budget--;
       const url =
         BASE.emart24Open + '/api1/store?page=' + page + '&search=' + encodeURIComponent(q);
@@ -853,7 +925,11 @@ async function emart24StoresPublic(lat, lng, ctx, diag) {
       try {
         body = await request(
           url,
-          { method: 'GET', headers: { 'user-agent': UA_ANDROID, accept: 'application/json' }, tms: 4000 },
+          {
+            method: 'GET',
+            headers: { 'user-agent': UA_ANDROID, accept: 'application/json' },
+            tms: sliceTms(stopAt, 6000)
+          },
           '이마트24 공개 매장("' + q + '" ' + page + 'p)',
           null,
           diag
@@ -1063,30 +1139,36 @@ async function cuStoresForItem(lat, lng, item, diag, tms) {
   return out;
 }
 
-async function collectCu(lat, lng, keyword, diag, radius) {
+async function collectCu(lat, lng, keyword, diag, radius, deadlineAt) {
   const products = await cuSearch(keyword, diag);
   if (!products.length) return { stores: [], products: [], note: '카드 상품 검색 0건' };
 
   /* 매장별 수량은 로그인 없이도 내려오므로(jipCd + recommendId:"stock") 카드 상품을 모두 물어
      「0으로 확인된 점포」와 「수량 미확인 점포」를 나눈다.
      v1.7 — 한 번의 POST /api/store 는 가까운 순 10곳 안팎만 주므로(환호동 3km 실측: 중심 9곳),
-     반경이 1.4km 이상이면 중심 + 주변 격자 지점을 함께 물어 매장코드로 합친다(같은 조건 실측 39곳). */
+     반경이 1.4km 이상이면 중심 + 주변 격자 지점을 함께 물어 매장코드로 합친다(같은 조건 실측 39곳).
+     v1.8 — 9점 → 17점(내링·외링)으로 늘려 3km 모서리까지 덮는다. 동시 요청은 4로 유지한다. */
   const targets = products.slice(0, MAX_PRODUCTS);
   const plan = ringPlan(radius || DEFAULT_RADIUS, 1500);
-  const centers = ringPoints(lat, lng, plan.offsetM, plan.dirs);
+  const centers = ringPoints(lat, lng, plan.rings);
   const ringItems = Math.max(1, Math.min(Math.trunc(RING_CU_ITEMS), targets.length));
   const jobs = [];
   for (const center of centers) {
     const items = center.tag === 'center' ? targets : targets.slice(0, ringItems);
     for (const item of items) jobs.push({ center, item });
   }
-  /* 격자 조회는 요청이 많으니 시간을 끊어 둔다 — 느린 날에도 부분 결과를 잃지 않도록
-     전체 시간이 아니라 "새 요청을 시작할 수 있는 시각"을 막는다. CU 응답이 끝나야 뒤 체인이 시작하므로 짧게. */
-  const deadline = Date.now() + 6000;
+  /* 체인 소프트 마감(기본 23초)까지만 새 요청을 시작하고, 요청 하나는 남은 시간으로 자른다 —
+     느린 날에도 부분 결과를 잃지 않고 전체 응답(27초)을 넘기지 않는다. CU 응답이 끝나야
+     세븐일레븐(바코드 공유)이 시작되므로 CU 는 마감보다 조금 일찍 멈춘다. */
+  const stopAt = stopAtFor(deadlineAt, CHAIN_SOFT_DEADLINE_MS - 1500);
+  let skipped = 0;
   const lists = await mapLimit(jobs, Math.max(1, Math.trunc(RING_CONCURRENCY)), async (job) => {
-    if (Date.now() > deadline) return [];
+    if (Date.now() > stopAt) {
+      skipped++;
+      return [];
+    }
     try {
-      return await cuStoresForItem(job.center.lat, job.center.lng, job.item, diag, 4500);
+      return await cuStoresForItem(job.center.lat, job.center.lng, job.item, diag, sliceTms(stopAt, 4500));
     } catch (err) {
       return [];
     }
@@ -1110,7 +1192,8 @@ async function collectCu(lat, lng, keyword, diag, radius) {
   const stores = Array.from(byStore.values()).map((s) => Object.assign(s, { brand: 'cu' }));
   const note = withQty
     ? centers.length > 1
-      ? '점포 ' + stores.length + '곳 재고 확인(' + centers.length + '지점 격자 조회)'
+      ? '점포 ' + stores.length + '곳 재고 확인(' + centers.length + '지점 격자 조회' +
+        (skipped ? ' · 시간 마감으로 ' + skipped + '회 생략' : '') + ')'
       : ''
     : 'CU 점포는 찾았지만 매장별 수량이 비어 있습니다(상품 ' + products.length + '종 확인 · ' + jobs.length + '회 조회). ' +
       '잠시 뒤 다시 조회하거나 매장에 확인해 주세요.';
@@ -1300,7 +1383,7 @@ function sevenRsaRows(body) {
 }
 
 /** 앱 경로 1회 — 상품 하나의 점포별 실재고 */
-async function sevenStoresByRsa(lat, lng, metas, radius, diag, strategies) {
+async function sevenStoresByRsa(lat, lng, metas, radius, diag, strategies, deadlineAt) {
   const encLat = sevenRsaEncrypt(lat);
   const encLng = sevenRsaEncrypt(lng);
   if (!encLat || !encLng) {
@@ -1330,7 +1413,7 @@ async function sevenStoresByRsa(lat, lng, metas, radius, diag, strategies) {
             stokMngQty: meta.stokMngQty,
             ignoreRateYn: 'Y'
           }),
-          tms: 4500
+          tms: Number.isFinite(deadlineAt) ? sliceTms(deadlineAt, 4500) : 4500
         },
         '세븐일레븐 앱 재고(RSA)',
         sevenJar,
@@ -1585,6 +1668,9 @@ async function sevenRealStock(storeCd, meta, diag) {
 async function collectSeven(lat, lng, ctx, diag) {
   const strategies = [];
   const queries = sevenAreaQueries(ctx);
+  /* v1.8 — 세븐일레븐은 CU 결과(바코드) 뒤에 시작해 늦을 수 있다. 남은 전체 시간 안에서만 돌고,
+     시간이 없으면 부분 결과를 낸다. */
+  const stopAt = stopAtFor(ctx && ctx.deadlineAt, CHAIN_SOFT_DEADLINE_MS);
 
   /* 상품 바코드는 CU 검색 결과(공용 바코드)를 먼저 쓰고, 없으면 환경변수 */
   let itemCodes = String(process.env.SEVEN_ITEM_CDS || '')
@@ -1613,7 +1699,7 @@ async function collectSeven(lat, lng, ctx, diag) {
 
   /* ① 앱이 실제로 쓰는 경로 — 좌표를 RSA 로 암호화해 점포와 실재고를 한 번에 받는다.
      공개 점포 검색이 403 게이트에 막혀도 이 길은 열려 있을 수 있다. */
-  const rsa = await sevenStoresByRsa(lat, lng, metas, ctx.radius, diag, strategies);
+  const rsa = await sevenStoresByRsa(lat, lng, metas, ctx.radius, diag, strategies, stopAt);
   if (rsa.stores.length) {
     return {
       stores: rsa.stores,
@@ -1653,7 +1739,7 @@ async function collectSeven(lat, lng, ctx, diag) {
   /* 검색어 후보를 차례로 — 반경 안에 점포가 잡히면 거기서 멈춘다 */
   const report = [];
   let candidates = [];
-  const searchDeadline = Date.now() + 6000;
+  const searchDeadline = Math.min(Date.now() + 6000, stopAt);
   for (const query of queries) {
     if (Date.now() > searchDeadline) {
       report.push({ query, ok: false, error: '시간 안에 시도하지 못함' });
@@ -1707,7 +1793,7 @@ async function collectSeven(lat, lng, ctx, diag) {
   /* 02가 한 번 막히면 이후 점포는 01로. UA 후보까지 모두 막히면(게이트웨이 403)
      점포마다 같은 요청을 되풀이하지 않고 한 번에 멈춘다(요청 예산·응답 시간 보호). */
   const mode = { batch: true, blocked: false, lastError: '' };
-  const storeStockDeadline = Date.now() + 8000;
+  const storeStockDeadline = Math.min(Date.now() + 8000, stopAt);
   const built = await mapLimit(candidates, 3, async (store) => {
     if (mode.blocked || Date.now() > storeStockDeadline) return null;
     const items = [];
@@ -2126,7 +2212,7 @@ async function gs25StockForItem(lat, lng, item, radius, diag, tms) {
   return out;
 }
 
-async function collectGs25(lat, lng, keyword, radius, diag) {
+async function collectGs25(lat, lng, keyword, radius, diag, deadlineAt) {
   gs25Load();
   if (!gs25Session.access) {
     /* 세션이 아직 없으면 오류가 아니라 「아직 연동 전」으로 조용히 알린다(사이트 UI 유지). */
@@ -2144,18 +2230,23 @@ async function collectGs25(lat, lng, keyword, radius, diag) {
   const targets = products.slice(0, GS25_MAX_ITEMS);
   /* v1.7 — radiusCondition 은 1500 이 상한(2000 부터 403)이라 반경 3km 를 한 번에 덮지 못한다.
      중심 + 주변 격자 지점(각 1.5km)을 함께 조회해 매장코드로 합친다.
-     (환호동 3km 실측: 중심 10곳 → 9점 격자 40곳) */
+     (환호동 3km 실측: 중심 10곳 → 9점 격자 40곳)
+     v1.8 — 9점 → 17점(내링 1.1km · 외링 2.2km). 격자당 상품 3종이라 51회를 동시 4로 나눠 돈다. */
   const plan = ringPlan(radius || GS25_RADIUS, 1500);
-  const centers = ringPoints(lat, lng, plan.offsetM, plan.dirs);
+  const centers = ringPoints(lat, lng, plan.rings);
   const jobs = [];
   for (const center of centers) for (const item of targets) jobs.push({ center, item });
-  const deadline = Date.now() + 8000;
+  const stopAt = stopAtFor(deadlineAt, CHAIN_SOFT_DEADLINE_MS);
+  let skipped = 0;
   let lists;
   try {
     lists = await mapLimit(jobs, Math.max(1, Math.trunc(GS25_RING_CONCURRENCY)), async (job) => {
-      if (Date.now() > deadline) return [];
+      if (Date.now() > stopAt) {
+        skipped++;
+        return [];
+      }
       try {
-        return await gs25StockForItem(job.center.lat, job.center.lng, job.item, radius, diag, 4000);
+        return await gs25StockForItem(job.center.lat, job.center.lng, job.item, radius, diag, sliceTms(stopAt, 4000));
       } catch (err) {
         if (err && (err.upstreamStatus === 401 || err.upstreamStatus === 403)) throw err;
         if (gs25Session.revoked) throw err;   // 세션 만료 사유를 note 로 올리기 위해
@@ -2185,7 +2276,8 @@ async function collectGs25(lat, lng, keyword, radius, diag) {
   const stores = Array.from(byStore.values());
   const note = stores.length
     ? centers.length > 1
-      ? '점포 ' + stores.length + '곳 재고 확인(' + centers.length + '지점 격자 조회 · 반경 1.5km 단위)'
+      ? '점포 ' + stores.length + '곳 재고 확인(' + centers.length + '지점 격자 조회 · 반경 1.5km 단위' +
+        (skipped ? ' · 시간 마감으로 ' + skipped + '회 생략' : '') + ')'
       : ''
     : 'GS25 점포 재고 응답이 비었습니다(상품 ' + targets.length + '종 · ' + centers.length + '지점 조회 · 반경 ' +
       Math.round(Math.max(300, Math.min(1500, Number(GS25_RADIUS) || 1000))) +
@@ -2245,9 +2337,10 @@ function cacheKey(lat, lng, keyword, radius) {
   return `${lat.toFixed(3)},${lng.toFixed(3)},${keyword},${radius}`;
 }
 
-async function runChain(name, task, diag) {
+async function runChain(name, task, diag, hardMs) {
   try {
-    const value = await withTimeout(task(), TIMEOUT_MS + 6000, name);
+    const budget = Number(hardMs) > 0 ? Number(hardMs) : TIMEOUT_MS + 6000;
+    const value = await withTimeout(task(), budget, name);
     return { ok: true, value: value || { stores: [], products: [], note: '' } };
   } catch (err) {
     const msg = (err && err.message) || String(err);
@@ -2268,26 +2361,33 @@ async function nearby(lat, lng, keyword, radius) {
   const nowIso = new Date().toISOString();
   const diag = { emart24: [], cu: [], seven: [], gs25: [], geo: [] };
 
-  /* ① 좌표→주소는 먼저 받아 둔다(세븐일레븐·이마트24 점포 검색의 지역명이 여기서 나온다).
-     ② CU·이마트24·GS25 는 서로의 결과를 쓰지 않으므로 동시에 출발한다 —
-        CU 격자 조회가 느린 날에도 다른 체인이 기다리지 않는다.
-     ③ 세븐일레븐만 CU 상품 바코드를 쓰므로 마지막에 시작한다. */
-  const geo = await reverseGeocode(lat, lng, diag.geo).catch(() => ({
+  /* v1.8 — 전체 마감(기본 27초)을 먼저 정해 두고 모든 체인에 전달한다.
+     좌표→주소는 이마트24·세븐일레븐에만 필요하므로 **기다리지 않고 동시에 출발**시켜,
+     역지오코딩이 느린 날에도 CU·GS25 시간을 깎지 않는다. */
+  const deadlineAt = Date.now() + NEARBY_DEADLINE_MS;
+  /* 체인 하나에 걸어 둘 상한 — 전체 마감을 넘기지 않게 남은 시간으로만 잡는다(최소 1.2초). */
+  const remaining = () => Math.max(MIN_SLICE_MS, deadlineAt - Date.now() + 500);
+
+  const geoP = reverseGeocode(lat, lng, diag.geo).catch(() => ({
     queries: [],
     address: '',
     city: '',
     district: '',
     dong: ''
   }));
+  const cuP = runChain('cu', () => collectCu(lat, lng, keyword, diag.cu, radius, deadlineAt), diag.cu, remaining());
+  const gsP = runChain('gs25', () => collectGs25(lat, lng, keyword, radius, diag.gs25, deadlineAt), diag.gs25, remaining());
+
+  /* ① 좌표→주소(이마트24·세븐일레븐 점포 검색의 지역명)를 기다린다.
+     ② CU·이마트24·GS25 는 서로의 결과를 쓰지 않으므로 동시에 돈다.
+     ③ 세븐일레븐만 CU 상품 바코드를 쓰므로 마지막에 시작한다. */
+  const geo = await geoP;
   const geoArea = (geo.queries && geo.queries[0]) || '';
   const baseAddresses = [geo.address || ''].filter(Boolean);
-  const baseCtx = { radius, area: geoArea, addresses: baseAddresses, geoQueries: geo.queries || [], barcodes: [] };
+  const baseCtx = { radius, area: geoArea, addresses: baseAddresses, geoQueries: geo.queries || [], barcodes: [], deadlineAt };
+  const emP = runChain('emart24', () => collectEmart24(lat, lng, keyword, diag.emart24, baseCtx), diag.emart24, remaining());
 
-  const started = await Promise.all([
-    runChain('cu', () => collectCu(lat, lng, keyword, diag.cu, radius), diag.cu),
-    runChain('emart24', () => collectEmart24(lat, lng, keyword, diag.emart24, baseCtx), diag.emart24),
-    runChain('gs25', () => collectGs25(lat, lng, keyword, radius, diag.gs25), diag.gs25)
-  ]);
+  const started = await Promise.all([cuP, emP, gsP]);
   const cu = started[0];
   let em = started[1];
   const gs = started[2];
@@ -2304,7 +2404,8 @@ async function nearby(lat, lng, keyword, radius) {
       const retried = await runChain(
         'emart24',
         () => collectEmart24(lat, lng, keyword, diag.emart24, retryCtx),
-        diag.emart24
+        diag.emart24,
+        remaining()
       );
       if (retried.value.stores.length) em = retried;
     }
@@ -2318,10 +2419,19 @@ async function nearby(lat, lng, keyword, radius) {
       .concat(addressRows.map((s) => (s && s.address) || ''))
       .filter(Boolean),
     geoQueries: geo.queries || [],
-    barcodes: uniqBy(cu.value.products || [], (p) => p.code).map((p) => p.code)
+    barcodes: uniqBy(cu.value.products || [], (p) => p.code).map((p) => p.code),
+    deadlineAt
   };
 
-  const se = await runChain('seven', () => collectSeven(lat, lng, ctx, diag.seven), diag.seven);
+  /* 세븐일레븐은 CU 응답 뒤에 시작한다 — 남은 시간이 거의 없으면 시작하지 않고 사유를 남긴다
+     (마감을 넘긴 응답보다 빨리 온 부분 결과가 낫다). */
+  const se =
+    deadlineAt - Date.now() > 2500
+      ? await runChain('seven', () => collectSeven(lat, lng, ctx, diag.seven), diag.seven, remaining())
+      : {
+          ok: true,
+          value: { stores: [], products: [], note: '시간 마감(27초)으로 세븐일레븐 조회를 건너뛰었습니다' }
+        };
 
   const sources = {};
   const stores = [];
@@ -2355,6 +2465,8 @@ async function nearby(lat, lng, keyword, radius) {
     keyword,
     radius,
     generatedAt: nowIso,
+    elapsedMs: Date.now() - (deadlineAt - NEARBY_DEADLINE_MS),
+    limits: { version: VERSION, maxStores: MAX_STORES, chainSoftDeadlineMs: CHAIN_SOFT_DEADLINE_MS, nearbyDeadlineMs: NEARBY_DEADLINE_MS },
     geo: {
       source: geo.source || '',
       city: geo.city || '',
@@ -2374,6 +2486,8 @@ async function nearby(lat, lng, keyword, radius) {
 /* 체인별로 "어디까지 됐는지"만 보여 주는 진단 — 태블릿에서 원인 확인용 */
 async function diagnose(lat, lng, keyword, radius) {
   const diag = { emart24: [], cu: [], seven: [], gs25: [], geo: [] };
+  /* 진단은 네 체인을 순서대로 돌리므로 전체 40초 예산을 미리 잡아 둔다(체인끼리 나눠 쓴다). */
+  const deadlineAt = Date.now() + 40000;
   const steps = {};
   const safe = async (name, task) => {
     try {
@@ -2391,7 +2505,7 @@ async function diagnose(lat, lng, keyword, radius) {
 
   const cuValue = await (async () => {
     try {
-      return await collectCu(lat, lng, keyword, diag.cu, radius);
+      return await collectCu(lat, lng, keyword, diag.cu, radius, deadlineAt);
     } catch (err) {
       steps.cu = { ok: false, error: ((err && err.message) || String(err)).slice(0, 200) };
       return { stores: [], products: [], hints: [] };
@@ -2404,7 +2518,8 @@ async function diagnose(lat, lng, keyword, radius) {
     area: areaFromStores(addressRows) || (geo.queries && geo.queries[0]) || '',
     addresses: [geo.address || ''].concat(addressRows.map((s) => (s && s.address) || '')).filter(Boolean),
     geoQueries: geo.queries || [],
-    barcodes: uniqBy(cuValue.products || [], (p) => p.code).map((p) => p.code)
+    barcodes: uniqBy(cuValue.products || [], (p) => p.code).map((p) => p.code),
+    deadlineAt
   };
   if (!steps.cu) {
     steps.cu = {
@@ -2442,7 +2557,7 @@ async function diagnose(lat, lng, keyword, radius) {
 
   await safe('gs25', async () => {
     gs25Load();
-    const value = await collectGs25(lat, lng, keyword, radius, diag.gs25);
+    const value = await collectGs25(lat, lng, keyword, radius, diag.gs25, deadlineAt);
     const first = (value.stores || [])[0];
     return {
       session: gs25Session.access ? gs25Session.source || 'set' : 'none',

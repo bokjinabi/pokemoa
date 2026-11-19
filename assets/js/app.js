@@ -426,7 +426,7 @@
     if (bpTitleEl) bpTitleEl.textContent = "편의점 4사 재고 조회";
     BP_BRANDS.forEach(function (id) {
       if (!BP_RELAY[id]) return;
-      bpSet(id, 40, "재고 조회 중", "run");
+      bpSet(id, 40, "최대 매장 조회 중 (최대 25~30초)", "run");
     });
     /* 완료되어 접혀 있던 패널도 새 진행이 시작되면 다시 펼쳐 보여 준다 */
     if (manual) { bp.quiet = false; bpShow(true); }
@@ -874,7 +874,9 @@
     relay.lastKey = key;
     bpRelayStart(!!manual);
     var ctrl = new AbortController();
-    var timer = setTimeout(function () { ctrl.abort(); }, 18000);
+    /* v1.8 — 중계 서버가 3km 안 매장을 최대한 모으느라 27초까지 쓸 수 있다(서버 전체 마감 27초).
+       클라이언트는 그보다 넉넉한 32초까지 기다린다. */
+    var timer = setTimeout(function () { ctrl.abort(); }, 32000);
     /* 검색어는 '포켓몬카드' — '포켓몬'으로 넣으면 CU가 과자(빼빼로)만 잡아 카드 상품이 0건이 된다. */
     var radiusM = mstate && mstate.radius ? Math.round(mstate.radius) : 3000;
     var url = relay.url + "/api/nearby?lat=" + lat + "&lng=" + lng +

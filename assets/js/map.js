@@ -29,9 +29,9 @@ window.PokeMoaMap = (function () {
     "&libraries=services&autoload=false";
   var SDK_TIMEOUT = 9000;        /* SDK·지도 초기화를 이 시간까지 기다린다 */
   var SEARCH_TIMEOUT = 8000;     /* 다점 격자 조회가 늦으면 내장 좌표로 먼저 표시 */
-  var MAX_MARKERS = 180;         /* 1km·3km — 3km는 격자(중심+8방위)로 받은 만큼 보여 준다 */
-  var MAX_MARKERS_5 = 200;       /* 5km — 격자 조회로 받은 외곽 매장까지 넉넉히 */
-  var MAX_MARKERS_20 = 250;      /* 20km — 반경 전역(포항 남구·양덕·유강·오천 등) */
+  var MAX_MARKERS = 450;         /* 1km·3km — v1.8: 중계가 최대 470곳을 주므로 400~500곳까지 그린다 */
+  var MAX_MARKERS_5 = 500;       /* 5km — 내링·외링 17점 격자로 받은 외곽 매장까지 */
+  var MAX_MARKERS_20 = 500;      /* 20km — 반경 전역(포항 남구·양덕·유강·오천 등) */
   /* 5km·20km 격자 조회의 방위(도, 북=0·동=90) */
   var DIRS4 = [0, 90, 180, 270];
   var DIRS8 = [0, 45, 90, 135, 180, 225, 270, 315];
@@ -721,7 +721,7 @@ window.PokeMoaMap = (function () {
       progress = 34;
     } else if (st.loading.data) {
       phase = "data";
-      msg = "주변 편의점 4사·오프라인 매장을 찾는 중... (카카오 장소 검색)";
+      msg = "주변 편의점 4사·오프라인 매장을 찾는 중... (최대 매장 조회 중 · 최대 25~30초 걸릴 수 있어요)";
       progress = 72;
     } else {
       phase = "done";
@@ -752,7 +752,7 @@ window.PokeMoaMap = (function () {
       };
     }
     if (st.loading.data && !(st.relay && st.relay.count)) {
-      return { kind: "busy", text: "카카오 장소 검색으로 주변 편의점 4사·오프라인 매장을 찾는 중입니다 (보통 1초 이내)", action: false };
+      return { kind: "busy", text: "주변 편의점 4사·오프라인 매장을 찾는 중입니다 (최대 매장 조회 중 · 최대 25~30초 걸릴 수 있어요)", action: false };
     }
     /* 실시간 재고 조회로 실제 수량을 받았으면 그 사실을 먼저 알린다 */
     if (st.relay && st.relay.count) {
