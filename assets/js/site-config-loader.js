@@ -867,6 +867,12 @@
     const path = trackPath();
     const info = activeTabInfo();
     if (path === track.path && info.tab === track.tab) return;
+    // 화면은 그대로인데 탭 이름만 뒤늦게 채워진 경우(첫 진입 때 내비 강조가 늦게 붙는 사이트) —
+    // 같은 화면으로 보고 이름만 바꾼다. 그렇지 않으면 한 번 방문이 두 번으로 세진다.
+    if (path === track.path && (!track.tab || !info.tab)) {
+      track.tab = info.tab || track.tab;
+      return;
+    }
     trackFlush("switch");
     track.path = path;
     track.tab = info.tab;
