@@ -1146,6 +1146,8 @@ async function collectCu(lat, lng, keyword, diag, radius) {
 const SEVEN_UA_VARIANTS = [
   'Mozilla/5.0 (Linux; Android 13; SM-X710 Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/131.0.0.0 Mobile Safari/537.36 app:k7app',
   UA_ANDROID + ' app:k7app',
+  /* 앱 패키지명 표식 — 페이지 런타임 설정의 androidPkg 값(확인 2026-11-19) */
+  UA_ANDROID + ' app:kr.co.kork7app',
   UA_ANDROID
 ];
 let sevenUaIndex = 0;
@@ -1210,6 +1212,7 @@ async function sevenStockPost(path, payload, label, diag) {
 const sevenJar = newJar();
 const sevenPrimeState = { at: 0, status: '', html: false };
 const sevenRsaState = { blockedUntil: 0 };
+const sevenGate = { blockedUntil: 0 };
 
 function sevenPublicKeyPem() {
   const b64 = String(SEVEN_RSA_PUBLIC_KEY || '').replace(/[^A-Za-z0-9+/=]/g, '');
@@ -1414,22 +1417,44 @@ async function sevenItemMeta(itemCd, diag) {
 
 /** 점포 검색 한 번 — 응답에서 점포 문서 배열과 전체 건수를 꺼낸다 */
 async function sevenStoreSearch(query, diag) {
-  const body = await request(
-    BASE.seven + '/api/v1/open/search/store',
-    {
-      method: 'POST',
-      headers: sevenHeaders({
-        'content-type': 'application/json; charset=UTF-8',
-        'sec-fetch-site': 'same-origin',
-        'sec-fetch-mode': 'cors'
-      }),
-      body: JSON.stringify({ collection: 'store', query, sort: 'Date/desc', listCount: 1000 }),
-      tms: 4500
-    },
-    '세븐일레븐 점포',
-    sevenJar,
-    diag
-  );
+  /* UA 후보를 차례로 — 게이트가 "Agent Information" 을 문제 삼을 때 표식을 하나씩 바꿔 본다.
+     한 번 통한 UA 는 기억하고(sevenUaIndex), 모두 막히면 err.gate 로 알린다. */
+  let lastErr = null;
+  let body = null;
+  for (let i = sevenUaIndex; i < SEVEN_UA_VARIANTS.length; i++) {
+    try {
+      body = await request(
+        BASE.seven + '/api/v1/open/search/store',
+        {
+          method: 'POST',
+          headers: sevenHeaders(
+            {
+              'content-type': 'application/json; charset=UTF-8',
+              'sec-fetch-site': 'same-origin',
+              'sec-fetch-mode': 'cors'
+            },
+            i
+          ),
+          body: JSON.stringify({ collection: 'store', query, sort: 'Date/desc', listCount: 1000 }),
+          tms: 4500
+        },
+        '세븐일레븐 점포 UA' + (i + 1),
+        sevenJar,
+        diag
+      );
+      sevenUaIndex = i;
+      break;
+    } catch (err) {
+      lastErr = err;
+      const msg = String((err && err.message) || '');
+      const agentIssue = /Access Token|Agent Information/i.test(msg) || (err && err.upstreamStatus === 403);
+      if (!agentIssue || i + 1 >= SEVEN_UA_VARIANTS.length) {
+        if (/Access Token|Agent Information/i.test(msg)) err.gate = true;
+        throw err;
+      }
+    }
+  }
+  if (!body) throw lastErr || new Error('세븐일레븐 점포 실패');
 
   const docs = [];
   const sq = pickDeep(body, ['SearchQueryResult']);
@@ -1612,6 +1637,18 @@ async function collectSeven(lat, lng, ctx, diag) {
     };
   const primed = await sevenPrime(diag);
   strategies.push({ step: 'prime', ok: primed.status === 'ok', cookies: sevenJar.map.size, note: primed.status });
+  if (Date.now() < sevenGate.blockedUntil) {
+    strategies.push({ step: 'store-search', ok: false, note: '최근 게이트 거절 — 10분간 건너뜀' });
+    return {
+      stores: [],
+      products: metas,
+      queries: [],
+      strategies,
+      note:
+        '세븐일레븐 점포 검색이 앱 토큰을 요구해 막혔습니다(403) — 잠시 뒤 다시 시도합니다' +
+        (rsa.note ? ' · ' + rsa.note : '')
+    };
+  }
 
   /* 검색어 후보를 차례로 — 반경 안에 점포가 잡히면 거기서 멈춘다 */
   const report = [];
@@ -1627,6 +1664,10 @@ async function collectSeven(lat, lng, ctx, diag) {
       res = await sevenStoreSearch(query, diag);
     } catch (err) {
       report.push({ query, ok: false, error: (err && err.message || '').slice(0, 120) });
+      if (err && err.gate) {
+        sevenGate.blockedUntil = Date.now() + 10 * 60e3;
+        break;
+      }
       continue;
     }
     const near = res.stores
