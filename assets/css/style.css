@@ -328,22 +328,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
   color: var(--navy);
 }
 .price-box.is-key span { color: #7a5a00; }
-.hero-warn {
-  display: flex;
-  gap: 10px;
-  margin: 18px 0 0;
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: rgba(255, 203, 5, 0.12);
-  border: 1px solid rgba(255, 203, 5, 0.28);
-  color: #ffe9a8;
-  font-size: 12.8px;
-  line-height: 1.55;
-  max-width: 700px;
-}
-.hero-warn b { color: #fff; }
-.hero-warn a { color: #fff; text-decoration: underline; text-underline-offset: 2px; }
-.hero-warn a:hover { color: var(--yellow); }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
 .hero-actions .btn-ghost { color: #fff; border-color: rgba(255, 255, 255, 0.3); }
 .hero-actions .btn-ghost:hover { background: rgba(255, 255, 255, 0.08); border-color: #fff; }
