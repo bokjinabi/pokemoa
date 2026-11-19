@@ -38,11 +38,17 @@
    허용 출처는 https://moa-kr.github.io 와 로컬 테스트(localhost·127.0.0.1)뿐입니다.
    미리보기 중에는 방문자의 ‘다시 보지 않기’ 저장소를 건드리지 않고, 팝업 기간도 무시해
    어드민에서 만든 화면 그대로 보여 줍니다.
+   v4.1 — 방문 통계 수집기
+   화면을 떠날 때(탭 전환·숨김·페이지 이탈) 이전 화면의 체류 초·경로·탭과 유입 도메인·
+   기기·OS 를 복지모아 서버(/api/analytics/collect)로 보냅니다. IP·쿠키·이메일 같은
+   개인 식별 값은 보내지 않고 익명 세션 ID 만 씁니다. 어드민 미리보기(iframe·
+   ?moa_preview=)와 localhost 는 보내지 않습니다. data-track-site 로 사이트 이름을 넘길 수
+   있습니다(없으면 site-config.json 의 site 값 / 주소로 판단).
    ──────────────────────────────────────────────────────────────── */
 (function () {
   "use strict";
 
-  const VERSION = "4.0";
+  const VERSION = "4.1";
   const STYLE_ID = "moa-site-config-style";
   const DISMISS_PREFIX = "moa:popup:";
   const TAB_SELECTOR = "[data-tab],[data-nav]";
@@ -637,6 +643,7 @@
     };
     state.path = path;
     state.options = options;
+    startTracking(script);
     announceReady();
     load(path).then((cfg) => {
       if (!cfg) return;
@@ -648,9 +655,288 @@
     });
   }
 
+  /* ───────────── 방문 통계 (v4.1) ─────────────
+     포케모아·복지모아가 같이 쓰는 수집기입니다. 화면을 떠날 때(sendBeacon) 이전 화면의
+     체류 초와 경로·탭, 유입 도메인, 기기·OS 를 복지모아 서버(/api/analytics/collect)로
+     보냅니다. 개인을 알아볼 수 있는 값(IP·쿠키·이메일)은 보내지 않고, 세션은 브라우저가
+     만든 익명 ID 하나로만 구분합니다(탭을 닫으면 사라짐).
+     - 어드민 미리보기(iframe·?moa_preview=)와 localhost 테스트는 보내지 않습니다.
+     - 같은 화면을 다시 보는 경우(탭 숨김 → 복귀)는 체류만 더하고 조회수로 세지 않습니다. */
+  const TRACK = {
+    endpoint: "https://bokjimoa.onrender.com/api/analytics/collect",
+    sessionKey: "moa:analytics:sid",
+    maxDuration: 1800,
+    tabSelector: "[data-tab],[data-nav]"
+  };
+
+  const track = {
+    enabled: false,
+    site: "",
+    sessionId: "",
+    path: "",
+    tab: "",
+    start: 0,
+    newView: false,
+    device: "etc",
+    os: "etc",
+    referrer: "direct",
+    utm: "",
+    sent: 0,
+    skipped: ""
+  };
+  let trackTimer = 0;
+
+  function trackSiteOf(script, cfg) {
+    const normalize = (value) => {
+      const key = String(value || "").trim().toLowerCase();
+      if (key === "pokemoa") return "pokemoa";
+      if (key === "bokjimoa" || key === "bokjinabi") return "bokjimoa";
+      return "";
+    };
+    let site = normalize(script && script.getAttribute("data-track-site"));
+    if (!site && cfg && cfg.site) site = normalize(cfg.site);
+    if (!site) {
+      const configPath = String((script && script.getAttribute("data-config")) || "");
+      site = configPath.charAt(0) === "/" ? "bokjimoa" : "pokemoa";
+    }
+    return site;
+  }
+
+  /* 미리보기 iframe · 어드민 미리보기 주소 · localhost 는 통계에서 뺍나다. */
+  function trackingBlocked() {
+    try {
+      if (window.parent && window.parent !== window) return "preview-iframe";
+      const params = new URLSearchParams(location.search || "");
+      if (params.has("moa_preview")) return "preview";
+      if (location.protocol === "file:") return "local";
+      const host = String(location.hostname || "").toLowerCase();
+      if (!host || host === "localhost" || host === "127.0.0.1" || host === "::1" || host === "[::1]") return "local";
+    } catch (err) {
+      return "unknown";
+    }
+    return "";
+  }
+
+  function newSessionId() {
+    try {
+      if (window.crypto && typeof window.crypto.randomUUID === "function") return window.crypto.randomUUID();
+      if (window.crypto && window.crypto.getRandomValues) {
+        const bytes = window.crypto.getRandomValues(new Uint8Array(16));
+        return Array.prototype.map.call(bytes, (b) => ("0" + b.toString(16)).slice(-2)).join("");
+      }
+    } catch (err) { /* 아래 대체값 */ }
+    return "s" + Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
+  }
+
+  function ensureSessionId() {
+    const valid = (value) => /^[A-Za-z0-9._-]{8,64}$/.test(String(value || ""));
+    try {
+      const saved = sessionStorage.getItem(TRACK.sessionKey);
+      if (valid(saved)) return saved;
+    } catch (err) { /* 저장소를 못 쓰면 메모리로 */ }
+    const id = newSessionId();
+    try { sessionStorage.setItem(TRACK.sessionKey, id); } catch (err) { /* 무시 */ }
+    return id;
+  }
+
+  function detectDevice() {
+    const ua = String((navigator && navigator.userAgent) || "");
+    const width = Number(window.innerWidth) || (window.screen && window.screen.width) || 0;
+    const touch = ("ontouchstart" in window) || Number(navigator && navigator.maxTouchPoints) > 1;
+    const ipad = /iPad/i.test(ua) || (/Macintosh/i.test(ua) && touch);
+    if (/Android/i.test(ua)) return /Mobile/i.test(ua) && width < 700 ? "mobile" : "tablet";
+    if (ipad) return "tablet";
+    if (/iPhone|iPod/i.test(ua) || /Mobile/i.test(ua)) return "mobile";
+    // UA 로 알 수 없는 환경(태블릿 모드·앱 내 웹뷰)은 화면 폭과 손가락 입력으로 고른다.
+    let coarse = false;
+    try { coarse = Boolean(window.matchMedia && window.matchMedia("(pointer: coarse)").matches); } catch (err) { coarse = false; }
+    if (width && width <= 640 && (coarse || touch)) return "mobile";
+    if (width && width <= 1024 && coarse) return "tablet";
+    return "desktop";
+  }
+
+  function detectOs() {
+    const ua = String((navigator && navigator.userAgent) || "");
+    if (/Android/i.test(ua)) return "Android";
+    if (/iPhone|iPad|iPod/i.test(ua)) return "iOS";
+    if (/Windows/i.test(ua)) return "Windows";
+    if (/Macintosh|Mac OS X/i.test(ua)) return "macOS";
+    return "etc";
+  }
+
+  function trackReferrer() {
+    const raw = String(document.referrer || "");
+    if (!raw) return "direct";
+    try {
+      const url = new URL(raw);
+      const host = String(url.hostname || "").replace(/^www\d*\./, "").toLowerCase();
+      if (!host || host === String(location.hostname || "").toLowerCase()) return "direct";
+      return host;
+    } catch (err) {
+      return "direct";
+    }
+  }
+
+  function trackUtmSource() {
+    try {
+      const params = new URLSearchParams(location.search || "");
+      return String(params.get("utm_source") || "").trim().toLowerCase().slice(0, 40);
+    } catch (err) {
+      return "";
+    }
+  }
+
+  /* 화면 경로 — 해시 라우터라도 검색어(?q=)는 남기지 않는다. */
+  function trackPath() {
+    const pathname = String(location.pathname || "");
+    const hash = String(location.hash || "").split("?")[0];
+    const full = pathname + hash;
+    return (full || "/").slice(0, 120);
+  }
+
+  /* 지금 열려 있는 탭의 이름 — 화면에 보이는 글자를 우선 쓰고, 없으면 해시 이름을 쓴다. */
+  function activeTabInfo() {
+    const scope = (state.options && state.options.tabContainer) || document;
+    let active = null;
+    try {
+      active = scope.querySelector('[data-tab].is-active,[data-nav].is-active,[data-tab].active,[data-nav].active');
+    } catch (err) { active = null; }
+    if (!active) {
+      try { active = document.querySelector('[data-tab].is-active,[data-nav].is-active,[data-tab].active,[data-nav].active'); } catch (err) { active = null; }
+    }
+    if (active) {
+      const label = String(active.textContent || "").replace(/\s+/g, " ").trim();
+      if (label && label.length <= 40) return { tab: label, id: active.getAttribute("data-tab") || active.getAttribute("data-nav") || "" };
+      const id = active.getAttribute("data-tab") || active.getAttribute("data-nav") || "";
+      return { tab: (id || label).slice(0, 40), id };
+    }
+    const hash = String(location.hash || "").replace(/^#\/?/, "").split("?")[0];
+    return { tab: (hash || "").slice(0, 40), id: hash || "" };
+  }
+
+  /* 이전 화면의 체류를 기록한다. is_view 가 true 인 행만 '조회수'로 센다. */
+  function trackFlush(reason) {
+    if (!track.enabled || !track.sessionId) return;
+    const now = Date.now();
+    if (!track.start) { track.start = now; return; }
+    const seconds = Math.min(TRACK.maxDuration, Math.max(0, Math.round((now - track.start) / 1000)));
+    const isView = Boolean(track.newView);
+    if (!isView && seconds < 1) { track.start = now; return; }
+    const payload = {
+      site: track.site,
+      session_id: track.sessionId,
+      page_path: track.path || trackPath(),
+      tab_name: track.tab || "",
+      duration_sec: seconds,
+      referrer_host: track.referrer,
+      utm_source: track.utm,
+      device_type: track.device,
+      os_name: track.os,
+      is_view: isView
+    };
+    track.newView = false;
+    track.start = 0;
+    track.sent += 1;
+    trackSend(payload);
+    return reason;
+  }
+
+  function trackSend(payload) {
+    const body = JSON.stringify(payload);
+    try {
+      if (navigator && typeof navigator.sendBeacon === "function") {
+        const blob = new Blob([body], { type: "text/plain;charset=UTF-8" });
+        if (navigator.sendBeacon(TRACK.endpoint, blob)) return;
+      }
+    } catch (err) { /* fetch 로 다시 시도 */ }
+    try {
+      fetch(TRACK.endpoint, {
+        method: "POST",
+        body: body,
+        headers: { "Content-Type": "text/plain;charset=UTF-8" },
+        mode: "cors",
+        credentials: "omit",
+        keepalive: true
+      }).catch(() => {});
+    } catch (err) { /* 통계 실패는 화면 동작을 막지 않는다 */ }
+  }
+
+  /* 탭·화면이 바뀌었는지 확인 — 바뀌었으면 이전 화면을 마감하고 새 화면을 연다. */
+  function trackScreenChanged() {
+    if (!track.enabled) return;
+    const path = trackPath();
+    const info = activeTabInfo();
+    if (path === track.path && info.tab === track.tab) return;
+    trackFlush("switch");
+    track.path = path;
+    track.tab = info.tab;
+    track.newView = true;
+    track.start = Date.now();
+  }
+
+  function trackSoon() {
+    window.clearTimeout(trackTimer);
+    trackTimer = window.setTimeout(trackScreenChanged, 80);
+  }
+
+  function startTracking(script) {
+    if (track.enabled) return;
+    const blocked = trackingBlocked();
+    if (blocked) { track.skipped = blocked; return; }
+    const endpoint = (script && script.getAttribute("data-track-endpoint")) || TRACK.endpoint;
+    if (endpoint) TRACK.endpoint = endpoint;
+    track.site = trackSiteOf(script, state.config);
+    track.sessionId = ensureSessionId();
+    track.device = detectDevice();
+    track.os = detectOs();
+    track.referrer = trackReferrer();
+    track.utm = trackUtmSource();
+    track.path = trackPath();
+    track.tab = activeTabInfo().tab;
+    track.newView = true;
+    track.start = Date.now();
+    track.enabled = true;
+
+    // 탭 버튼 클릭·주소 변경·화면 다시 그리기
+    document.addEventListener("click", (event) => {
+      const el = event.target && event.target.closest ? event.target.closest(TRACK.tabSelector) : null;
+      if (el) trackSoon();
+    }, true);
+    window.addEventListener("hashchange", trackSoon);
+    window.addEventListener("popstate", trackSoon);
+    document.addEventListener("moa:route-rendered", trackSoon);
+
+    // 탭 숨김·복귀, 페이지를 떠날 때
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") trackFlush("hidden");
+      else if (track.enabled && !track.start) {
+        // 같은 화면으로 돌아왔다 — 체류만 이어 세고 조회수는 늘리지 않는다.
+        track.start = Date.now();
+        track.newView = false;
+      }
+    });
+    window.addEventListener("pagehide", () => trackFlush("pagehide"));
+
+    // 탭 강조(class)만 바뀌는 사이트를 위해 탭 영역을 지켜본다.
+    const nav = state.options && state.options.tabContainer;
+    if (nav && window.MutationObserver) {
+      try {
+        new MutationObserver(trackSoon).observe(nav, { subtree: true, attributes: true, attributeFilter: ["class"] });
+      } catch (err) { /* 관측 실패해도 클릭·hashchange 로 동작한다 */ }
+    }
+  }
+
   document.addEventListener("moa:route-rendered", () => { refresh(); });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", autoInit);
   else autoInit();
+
+  window.MoaSiteAnalytics = {
+    state: track,
+    endpoint: () => TRACK.endpoint,
+    flush: trackFlush,
+    path: trackPath,
+    tab: () => activeTabInfo().tab
+  };
 
   window.MoaSiteConfig = {
     version: VERSION,
@@ -666,6 +952,7 @@
     applyCopy,
     orderTabs: applyTabs,
     preview: PREVIEW,
+    analytics: track,
     state
   };
   Object.defineProperty(window.MoaSiteConfig, "config", { get: () => state.config });
