@@ -183,6 +183,7 @@ node server.js                        # relay/ 폴더에서 — http://127.0.0.1
 cloudflared tunnel --url http://127.0.0.1:3100   # 출력된 https://….trycloudflare.com 이 중계 주소
 ```
 - 서버는 **외부 npm 패키지 없이** Node 내장 모듈만 씁니다(파일 1개, `node server.js` 한 줄).
+
 ### 이미 쓰는 태블릿을 v1.8로 올릴 때 (커밋 고정 한 줄)
 릴레이 폴더에서 아래 한 줄을 붙여넣으면 `server.js` 만 v1.8(커밋 `0a4f1e9`)로 바뀌고 **`gs25-session.json`·`GS25-*.js` 는 그대로** 남습니다. 문법 검사를 통과해야만 교체하고, 이전 판은 `server.js.v17.bak` 으로 남깁니다. 교체 뒤에는 실행 중인 서버를 `Ctrl+C` 로 멈추고 `node server.js` 로 다시 띄우면 `/health` 의 `version` 이 `1.8` 이 됩니다.
 ```bash
