@@ -3160,7 +3160,25 @@
     }
     return out.replace(/[ \t]+/g, " ").trim();
   }
+  /* PSA 거래 내역(APR) 검색은 PSA 검색창이 실제로 만드는 주소를 그대로 쓴다.
+     샵·즉구가는 사용자가 보여 준 PSA 카드 페이지 주소의 필터
+     (gt=SINGLE_GRADED · ss=PRICE_ASCENDING · sg=PSA,CGC,SGC,BECKETT,CSG · p=shop)를
+     같은 검색 주소에 붙여, 등급 카드 즉구 매물을 가격 낮은 순으로 보게 한다. */
+  var PSA_APR_SEARCH = "https://www.psacard.com/auctionprices/search?q=";
+  var PSA_SHOP_FILTER = "&gt=SINGLE_GRADED&ss=PRICE_ASCENDING&sg=PSA,CGC,SGC,BECKETT,CSG&p=shop";
   var MARKET_LINKS = {
+    /* PSA 검색(Enter 기본) — 검색어가 없으면 PSA 경매가 첫 화면. */
+    psaSearch: function (en) {
+      return en ? PSA_APR_SEARCH + encodeURIComponent(en) : "https://www.psacard.com/auctionprices";
+    },
+    /* PSA 샵·즉구가 — 같은 검색어에 PSA·CGC·SGC·BGS·CSG · 가격 낮은 순 필터. */
+    psaShop: function (en) {
+      return PSA_APR_SEARCH + encodeURIComponent(en || "pokemon card") + PSA_SHOP_FILTER;
+    },
+    /* PSA 공식 가격 가이드 — 로그인 없이 열리는 고정 주소(검색어를 붙이지 않는다). */
+    psaGuide: function () {
+      return "https://www.psacard.com/priceguide";
+    },
     /* 크림은 한글 검색어를 그대로 넘긴다. */
     kream: function (ko) {
       /* 검색어가 없으면 크림 첫 화면, 있으면 그 검색어로 바로 검색한다. */
@@ -3184,15 +3202,10 @@
     ebayBin: function (en) {
       return "https://www.ebay.com/sch/i.html?_nkw=" + encodeURIComponent((en ? en + " " : "") + "pokemon psa") +
         "&LH_BIN=1&_sop=15";
-    },
-    psaApr: function (en) {
-      return en
-        ? "https://www.psacard.com/auctionprices/search?q=" + encodeURIComponent(en)
-        : "https://www.psacard.com/auctionprices";
     }
   };
-  /* 어떤 링크에 어떤 검색어를 넘기는지(크림만 한글). */
-  var MARKET_QUERY_KIND = { kream: "ko", snkrdunk: "en", p130point: "en", pricecharting: "en", ebaySold: "en", ebayBin: "en", psaApr: "en" };
+  /* 어떤 링크에 어떤 검색어를 넘기는지(크림만 한글, PSA 가이드는 검색어 없음). */
+  var MARKET_QUERY_KIND = { psaSearch: "en", psaShop: "en", psaGuide: "none", kream: "ko", snkrdunk: "en", p130point: "en", pricecharting: "en", ebaySold: "en", ebayBin: "en" };
   function marketQueryText() {
     return String((marketQueryEl && marketQueryEl.value) || "").trim();
   }
@@ -3205,44 +3218,59 @@
   }
   function updateMarketLinks() {
     var pair = marketQueryPair(marketQueryText());
-    $$("#marketTools [data-market]").forEach(function (a) {
+    $$("[data-market]").forEach(function (a) {
       var key = a.getAttribute("data-market");
       var build = MARKET_LINKS[key];
       if (!build) return;
-      var value = MARKET_QUERY_KIND[key] === "ko" ? pair.ko : pair.en;
+      var kind = MARKET_QUERY_KIND[key];
+      var value = kind === "ko" ? pair.ko : (kind === "en" ? pair.en : "");
       a.setAttribute("href", build(value));
-      a.classList.toggle("is-empty", !pair.ko);
+      a.classList.toggle("is-empty", !pair.ko && kind !== "none");
     });
+    updateResellHint(pair);
     if (!marketHintEl) return;
     if (!pair.ko) {
-      marketHintEl.innerHTML = "검색어 없이 누르면 각 사이트의 기본 조회 화면이 열립니다. 한글로 넣으면 크림은 한글 그대로, 해외 사이트는 영문으로 자동 변환해 검색합니다.";
+      marketHintEl.innerHTML = "검색어 없이 누르면 PSA 기본 조회 화면이 열립니다. 한글 카드명은 영문으로 자동 변환해 PSA에 넘기고, 아래 리셀 그룹에는 크림만 한글 그대로 넘깁니다.";
       return;
     }
     if (pair.korean && pair.converted) {
-      marketHintEl.innerHTML = '한글 → 영문 자동 변환: <b>“' + escapeHtml(pair.en) + '”</b> (크림은 “' +
-        escapeHtml(pair.ko) + '” 그대로 검색)';
+      marketHintEl.innerHTML = '한글 → 영문 자동 변환: <b>“' + escapeHtml(pair.en) +
+        '”</b> · Enter 를 누르면 <b>PSA 거래 내역 검색</b>이 이 검색어로 열립니다.';
       return;
     }
     if (pair.korean) {
-      marketHintEl.innerHTML = '사전에 없는 한글 단어가 있어 영문 변환이 일부만 됐어요. <b>영문 카드명을 함께 입력하면 해외 시세 검색이 더 정확합니다.</b> (크림은 “' +
-        escapeHtml(pair.ko) + '” 그대로 검색)';
+      marketHintEl.innerHTML = '사전에 없는 한글 단어가 있어 영문 변환이 일부만 됐어요. <b>영문 카드명을 함께 입력하면 PSA 검색이 더 정확합니다.</b> (지금은 “' +
+        escapeHtml(pair.en) + '”로 검색)';
       return;
     }
     marketHintEl.innerHTML = '<b>“' + escapeHtml(pair.ko) +
-      '”</b> 로 아래 7개 링크를 엽니다. PSA 경매 낙찰가(APR)는 무료 계정 로그인을 요구합니다.';
+      '”</b> 로 PSA 거래 내역을 검색합니다. PSA 경매가(APR)·샵은 무료 계정 로그인 뒤 결과가 보이고, 아래 리셀·해외 실거래 링크도 같은 검색어로 열립니다.';
+  }
+  /* 아래 ‘리셀 · 해외 실거래 시세’ 그룹에 지금 검색어가 어떻게 전달되는지 한 줄로 보여 준다. */
+  function updateResellHint(pair) {
+    var hint = $("#resellHint");
+    if (!hint) return;
+    if (!pair || !pair.ko) {
+      hint.innerHTML = "위 검색창에 카드명을 넣으면 이 링크들도 같은 검색어로 열립니다.";
+      return;
+    }
+    hint.innerHTML = '<b>“' + escapeHtml(pair.ko) + '”</b> → 크림은 한글 그대로, 해외 링크는 <b>“' +
+      escapeHtml(pair.en) + '”</b> 로 열립니다.';
   }
   function initMarketTools() {
     if (!marketQueryEl) return;
+    /* 검색 버튼·Enter 가 함께 쓰는 기본 동작 — PSA 거래 내역 검색을 새 창으로 연다. */
+    function openPsaSearch() {
+      updateMarketLinks();
+      var first = $("#marketTools [data-market=\"psaSearch\"]");
+      if (first) { trackEvent("market_lookup", { target: "psaSearch" }); window.open(first.href, "_blank", "noopener"); }
+    }
     marketQueryEl.addEventListener("input", updateMarketLinks);
     marketQueryEl.addEventListener("keydown", function (e) {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        updateMarketLinks();
-        /* Enter 는 로그인 없이 바로 볼 수 있는 크림(한글 시세)으로 연다. */
-        var first = $("#marketTools [data-market=\"kream\"]");
-        if (first) { trackEvent("market_lookup", { target: "kream" }); window.open(first.href, "_blank", "noopener"); }
-      }
+      if (e.key === "Enter") { e.preventDefault(); openPsaSearch(); }
     });
+    var marketGoEl = $("#marketGo");
+    if (marketGoEl) marketGoEl.addEventListener("click", openPsaSearch);
     if (marketClearEl) {
       marketClearEl.addEventListener("click", function () {
         marketQueryEl.value = "";
@@ -3250,7 +3278,7 @@
         marketQueryEl.focus();
       });
     }
-    $$("#marketTools [data-market]").forEach(function (a) {
+    $$("[data-market]").forEach(function (a) {
       a.addEventListener("click", function () { trackEvent("market_lookup", { target: a.getAttribute("data-market") }); });
     });
     updateMarketLinks();
