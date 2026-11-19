@@ -38,6 +38,10 @@
    허용 출처는 https://moa-kr.github.io 와 로컬 테스트(localhost·127.0.0.1)뿐입니다.
    미리보기 중에는 방문자의 ‘다시 보지 않기’ 저장소를 건드리지 않고, 팝업 기간도 무시해
    어드민에서 만든 화면 그대로 보여 줍니다.
+   v4.2 — 기능 스위치(features)
+   site-config.json 의 features 값이 false 인 요소를 숨깁니다. 요소는 data-feature="플래그"
+   로 표시해 둡니다(포케모아: 반경 버튼 5km·20km). 지금 고른 반경이 꺼진 반경이면 3km 로
+   되돌리고, 저장소에 남은 꺼진 반경 값도 3km 로 고쳐 둡니다.
    v4.1 — 방문 통계 수집기
    화면을 떠날 때(탭 전환·숨김·페이지 이탈) 이전 화면의 체류 초·경로·탭과 유입 도메인·
    기기·OS 를 복지모아 서버(/api/analytics/collect)로 보냅니다. IP·쿠키·이메일 같은
@@ -48,7 +52,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "4.1";
+  const VERSION = "4.2";
   const STYLE_ID = "moa-site-config-style";
   const DISMISS_PREFIX = "moa:popup:";
   const TAB_SELECTOR = "[data-tab],[data-nav]";
@@ -521,6 +525,108 @@
     });
   }
 
+  /* ───────────── 기능 스위치(features) ─────────────
+     features[플래그] 가 false 면 data-feature="플래그" 요소를 숨긴다. 값이 없으면 켜짐(true). */
+  const RADIUS_FEATURES = [
+    { flag: "radius5km", radius: 5000 },
+    { flag: "radius20km", radius: 20000 }
+  ];
+  const RADIUS_FALLBACK = 3000;
+
+  function featureOn(cfg, flag) {
+    const features = cfg && cfg.features && typeof cfg.features === "object" ? cfg.features : null;
+    const value = features ? features[flag] : undefined;
+    if (value == null) return true;
+    if (typeof value === "string") return !/^(false|0|off|no)$/i.test(value.trim());
+    return Boolean(value);
+  }
+
+  function setFeatureElement(el, on) {
+    el.classList.toggle(HIDDEN_CLASS, !on);
+    if (on) {
+      el.removeAttribute("hidden");
+      el.removeAttribute("aria-hidden");
+      el.removeAttribute("tabindex");
+      return;
+    }
+    el.setAttribute("hidden", "");
+    el.setAttribute("aria-hidden", "true");
+    el.setAttribute("tabindex", "-1");
+  }
+
+  /* 지금 선택된 반경 — 지도 상태를 먼저 보고, 없으면 화면의 활성 버튼에서 읽는다. */
+  function currentRadius() {
+    if (window.PokeMoaMap && typeof window.PokeMoaMap.getState === "function") {
+      const mapState = window.PokeMoaMap.getState();
+      if (mapState && typeof mapState.radius === "number") return mapState.radius;
+    }
+    const active = document.querySelector(".radius-btn.is-active[data-radius]");
+    return active ? Number(active.getAttribute("data-radius")) : null;
+  }
+
+  function markRadiusButton(radius) {
+    Array.prototype.forEach.call(document.querySelectorAll(".radius-btn[data-radius]"), (btn) => {
+      btn.classList.toggle("is-active", Number(btn.getAttribute("data-radius")) === radius);
+    });
+  }
+
+  /* 꺼진 반경이 선택돼 있으면 3km 로 되돌린다.
+     사이트 핸들러(버튼 클릭)를 먼저 쓰고, 반응하지 않으면 지도·표시를 직접 맞춘다. */
+  function fallbackRadius(offRadii) {
+    const radius = currentRadius();
+    if (radius == null || !offRadii.some((r) => radius >= r)) return;
+    const btn = document.querySelector(`.radius-btn[data-radius="${RADIUS_FALLBACK}"]`);
+    if (btn && !btn.classList.contains(HIDDEN_CLASS)) {
+      try { btn.click(); } catch (err) { /* 아래에서 직접 맞춘다 */ }
+    }
+    const after = currentRadius();
+    if (after != null && offRadii.some((r) => after >= r)) {
+      if (window.PokeMoaMap && typeof window.PokeMoaMap.setRadius === "function") {
+        try { window.PokeMoaMap.setRadius(RADIUS_FALLBACK); } catch (err) { /* 무시 */ }
+      }
+      markRadiusButton(RADIUS_FALLBACK);
+    }
+    forgetStoredRadius(offRadii);
+  }
+
+  /* 예전 화면·직접 저장한 반경 값이 꺼진 반경이면 3km 로 고친다(km·m 표기 모두). */
+  function forgetStoredRadius(offRadii) {
+    try {
+      const keys = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i) || "";
+        if (/radius/i.test(key)) keys.push(key);
+      }
+      keys.forEach((key) => {
+        const raw = localStorage.getItem(key);
+        const value = Number(raw);
+        if (!raw || !Number.isFinite(value) || value <= 0) return;
+        const inKm = value <= 100;
+        const meters = inKm ? value * 1000 : value;
+        if (!offRadii.some((r) => meters >= r)) return;
+        localStorage.setItem(key, String(inKm ? RADIUS_FALLBACK / 1000 : RADIUS_FALLBACK));
+      });
+    } catch (err) { /* 저장소를 못 쓰면 무시 */ }
+  }
+
+  function applyFeatures(cfg) {
+    Array.prototype.forEach.call(document.querySelectorAll("[data-feature]"), (el) => {
+      const flag = el.getAttribute("data-feature");
+      if (flag) setFeatureElement(el, featureOn(cfg, flag));
+    });
+    const offRadii = RADIUS_FEATURES.filter((item) => !featureOn(cfg, item.flag)).map((item) => item.radius);
+    // 20km 버튼이 꺼지면 ‘도심은 5km까지 지원’ 안내도 의미가 없어 함께 숨긴다.
+    // (사이트의 syncRadiusUI 가 hidden 을 다시 풀어도 숨겨지도록 class 로도 표시한다.)
+    const note = document.getElementById("radiusNote");
+    if (note) {
+      const hideNote = offRadii.indexOf(20000) >= 0;
+      note.classList.toggle(HIDDEN_CLASS, hideNote);
+      if (hideNote) note.hidden = true;
+    }
+    if (!offRadii.length) return;
+    fallbackRadius(offRadii);
+  }
+
   function apply(cfg, options) {
     const opts = options || {};
     if (!cfg) return null;
@@ -534,6 +640,7 @@
     if (opts.tabContainer) applyTabs(opts.tabContainer, cfg);
     applySections(opts.sectionRoot || document.body, cfg);
     applyCopy(cfg, opts.copyRoot || document.body);
+    applyFeatures(cfg);
     return cfg;
   }
 
@@ -545,6 +652,7 @@
     if (opts.tabContainer) applyTabs(opts.tabContainer, cfg);
     applySections(opts.sectionRoot || document.body, cfg);
     applyCopy(cfg, opts.copyRoot || document.body);
+    applyFeatures(cfg);
     return cfg;
   }
 
