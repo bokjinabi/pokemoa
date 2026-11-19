@@ -183,6 +183,11 @@ node server.js                        # relay/ 폴더에서 — http://127.0.0.1
 cloudflared tunnel --url http://127.0.0.1:3100   # 출력된 https://….trycloudflare.com 이 중계 주소
 ```
 - 서버는 **외부 npm 패키지 없이** Node 내장 모듈만 씁니다(파일 1개, `node server.js` 한 줄).
+### 이미 쓰는 태블릿을 v1.8로 올릴 때 (커밋 고정 한 줄)
+릴레이 폴더에서 아래 한 줄을 붙여넣으면 `server.js` 만 v1.8(커밋 `0a4f1e9`)로 바뀌고 **`gs25-session.json`·`GS25-*.js` 는 그대로** 남습니다. 문법 검사를 통과해야만 교체하고, 이전 판은 `server.js.v17.bak` 으로 남깁니다. 교체 뒤에는 실행 중인 서버를 `Ctrl+C` 로 멈추고 `node server.js` 로 다시 띄우면 `/health` 의 `version` 이 `1.8` 이 됩니다.
+```bash
+curl -fsSL "https://raw.githubusercontent.com/moa-kr/pokemoa/0a4f1e9572706f1a94a577fadd7ca17ae1e6e058/relay/server.js" -o server.v18.js && node --check server.v18.js && cp -n server.js server.js.v17.bak 2>/dev/null; mv server.v18.js server.js && grep -m1 "const VERSION" server.js && ls -l gs25-session.json
+```
 - `127.0.0.1:3100`은 태블릿 안에서만 열리는 주소라, 바깥(휴대폰)에서 쓰려면 cloudflared 같은 터널로 https 주소를 만들어 그 주소를 입력합니다.
 - 같은 와이파이에서만 쓸 때는 `HOST=0.0.0.0 node server.js` 후 `http://<태블릿 IP>:3100`을 넣어도 됩니다.
 
@@ -234,6 +239,8 @@ cloudflared tunnel --url http://127.0.0.1:3100   # 출력된 https://….tryclou
 
 ## 6. 검증 기록
 
+- **v4.27 확인 항목(2026-11-19 라이브 `https://moa-kr.github.io/pokemoa/?v=96`, 자산 `v=96`, 커밋 `0a4f1e9`)**: ① 라이브 `index.html` 의 자산 쿼리 5곳 모두 `?v=96`(style.css·data.js·map.js·app.js·site-config-loader.js)이고, `assets/js/map.js?v=96` 응답에 `MAX_MARKERS = 450` 이 실려 옵니다. ② 브라우저에서 라이브 페이지를 열어 3km 버튼·동네 검색(포항 북구 환호동)을 직접 조작하는 동안 **JS 오류 0건**(`window.onerror`·`unhandledrejection` 0, 실패한 리소스 0 — AdSense·카카오 SDK 포함 정상 200). ③ 로딩 문구가 `주변 편의점 4사·오프라인 매장을 찾는 중... (최대 매장 조회 중 · 최대 25~30초 걸릴 수 있어요)` 로 바뀌고, 진행률 패널 4사 상태가 `최대 매장 조회 중 (최대 25~30초)` 로 표시됩니다. ④ 포항 북구 3km 에서 내장 좌표 스냅샷 폴백 18곳(GS25 6·CU 6·세븐일레븐 5·이마트24 1)이 목록·마커에 그대로 그려지고, 450 상한에서 잘리지 않습니다(이 검증 환경은 카카오 장소 검색이 8초를 넘겨 `timeout` 폴백 — 사이트의 기존 동작이며 이번 변경과 무관, 실사용 회선에서는 실시간 조회). ⑤ 중계는 이 세션에서 태블릿 터널이 꺼져 있어 `미연동 · 매장 위치만` 으로 표시됐고, v1.8 응답 계약(`sources`·`stores`)은 v1.7과 같아 화면 변화가 없습니다. 화면은 `screenshots/48-v427-live-v96-pohang.png`.
+- **v4.27 중계 회귀(`tmp/relay-v18/run-test.sh`, 목 업스트림)**: 3km 에서 CU·GS25 **각 17지점** 격자(CU 37회·GS25 51회 요청, 동시 4), 중복 점포 0·거리 오름차순·반경 밖 0·4사 병합 **196곳**, 응답 0.65초. 1km 는 중심 1점만(43곳). `RELAY_MAX_STORES=20` 시험에서 거리순 20곳. **모든 응답을 3초 지연**시킨 시험에서 **27.4초**에 부분 결과 105~156곳(세븐일레븐은 `시간 마감(27초)으로 … 건너뛰었습니다`)으로 30초 이내. `/health` `version 1.8`, `POST 405`, `OPTIONS 204`, `/api/diag` 4사 정상(CU 78·이마트24 52·세븐일레븐 12·GS25 72).
 - **v4.4 확인 항목(2026-11-18 라이브 `https://moa-kr.github.io/pokemoa/`, 자산 `v=49`, 커밋 `87d34b4`, GitHub Pages `built`)**:
   ① 포항 북구 반경별 매장 수: **3km 41곳 → 5km 116곳 → 20km 185곳** (브랜드 4사 모두 포함 — 5km GS25 46·CU 42·세븐일레븐 19·이마트24 9 / 20km GS25 60·CU 72·세븐일레븐 32·이마트24 21, 재고 63·확인 92·없음 30). 개선 전에는 3·5·20km 모두 **41곳**으로 같았습니다.
   ② 조회 계획: `searchPlan()`이 5km에서 10회, 20km에서 18회 `categorySearch('CS2')`를 병렬 호출하고, `id` 중복 제거 후 `meters(center,row) <= radius`로 다시 거릅니다. 20km 고리 격자는 0~20km 구간을 고르게 채웁니다(2km 단위 33·24·50·20·15·16·11·16·6·4곳).
