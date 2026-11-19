@@ -687,18 +687,21 @@ async function collectEmart24(lat, lng, keyword, diag, ctx) {
   return { stores: out, products, hints: stores, note };
 }
 
-/** 재고 API 가 살아 있는지 확인하는 대조 조회 — 상시 취급 품목(생수)으로 한 번만 */
+/** 재고 API 가 살아 있는지 확인하는 대조 조회 — 상시 취급 품목으로 한 번만(막히면 한 후보 더) */
 async function emart24StockControl(bizNos, diag) {
-  try {
-    const list = await emart24Products('생수', diag);
-    const pickOne = list.find((p) => /생수|샘물|수\)/.test(p.name)) || list[0];
-    if (!pickOne) return false;
-    await emart24Prepare(pickOne.code, diag);
-    const rows = await emart24StockOne(pickOne.code, bizNos, diag);
-    return rows.some((r) => Number(r.qty) > 0);
-  } catch (err) {
-    return false;
+  for (const keyword of ['생수', '우유']) {
+    try {
+      const list = await emart24Products(keyword, diag);
+      const pickOne = list.find((p) => /생수|샘물|삼다수|수\)/.test(p.name)) || list[0];
+      if (!pickOne) continue;
+      await emart24Prepare(pickOne.code, diag);
+      const rows = await emart24StockOne(pickOne.code, bizNos, diag);
+      if (rows.some((r) => Number(r.qty) > 0)) return true;
+    } catch (err) {
+      /* 다음 후보 — 둘 다 안 되면 '수량 미확인'으로 남긴다 */
+    }
   }
+  return false;
 }
 
 /** 공개 매장 API(emart24.co.kr/api1/store) — 앱 재고 화면(getNearStoreList)이 500/차단일 때 쓴다.
