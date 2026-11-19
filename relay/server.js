@@ -125,6 +125,21 @@
  *   · 이마트24 페이지 예산 18 → 36회(검색어당 최대 12페이지)로 늘려 도심에서도 끝까지 읽습니다.
  *   · 세븐일레븐은 CU 결과(바코드)를 기다려 시작하므로 남은 시간 안에서만 돌고, 늦으면 부분 결과를 냅니다.
  *
+ * 2026-11-20 개정(v1.9) — CU 수량 복구(요청 조절)
+ *   · 증상: v1.8 에서 CU 만 "점포는 찾았지만 매장별 수량이 비어 있습니다"(sources.cu.count 0).
+ *   · 원인(실측 2026-11-20): CU `POST /api/store` 는 서버 응답 시작(TTFB)이 6.3~6.6초, 완료 6.7~7.1초입니다
+ *     (단건·순차·동시 4 모두 같음 = 회선이 아니라 CU 서버 처리 시간). 그런데 v1.8 은 요청마다
+ *     `sliceTms(stopAt, 4500)` 으로 4.5초에서 잘라, 37회 전부 AbortError → 빈 배열이 되어
+ *     점포도 수량도 통째로 비었습니다. 같은 시각 1km 경로(5회)도 같은 이유로 0곳이었습니다.
+ *     요청 본문·헤더·상품 선택은 v1.6 과 같아 되돌릴 payload 회귀는 없습니다.
+ *   · 고친 것: ① 요청 타임아웃을 CU_TIMEOUT_MS(기본 12초, 실측 6.5초의 약 1.8배)까지 주되
+ *     전체 27초 마감 안에서만 자릅니다.
+ *     ② 격자는 17지점 37회 → 최대 5지점(중심 + 동서남북 1.5km) × 중심 상품 2종·격자 1종 = 6회.
+ *     ③ 시작 간격 CU_PACE_MS(기본 400ms), 동시성은 1(직렬)로 시작하고, 잰 지연으로 27초 안에 못 끝날
+ *        때만 필요한 만큼 올립니다(최대 3). 지연이 낮은 회선에서는 지정대로 직렬로만 돕니다.
+ *     실측(같은 좌표): 중심 1지점 9곳 → 5지점 28곳, 5지점 직렬 34.1초(그래서 동시성 보정이 필요합니다).
+ *   · GS25(17지점)·이마트24(전체 페이지)·27초 전체 마감은 v1.8 그대로입니다.
+ *
  * 주의: 이 서버는 조회만 합니다. 주문·결제·선점 같은 쓰기 요청은 없습니다.
  */
 
@@ -135,7 +150,7 @@ const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const VERSION = '1.8';
+const VERSION = '1.9';
 const SERVICE = 'pokemoa-relay';
 
 const PORT = Number(process.env.PORT || 3100);
@@ -171,11 +186,20 @@ const MAX_STORES = Number(process.env.RELAY_MAX_STORES || 470);    // 응답에 
 const SEVEN_STORE_LIMIT = 40;  // 세븐일레븐 점포 상한(점포 1곳당 요청 1번인 폴백에서만 의미)
 const SEVEN_MAX_ITEMS = 4;     // 세븐일레븐에서 점포마다 물어볼 상품 수(02 경로는 한 번에)
 
-/* 격자 조회 설정 — 사이트가 32초까지 기다리므로 요청 수를 넉넉히 두되, 동시 요청은 4로 묶어
+/* 격자 조회 설정 — 사이트가 32초까지 기다리므로 GS25 는 요청 수를 넉넉히 두되, 동시 요청은 4로 묶어
    편의점 API 가 단시간 과다 요청으로 403/429 를 걸지 않게 한다. */
-const RING_CU_ITEMS = Number(process.env.CU_RING_ITEMS || 2);        // 격자 지점에서 물어볼 상품 수
-const RING_CONCURRENCY = Number(process.env.RING_CONCURRENCY || 4);  // CU 격자 동시 요청
-const GS25_RING_CONCURRENCY = Number(process.env.GS25_RING_CONCURRENCY || 4);
+/* v1.9 — CU 는 요청 수를 줄이고 시작 간격을 둔다(위 개정 주석 참조).
+   CU /api/store 는 서버 처리만 약 6.5초라, 요청 하나의 시간 제한이 그보다 짧으면 수량이 통째로 빈다. */
+const CU_CENTER_ITEMS = envClamp('CU_CENTER_ITEMS', 2, 1, 5);        // 중심 지점에서 물어볼 상품 수
+const CU_RING_ITEMS = envClamp('CU_RING_ITEMS', 1, 1, 3);            // 격자 지점에서 물어볼 상품 수
+const CU_RING_RADIUS_M = envClamp('CU_RING_RADIUS_M', 1500, 1400, 2500); // 격자 지점 거리(1.4km 이상)
+const CU_PACE_MS = (() => {
+  const n = Number(process.env.CU_PACE_MS);
+  return Number.isFinite(n) && n >= 0 ? Math.min(3000, Math.trunc(n)) : 400; // 요청 시작 간격
+})();
+const CU_MAX_CONCURRENCY = envClamp('CU_MAX_CONCURRENCY', 3, 1, 5);  // 지연이 클 때만 올리는 동시성 상한
+const CU_TIMEOUT_MS = envClamp('CU_TIMEOUT_MS', Math.max(TIMEOUT_MS, 12000), 3000, 20000);
+const GS25_RING_CONCURRENCY = envClamp('GS25_RING_CONCURRENCY', 4, 1, 8);
 const EMART24_MAX_PAGES = Number(process.env.EMART24_MAX_PAGES || 12); // 검색어당 최대 페이지
 const EMART24_QUERY_BUDGET = Number(process.env.EMART24_QUERY_BUDGET || 36); // 이마트24 점포 요청 총량
 
@@ -565,6 +589,10 @@ async function reverseGeocode(lat, lng, diag) {
 }
 
 /** 동시 실행 수를 제한하며 매핑한다 (업체 서버를 두드리는 양 조절) */
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, Math.max(0, Number(ms) || 0)));
+}
+
 async function mapLimit(list, limit, fn) {
   const out = new Array(list.length);
   let index = 0;
@@ -1110,7 +1138,7 @@ async function cuStoresForItem(lat, lng, item, diag, tms) {
       method: 'POST',
       headers: Object.assign(cuHeaders(), { referer: BASE.cu + '/search/stock?isRecommend=Y&item_cd=' + item.code }),
       body: JSON.stringify(payload),
-      tms: Math.max(2000, Math.min(TIMEOUT_MS, Number(tms) || TIMEOUT_MS))
+      tms: Math.max(2000, Math.min(CU_TIMEOUT_MS, Number(tms) || CU_TIMEOUT_MS))
     },
     'CU 점포',
     null,
@@ -1139,48 +1167,104 @@ async function cuStoresForItem(lat, lng, item, diag, tms) {
   return out;
 }
 
+/** CU 요청 하나에 줄 시간 — 전체 마감(27초)을 넘기지 않는 선에서 CU_TIMEOUT_MS 까지.
+    v1.8 처럼 4.5초로 자르면 CU(실측 6.5초)가 모두 시간 초과로 버려진다. */
+function cuTimeoutFor(hardAt) {
+  const hard = Number.isFinite(hardAt) ? hardAt : Date.now() + NEARBY_DEADLINE_MS;
+  return Math.max(3000, Math.min(CU_TIMEOUT_MS, hard - Date.now() - 600));
+}
+
 async function collectCu(lat, lng, keyword, diag, radius, deadlineAt) {
   const products = await cuSearch(keyword, diag);
   if (!products.length) return { stores: [], products: [], note: '카드 상품 검색 0건' };
 
-  /* 매장별 수량은 로그인 없이도 내려오므로(jipCd + recommendId:"stock") 카드 상품을 모두 물어
+  /* 매장별 수량은 로그인 없이도 내려오므로(jipCd + recommendId:"stock") 카드 상품을 물어
      「0으로 확인된 점포」와 「수량 미확인 점포」를 나눈다.
      v1.7 — 한 번의 POST /api/store 는 가까운 순 10곳 안팎만 주므로(환호동 3km 실측: 중심 9곳),
      반경이 1.4km 이상이면 중심 + 주변 격자 지점을 함께 물어 매장코드로 합친다(같은 조건 실측 39곳).
-     v1.8 — 9점 → 17점(내링·외링)으로 늘려 3km 모서리까지 덮는다. 동시 요청은 4로 유지한다. */
+     v1.8 — 9점 → 17점(내링·외링)으로 늘렸으나 요청 타임아웃을 4.5초로 잘라 CU 수량이 통째로 비었다.
+     v1.9 — 5지점(중심 + 동서남북, 1.4km 이상) × 중심 2종·격자 1종 = 6회로 줄이고,
+             요청 타임아웃은 CU_TIMEOUT_MS(기본 12초)까지, 시작 간격은 CU_PACE_MS(기본 400ms)로 둔다.
+             동시성은 1(직렬)로 시작해, 잰 지연으로 마감 안에 못 끝날 때만 필요한 만큼 올린다(최대 3). */
   const targets = products.slice(0, MAX_PRODUCTS);
-  const plan = ringPlan(radius || DEFAULT_RADIUS, 1500);
-  const centers = ringPoints(lat, lng, plan.rings);
-  const ringItems = Math.max(1, Math.min(Math.trunc(RING_CU_ITEMS), targets.length));
+  const r = Number(radius) || DEFAULT_RADIUS;
+  /* 반경 1.4km 미만이면 중심 1지점(한 번의 조회가 가까운 순 9곳 안팎을 준다).
+     5km·20km 도 격자는 5지점까지만 — CU 지연(6.5초) 때문에 더 늘리면 마감 안에 못 끝난다. */
+  const centers =
+    r < 1400
+      ? [{ lat, lng, tag: 'center' }]
+      : ringPoints(lat, lng, [
+          { offsetM: Math.min(CU_RING_RADIUS_M, Math.max(1400, Math.round(r * 0.5))), dirs: 4 }
+        ]);
   const jobs = [];
   for (const center of centers) {
-    const items = center.tag === 'center' ? targets : targets.slice(0, ringItems);
+    const items =
+      center.tag === 'center' ? targets.slice(0, CU_CENTER_ITEMS) : targets.slice(0, CU_RING_ITEMS);
     for (const item of items) jobs.push({ center, item });
   }
-  /* 체인 소프트 마감(기본 23초)까지만 새 요청을 시작하고, 요청 하나는 남은 시간으로 자른다 —
-     느린 날에도 부분 결과를 잃지 않고 전체 응답(27초)을 넘기지 않는다. CU 응답이 끝나야
-     세븐일레븐(바코드 공유)이 시작되므로 CU 는 마감보다 조금 일찍 멈춘다. */
+
+  /* CU 응답이 끝나야 세븐일레븐(바코드 공유)이 시작되므로 CU 는 체인 소프트 마감보다 조금 일찍 멈춘다. */
   const stopAt = stopAtFor(deadlineAt, CHAIN_SOFT_DEADLINE_MS - 1500);
+  const hardAt = Number.isFinite(deadlineAt) ? deadlineAt : Date.now() + NEARBY_DEADLINE_MS;
+
+  const results = [];
+  const latencies = [];
+  let cursor = 0;
+  let conc = 1;
+  let usedConc = 1;
   let skipped = 0;
-  const lists = await mapLimit(jobs, Math.max(1, Math.trunc(RING_CONCURRENCY)), async (job) => {
-    if (Date.now() > stopAt) {
-      skipped++;
-      return [];
+
+  while (cursor < jobs.length) {
+    if (Date.now() >= stopAt) {
+      skipped += jobs.length - cursor;
+      break;
     }
-    try {
-      return await cuStoresForItem(job.center.lat, job.center.lng, job.item, diag, sliceTms(stopAt, 4500));
-    } catch (err) {
-      return [];
+    const batch = jobs.slice(cursor, cursor + conc);
+    usedConc = Math.max(usedConc, batch.length);
+    const wave = await Promise.all(
+      batch.map(async (job, i) => {
+        if (i) await sleep(CU_PACE_MS * i); /* 시작 간격 — 한꺼번에 몰아 보내지 않는다 */
+        if (Date.now() >= hardAt - 4000) return { job, list: [], ms: 0, notSent: true };
+        const t0 = Date.now();
+        try {
+          const list = await cuStoresForItem(job.center.lat, job.center.lng, job.item, diag, cuTimeoutFor(hardAt));
+          return { job, list, ms: Date.now() - t0 };
+        } catch (err) {
+          return { job, list: [], ms: Date.now() - t0, error: (err && err.message) || String(err) };
+        }
+      })
+    );
+    for (const row of wave) {
+      results.push(row);
+      if (row.notSent) skipped++;
+      else if (row.ms > 0) latencies.push(row.ms);
     }
-  });
+    cursor += batch.length;
+
+    /* 남은 요청이 소프트 마감 안에 끝나는 "가장 작은" 동시성을 고른다.
+       지연이 낮으면 1(직렬) 그대로, 높으면 최대 CU_MAX_CONCURRENCY 까지. */
+    const rest = jobs.length - cursor;
+    const left = stopAt - Date.now();
+    if (rest > 0 && left > 0 && latencies.length) {
+      const avg = latencies.reduce((a, b) => a + b, 0) / latencies.length;
+      const projected = (k) => Math.ceil(rest / k) * (avg + CU_PACE_MS * (k - 1));
+      let k = 1;
+      while (k < CU_MAX_CONCURRENCY && projected(k) > left) k++;
+      conc = k;
+    }
+  }
 
   const byStore = new Map();
   const hints = [];
   let withQty = 0;
-  for (const list of lists) {
-    for (const row of list) {
+  let withoutQty = 0;
+  for (const res of results) {
+    for (const row of res.list) {
       hints.push(row);
-      if (row.item.qty === null) continue; // 수량 미확인 → 0으로 속이지 않는다
+      if (row.item.qty === null) {
+        withoutQty++;
+        continue; // 수량 미확인 → 0으로 속이지 않는다
+      }
       withQty++;
       const cur = byStore.get(row.id) || Object.assign({}, row, { items: [] });
       const idx = cur.items.findIndex((i) => i.code === row.item.code);
@@ -1190,14 +1274,33 @@ async function collectCu(lat, lng, keyword, diag, radius, deadlineAt) {
     }
   }
   const stores = Array.from(byStore.values()).map((s) => Object.assign(s, { brand: 'cu' }));
-  const note = withQty
-    ? centers.length > 1
-      ? '점포 ' + stores.length + '곳 재고 확인(' + centers.length + '지점 격자 조회' +
-        (skipped ? ' · 시간 마감으로 ' + skipped + '회 생략' : '') + ')'
-      : ''
-    : 'CU 점포는 찾았지만 매장별 수량이 비어 있습니다(상품 ' + products.length + '종 확인 · ' + jobs.length + '회 조회). ' +
-      '잠시 뒤 다시 조회하거나 매장에 확인해 주세요.';
-  return { stores, products, hints, note, queries: centers.length };
+  const failed = results.filter((x) => x.error && !x.notSent).length;
+  const avgSec = latencies.length
+    ? (latencies.reduce((a, b) => a + b, 0) / latencies.length / 1000).toFixed(1) + '초 평균'
+    : '';
+  let note;
+  if (withQty) {
+    note =
+      centers.length > 1
+        ? '점포 ' + stores.length + '곳 재고 확인(' + centers.length + '지점 · ' + jobs.length + '회 조회' +
+          (usedConc > 1 ? ' · 동시 ' + usedConc : '') +
+          (skipped ? ' · 시간 마감으로 ' + skipped + '회 생략' : '') + ')'
+        : '';
+  } else if (withoutQty) {
+    /* 점포는 왔는데 수량 필드가 통째로 빈 경우 — 다음에 원인을 가릴 수 있게 따로 적는다. */
+    note =
+      'CU 점포 ' + hints.length + '곳이 응답했지만 매장별 수량이 비어 있습니다(수량 ' + jobs.length + '회 조회' +
+      (skipped ? ' · 시간 마감으로 ' + skipped + '회 생략' : '') + '). 잠시 뒤 다시 조회하거나 매장에 확인해 주세요.';
+  } else if (failed || skipped) {
+    note =
+      'CU 점포 수량 조회 ' + results.length + '회 중 ' + failed + '회가 응답하지 않았습니다' +
+      (avgSec ? '(' + avgSec + ')' : '') +
+      (skipped ? ' · 시간 마감으로 ' + skipped + '회 생략' : '') +
+      ' — 잠시 뒤 다시 조회해 주세요.';
+  } else {
+    note = 'CU 점포는 찾았지만 매장별 수량이 비어 있습니다(상품 ' + products.length + '종 확인). 잠시 뒤 다시 조회해 주세요.';
+  }
+  return { stores, products, hints, note, queries: centers.length, requests: jobs.length, concurrency: usedConc };
 }
 
 /* ------------------------------------------------------- 세븐일레븐 */
@@ -2902,6 +3005,7 @@ module.exports = {
   diagnose,
   mergeStores,
   distanceM,
+  cuTimeoutFor,
   ringPoints,
   ringPlan,
   looksLikeCard,
