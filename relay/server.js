@@ -107,6 +107,7 @@
 const http = require('node:http');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
+const path = require('node:path');
 
 const VERSION = '1.6';
 const SERVICE = 'pokemoa-relay';
@@ -1464,10 +1465,23 @@ function gs25ApplySession(access, refresh, deviceId, source) {
   gs25Session.revoked = false;
 }
 
+/** 세션 파일 길잡이 — 환경 변수가 없으면 server.js 옆의 gs25-session.json 을 찾는다. */
+function gs25SessionPath() {
+  const env = String(process.env.GS25_SESSION_FILE || '').trim();
+  if (env) return env;
+  try {
+    const guess = path.join(__dirname, 'gs25-session.json');
+    if (fs.existsSync(guess)) return guess;
+  } catch (err) {
+    /* 무시 */
+  }
+  return '';
+}
+
 function gs25Load() {
   if (gs25Session.loaded) return gs25Session;
   gs25Session.loaded = true;
-  const file = String(process.env.GS25_SESSION_FILE || '').trim();
+  const file = gs25SessionPath();
   if (file) {
     try {
       const raw = fs.readFileSync(file, 'utf8');
@@ -1498,7 +1512,7 @@ function gs25Load() {
 
 /** 회전된 토큰을 세션 파일에 다시 쓴다(같은 폴더 임시 파일 → rename, 0600). */
 function gs25SaveSession() {
-  const file = String(process.env.GS25_SESSION_FILE || '').trim();
+  const file = gs25SessionPath();
   if (!file || gs25Session.source !== 'file') return;
   const body = JSON.stringify({
     accessToken: gs25Session.access,
