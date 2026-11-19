@@ -187,9 +187,9 @@ cloudflared tunnel --url http://127.0.0.1:3100   # 출력된 https://….tryclou
 - 서버는 **외부 npm 패키지 없이** Node 내장 모듈만 씁니다(파일 1개, `node server.js` 한 줄).
 
 ### 이미 쓰는 태블릿을 v1.9로 올릴 때 (커밋 고정 한 줄)
-릴레이 폴더에서 아래 한 줄을 붙여넣으면 `server.js` 만 v1.9(커밋 `e7f15f9`)로 바뀌고 **`gs25-session.json`·`GS25-*.js` 는 그대로** 남습니다. 문법 검사를 통과해야만 교체하고, 이전 판은 `server.js.v18.bak` 으로 남깁니다. 교체 뒤에는 실행 중인 서버를 `Ctrl+C` 로 멈추고 `node server.js` 로 다시 띄우면 `/health` 의 `version` 이 `1.9` 가 됩니다.
+릴레이 폴더에서 아래 한 줄을 붙여넣으면 `server.js` 만 v1.9(커밋 `e7f15f9`)로 바뀌고 **`gs25-session.json`·`GS25-*.js` 는 그대로** 남습니다. ① 지금 폴더가 중계 폴더인지(`pokemoa-relay` 표식) 먼저 확인하고, ② 내려받은 판이 `node --check` 를 통과해야만 교체하며(실패하면 이전 판 그대로), ③ 돌고 있던 `node server.js` 를 `kill` 로 멈추고(프로세스 이름 대신 `/proc` 의 cmdline 으로 찾아 이 셸 자신은 건드리지 않습니다 — Termux 에 `pkill` 이 기본 설치되어 있지 않습니다) ④ `nohup node server.js` 로 백그라운드 재시작한 뒤 ⑤ `/health` 의 `version` 과 `gs25-session.json` 을 찍어 확인합니다. 로그는 `tail -f server.log`.
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/moa-kr/pokemoa/e7f15f94b373fcb24d6181313e4e70763e562aef/relay/server.js" -o server.v19.js && node --check server.v19.js && cp -n server.js server.js.v18.bak 2>/dev/null; mv server.v19.js server.js && grep -m1 "const VERSION" server.js && ls -l gs25-session.json
+grep -q "pokemoa-relay" server.js 2>/dev/null || { echo "relay 폴더에서 붙여넣어 주세요"; exit 1; }; if curl -fsSL "https://raw.githubusercontent.com/moa-kr/pokemoa/e7f15f94b373fcb24d6181313e4e70763e562aef/relay/server.js" -o server.v19.js && node --check server.v19.js; then cp -n server.js server.js.v18.bak 2>/dev/null; mv server.v19.js server.js; for d in /proc/[0-9]*; do c=$(tr "\0" " " < "$d/cmdline" 2>/dev/null); case "$c" in node\ *server.js*) kill "${d#/proc/}" 2>/dev/null;; esac; done; sleep 2; (nohup node server.js > server.log 2>&1 &); sleep 3; curl -s http://127.0.0.1:3100/health; echo; grep -m1 "const VERSION" server.js; ls -l gs25-session.json; else echo "새 판 내려받기/문법 검사 실패 — 이전 판(server.js) 그대로 둡니다"; fi
 ```
 - v1.8 로 올릴 때 쓴 명령은 커밋 `0a4f1e9` 기준으로 그대로 남아 있습니다(이전 판에서 올리는 태블릿은 `server.js.v17.bak` 이 생깁니다).
 - `127.0.0.1:3100`은 태블릿 안에서만 열리는 주소라, 바깥(휴대폰)에서 쓰려면 cloudflared 같은 터널로 https 주소를 만들어 그 주소를 입력합니다.
