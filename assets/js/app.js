@@ -2211,21 +2211,6 @@
     });
   });
 
-  /* ------------------------------------------------------- 모바일 하단광고 */
-  var mobileAd = $("#mobileAd");
-  var mobileAdClose = $("#mobileAdClose");
-  function maybeShowMobileAd() {
-    if (!mobileAd || mobileAd.hidden) return;
-    if (window.scrollY > 320) mobileAd.classList.add("is-visible");
-  }
-  window.addEventListener("scroll", maybeShowMobileAd, { passive: true });
-  maybeShowMobileAd();
-  if (mobileAdClose) {
-    mobileAdClose.addEventListener("click", function () {
-      mobileAd.hidden = true;
-    });
-  }
-
   /* ------------------------------------- 다른 확장팩·박스 정가 구매처 (v4.6) */
   /* 정가 구매처 탭 안에서 30th가 아닌 박스를 골라 그 박스의 정가·KREAM 시세와
      공식/인증 판매처 링크를 보여 줍니다. 판매처 URL·재고 표시는 data.js의

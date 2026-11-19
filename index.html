@@ -37,7 +37,7 @@
 <meta name="twitter:image:alt" content="포켓몬카드모아 — 내 주변 편의점 재고 · 인기 카드 시세 · 도감">
 <meta name="theme-color" content="#101f3c">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23101f3c'/%3E%3Crect x='7' y='7' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05'/%3E%3Crect x='17.5' y='7' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05' opacity='.7'/%3E%3Crect x='7' y='17.5' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05' opacity='.7'/%3E%3Crect x='17.5' y='17.5' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="assets/css/style.css?v=96">
+<link rel="stylesheet" href="assets/css/style.css?v=97">
 <!-- 카카오맵 JavaScript SDK — autoload=false로 불러 두고 map.js가 kakao.maps.load()로 초기화합니다.
      JavaScript 키 도메인에는 https://moa-kr.github.io 만 등록되어 있어, 그 밖의 주소(미등록 프리뷰)에서는
      지도 대신 내장 좌표 스냅샷 안내가 표시됩니다. -->
@@ -140,22 +140,6 @@
   </div>
 </header>
 
-<!-- ================================ PC 넓은 화면 좌·우 160×600 광고 레일 -->
-<aside class="side-ad-rail side-ad-rail--left" aria-label="광고">
-  <div class="ad-slot ad-slot-rail" data-ad-slot="left-rail" aria-hidden="true">
-    <span class="ad-label">AD</span>
-    <span class="ad-title">Google AdSense</span>
-    <span class="ad-desc">160×600</span>
-  </div>
-</aside>
-<aside class="side-ad-rail side-ad-rail--right" aria-label="광고">
-  <div class="ad-slot ad-slot-rail" data-ad-slot="right-rail" aria-hidden="true">
-    <span class="ad-label">AD</span>
-    <span class="ad-title">Google AdSense</span>
-    <span class="ad-desc">160×600</span>
-  </div>
-</aside>
-
 <main id="main">
 
 <!-- ============================================================ 홈 탭 -->
@@ -183,12 +167,6 @@
       </div>
     </div>
 
-    <!-- AdSense Slot: home-top-banner -->
-    <div class="ad-slot is-banner" data-ad-slot="home-top-banner" aria-hidden="true">
-      <span class="ad-label">AD</span>
-      <span class="ad-title">Google AdSense 광고 영역</span>
-      <span class="ad-desc">home-top-banner · 970×90 / 모바일 320×100</span>
-    </div>
   </div>
 
   <!-- ------------------------------------------------------ 정가 구매처 -->
@@ -374,12 +352,6 @@
       <p class="src-note mt-16">출처: 포켓몬코리아 <a href="https://www.pokemonkorea.co.kr/card_vending_machine" target="_blank" rel="noopener">자판기 안내</a>(전국 178곳 중 좌표 확인 176곳) · <a href="https://www.pokemonkorea.co.kr/pokemon_cardshop" target="_blank" rel="noopener">공식 카드샵 목록</a>(16곳) 2026-11-18 확인, 아트박스 매장·재고 조회 <a href="https://www.poom.co.kr" target="_blank" rel="noopener">POOM</a>. 대형마트 위치는 「동네에서 찾기」 지도에서 카카오 장소 검색으로 보여 줍니다. 재고·운영 여부는 시점·매장에 따라 달라지므로 방문 전 확인하세요.</p>
     </section>
 
-    <!-- AdSense Slot: home-infeed-1 -->
-    <div class="ad-slot is-inline" data-ad-slot="home-infeed-1" aria-hidden="true">
-      <span class="ad-label">AD</span>
-      <span class="ad-title">Google AdSense 인피드 광고 영역</span>
-      <span class="ad-desc">home-infeed-1 · 반응형</span>
-    </div>
 
     <!-- --------------------------------------------------- 카드팩 트렌드 -->
     <section class="section" id="trendSection" aria-labelledby="trend-title" data-section="trend">
@@ -694,10 +666,18 @@
     </div>
     </div>
 
-    <div class="ad-slot is-banner" data-ad-slot="map-bottom" aria-hidden="true">
-      <span class="ad-label">AD</span>
-      <span class="ad-title">Google AdSense 광고 영역</span>
-      <span class="ad-desc">map-bottom · 반응형</span>
+
+    <div class="panel-card mt-24 guide-prose" id="cvsGuide">
+      <h3>편의점 4사 입고·재고, 이렇게 읽으면 헛걸음이 줄어듭니다</h3>
+      <p class="panel-sub">같은 날 같은 동네인데도 매장마다 재고가 다릅니다. 이유는 발주·배송 구조에 있습니다.</p>
+      <p>편의점 카드팩은 본사가 점포별 발주를 받아 물류센터에서 배송하는 구조입니다. 그래서 <strong>같은 브랜드라도 점포마다 입고 요일과 시간대가 다르고</strong>, 배송 순서에 따라 오전·오후가 갈립니다. 이 지도에 보이는 수량은 편의점 앱이 알려 주는 전산값이라, 방문 직전에 한 번 더 확인하는 편이 안전합니다.</p>
+      <ul class="channel-features">
+        <li><strong>GS25</strong> — 우리동네GS 앱의 매장별 재고 찾기에서 상품 수량을 확인할 수 있습니다. 수량 0은 “아직 입고 전”과 “이미 판매됨”이 섞여 있어 앱만으로는 구분되지 않습니다.</li>
+        <li><strong>CU</strong> — 포켓CU 앱에서 상품을 검색해 매장 재고를 봅니다. 예약 발주 물량은 매장 도착 뒤 전산에 반영되므로 발주일과 도착일 사이에 시차가 있습니다.</li>
+        <li><strong>세븐일레븐</strong> — 앱·홈페이지는 매장 위치·영업 정보 중심이고, 상품 수량 표시는 상품·매장에 따라 제한적입니다. 수량이 보이지 않으면 전화 확인이 가장 빠릅니다.</li>
+        <li><strong>이마트24</strong> — 앱 재고 조회는 조회 가능한 상품·매장에 한해 표시됩니다. 표시가 없다고 재고가 없는 것은 아닙니다.</li>
+      </ul>
+      <p><strong>방문 전 체크</strong> — ① 앱에서 수량 1개 이상인 매장만 후보로 두기 ② 이동 거리가 길면 전화로 카드팩 재고 확인 ③ 박스(20팩)가 목적이면 판매 단위를 먼저 묻기 ④ 1인 구매 수량을 제한하는 매장이 있다는 점 기억하기. 카드팩은 낱팩 위주로 풀리고, 박스 판매는 점포 정책이라 같은 브랜드에서도 다릅니다.</p>
     </div>
 
     <p class="src-note">지도·주변 매장: <a href="https://apis.map.kakao.com/" target="_blank" rel="noopener">카카오맵</a> JavaScript SDK + 카카오 장소 검색(Places, 편의점 카테고리 CS2 · 키워드 보충 조회, 지연 시 내장 실제 좌표 스냅샷 2026-11-17). 매장 위치·이름은 카카오맵 실제 장소 데이터이고, <b>재고 수량은 편의점 앱에서 실시간으로 조회한 실제 값만</b> 쓰고, 재고 0으로 확인되면 「없음」, 받지 못한 매장은 「미조회」로 표시합니다(샘플 수량 없음). <b>오프라인 판매처</b>는 마트·아트박스는 카카오 장소 검색(2026-11-18), 공식 자판기는 <a href="https://www.pokemonkorea.co.kr/card_vending_machine" target="_blank" rel="noopener">포켓몬코리아 자판기 안내</a>의 공식 목록(176곳), 공인 카드샵은 <a href="https://www.pokemonkorea.co.kr/pokemon_cardshop" target="_blank" rel="noopener">포켓몬코리아 카드샵 목록</a>(16곳)을 기준으로 했고, <b>재고는 표시하지 않습니다</b>.</p>
@@ -855,11 +835,6 @@
     </section>
     </div>
     
-    <div class="ad-slot is-banner" data-ad-slot="schedule-bottom" aria-hidden="true">
-      <span class="ad-label">AD</span>
-      <span class="ad-title">Google AdSense 광고 영역</span>
-      <span class="ad-desc">schedule-bottom · 반응형</span>
-    </div>
 
     <p class="src-note">추첨 일정 출처: 포켓몬스토어 30주년 특설 페이지, 2차 추첨 안내 보도(2026-10-20), 편의점 판매 일정 보도(2026-10-09 세계일보 · 10-20 TCG뉴스). 지난 회차 조건은 다음 회차에 그대로 적용되지 않을 수 있습니다.</p>
   </div>
@@ -936,6 +911,19 @@
         </div>
 
         <p class="fx-calc-note" data-copy="fxCalcNote">참고용 예상치입니다. 실제 통관은 관세청 고시환율·HS코드·목록통관 여부에 따라 다를 수 있습니다.</p>
+      </div>
+
+      <div class="panel-card mt-24 guide-prose" id="fxGuide">
+        <h3>해외직구 면세·관부가세, 계산 전에 알아 둘 것</h3>
+        <p class="panel-sub">카드값이 싸 보여도 배송비와 세금에서 갈리는 경우가 많습니다.</p>
+        <p>해외에서 카드를 직구할 때 세금은 <strong>물품가와 국제 배송비를 합친 금액</strong>을 기준으로 계산합니다. 다만 <strong>면세 한도는 물품가만</strong> 보고 판단합니다. 일본 등 일반 국가는 물품가 $150, 미국은 $200까지 목록통관으로 면세되고, 한도를 넘으면 배송비까지 포함한 금액 전체에 관세와 부가세가 붙습니다.</p>
+        <ul class="channel-features">
+          <li><strong>관세</strong> — 카드류는 대체로 8% 선입니다. 원산지에 따라 협정 세율이 인정되면 0%에 가까워질 수 있어, 계산기의 관세율 칸을 직접 고를 수 있게 해 두었습니다.</li>
+          <li><strong>부가세</strong> — (물품가 + 배송비 + 관세)의 10%입니다. 관세가 붙으면 부가세도 함께 커집니다.</li>
+          <li><strong>환율</strong> — 실제 통관은 관세청 고시환율을 씁니다. 카드 결제 환율과 달라 몇천 원 차이가 날 수 있습니다.</li>
+          <li><strong>수량</strong> — 같은 상품을 여러 개 사면 자가소비로 보지 않을 수 있습니다. 소장용이라도 수량이 많으면 통관에서 소명을 요구받을 수 있습니다.</li>
+        </ul>
+        <p>면세 한도와 세율은 제도가 바뀌면 함께 달라집니다. 계산기는 참고용 예상치이므로, 결제 전 <a href="https://unipass.customs.go.kr" target="_blank" rel="noopener">관세청 유니패스</a> 안내에서 최신 기준을 확인하세요.</p>
       </div>
     </section>
 
@@ -1199,11 +1187,6 @@
       <small class="affiliate-disclosure">이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</small>
     </div>
 
-    <div class="ad-slot is-banner" data-ad-slot="guide-bottom" aria-hidden="true">
-      <span class="ad-label">AD</span>
-      <span class="ad-title">Google AdSense 광고 영역</span>
-      <span class="ad-desc">guide-bottom · 반응형</span>
-    </div>
 
     <p class="src-note">자료 출처 — 정가·구성: <a href="https://pokemoncard.co.kr/card/960" target="_blank" rel="noopener">포켓몬 카드 게임 공식 제품 정보</a> · 수록 카드: <a href="https://www.tcgheart.com/set/30th-celebration-korean" target="_blank" rel="noopener">30th Celebration 카드 목록</a> · 시세: <a href="https://kream.co.kr/search?keyword=30th%20CELEBRATION" target="_blank" rel="noopener">KREAM</a> 2026-11-17 확인(미개봉 1박스, 슈링크·논슈링크, 배송비·수수료 별도). 포켓몬카드모아는 포켓몬코리아와 무관한 비공식 정보 사이트입니다.</p>
 
@@ -1336,16 +1319,6 @@
     </div>
   </div>
 </footer>
-
-<!-- ======================================================= 모바일 하단 광고 -->
-<div class="mobile-ad" id="mobileAd">
-  <div class="ad-slot" aria-hidden="true">
-    <span class="ad-label">AD</span>
-    <span class="ad-title">Google AdSense 하단 고정 광고 영역</span>
-    <span class="ad-desc">mobile-sticky · 320×50</span>
-  </div>
-  <button type="button" class="mobile-ad-close" id="mobileAdClose" aria-label="광고 닫기">×</button>
-</div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
@@ -1501,12 +1474,12 @@
   </div>
 </template>
 
-<script src="assets/js/data.js?v=96"></script>
-<script src="assets/js/map.js?v=96"></script>
-<script src="assets/js/app.js?v=96"></script>
+<script src="assets/js/data.js?v=97"></script>
+<script src="assets/js/map.js?v=97"></script>
+<script src="assets/js/app.js?v=97"></script>
 <!-- 모아 어드민(moa-kr/moa-admin)이 커밋하는 assets/config/site-config.json 을 화면에 적용합니다.
      공지 바·팝업·탭/섹션 순서와 노출·문구가 이 파일 값으로 바뀝니다. -->
-<script src="assets/js/site-config-loader.js?v=96" defer
+<script src="assets/js/site-config-loader.js?v=97" defer
         data-config="assets/config/site-config.json"
         data-track-site="pokemoa"
         data-tab-container=".main-nav"
