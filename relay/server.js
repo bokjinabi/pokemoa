@@ -132,7 +132,10 @@ const DEFAULT_KEYWORD = '포켓몬카드';
 const DEFAULT_RADIUS = 3000;   // m — 사이트가 ?radius= 로 덮어쓸 수 있다
 
 const MAX_PRODUCTS = 5;        // 체인당 재고를 물어볼 상품 수 (요청 예산 보호)
-const GS25_MAX_ITEMS = Number(process.env.GS25_MAX_ITEMS || 3);   // GS25는 상품 1개당 요청 1번
+const GS25_MAX_ITEMS = (() => {
+  const n = Number(process.env.GS25_MAX_ITEMS || 3);      // GS25는 상품 1개당 요청 1번
+  return Number.isFinite(n) ? Math.min(6, Math.max(1, Math.trunc(n))) : 3;
+})();
 const GS25_RADIUS = Number(process.env.GS25_RADIUS || 1000);       // m — 우리동네GS 앱 기본 반경
 const GEO_TTL_MS = 6 * 3600e3; // 좌표→주소 캐시 (같은 동네를 다시 물을 때 외부 호출을 아낀다)
 const MAX_STORES = 40;         // 응답에 담는 점포 수
@@ -1768,7 +1771,7 @@ async function collectGs25(lat, lng, keyword, radius, diag) {
   const products = await gs25Search(keyword, diag);
   if (!products.length) return { stores: [], products: [], note: 'GS25 카드 상품 검색 0건' };
 
-  const targets = products.slice(0, Math.max(1, GS25_MAX_ITEMS));
+  const targets = products.slice(0, GS25_MAX_ITEMS);
   let lists;
   try {
     lists = await mapLimit(targets, 1, async (item) => {
@@ -2212,7 +2215,7 @@ const server = http.createServer(async (req, res) => {
         if (!gs25Session.access) {
           note = 'GS25 로그인 세션(GS25_ACCESS_TOKEN) 필요';
         } else if (products.length) {
-          const lists = await mapLimit(products.slice(0, Math.max(1, GS25_MAX_ITEMS)), 1, (p) =>
+          const lists = await mapLimit(products.slice(0, GS25_MAX_ITEMS), 1, (p) =>
             gs25StockForItem(lat, lng, p, radius, dg)
           );
           const byStore = new Map();
