@@ -12,6 +12,7 @@
  *   GET  /api/seven?lat=&lng=&q= → 세븐일레븐만 따로(검색어 후보·점포·재고) 확인합니다.
  *   GET  /api/kream-movers → (준비 중 · 501) KREAM 시세를 사이트 「시세·팝수」 탭에 공급하는 자리
  *   GET  /api/pop?q=      → (준비 중 · 501) PSA·BRG 팝수를 공급하는 자리
+ *   POST /admin/update    → (어드민 전용 · v2.0) 이 파일을 GitHub main 의 최신 판으로 교체·재시작
  *
  * 실행 예:
  *   node server.js                       # 127.0.0.1:3100
@@ -140,7 +141,25 @@
  *     실측(같은 좌표): 중심 1지점 9곳 → 5지점 28곳, 5지점 직렬 34.1초(그래서 동시성 보정이 필요합니다).
  *   · GS25(17지점)·이마트24(전체 페이지)·27초 전체 마감은 v1.8 그대로입니다.
  *
- * 주의: 이 서버는 조회만 합니다. 주문·결제·선점 같은 쓰기 요청은 없습니다.
+ * 2026-11-20 개정(v2.0)에서 바뀐 점 — 어드민 원클릭 자가 업데이트
+ *   · 어드민(모아 어드민 웹)이 `POST /admin/update` + `X-Admin-Token` 으로 로그인 토큰을
+ *     보내면, 복지모아 서버(`bokjimoa.onrender.com/api/admin/session`)에 그 토큰이 아직
+ *     유효한지 물어 통과한 요청만 실행합니다. RELAY_ADMIN_TOKEN 을 지정해 두면 그 키
+ *     하나로도 됩니다(복지모아 서버가 잠들었을 때의 대비).
+ *   · 내려받는 곳은 아래 UPDATER.sourceUrl **한 곳으로 고정**했습니다. 요청 본문·쿼리로
+ *     주소나 셸 명령을 받지 않으므로, 이 서버로 임의 코드를 실행할 길은 없습니다.
+ *   · 순서: server.next.js 로 저장 → "pokemoa-relay" 표식 확인 → `node --check` →
+ *     server.js 를 server.js.bak 으로 백업 → 교체 → JSON 응답(res.end) → 300ms 뒤
+ *     새 프로세스(출력은 server.log) → 기존 프로세스 종료. gs25-session.json 은 건드리지
+ *     않습니다(같은 폴더의 파일만 읽습니다).
+ *   · 포트가 아직 물려 있으면(EADDRINUSE) 새 프로세스가 250ms 부터 조금씩 늘려 가며
+ *     다시 listen 합니다(최대 20회). 기존 프로세스도 server.close() 로 연결을 정리한
+ *     뒤에 새 프로세스를 띄우므로 두 프로세스가 포트를 다투지 않습니다.
+ *   · v1.9 의 CU 타임아웃 12초·5지점 격자, GS25 gs25-session.json 자동 로드/갱신,
+ *     이마트24·세븐일레븐 조회는 그대로입니다(코드 변경 없음).
+ *
+ * 주의: 이 서버는 조회만 합니다. 주문·결제·선점 같은 쓰기 요청은 없습니다
+ *       (자기 파일을 바꾸는 /admin/update 만 예외).
  */
 
 'use strict';
@@ -149,14 +168,30 @@ const http = require('node:http');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
+const cp = require('node:child_process');
 
-const VERSION = '1.9';
+const VERSION = '2.0';
 const SERVICE = 'pokemoa-relay';
 
 const PORT = Number(process.env.PORT || 3100);
 const HOST = process.env.HOST || '127.0.0.1';
 const TIMEOUT_MS = Number(process.env.RELAY_TIMEOUT_MS || 8000);
 const CACHE_MS = Number(process.env.RELAY_CACHE_MS || 60000);
+
+/* ── 자가 업데이트(v2.0) — 어드민 「최신 버전 업데이트」 버튼이 부르는 경로 ──
+   내려받는 주소는 이 상수 하나뿐입니다. 요청이 보낸 URL·명령은 절대 쓰지 않습니다. */
+const UPDATER = {
+  sourceUrl: process.env.RELAY_UPDATE_URL || 'https://raw.githubusercontent.com/moa-kr/pokemoa/main/relay/server.js',
+  verifyUrl: process.env.RELAY_ADMIN_VERIFY_URL || 'https://bokjimoa.onrender.com/api/admin/session',
+  sharedKey: String(process.env.RELAY_ADMIN_TOKEN || '').trim(),
+  marker: 'pokemoa-relay',
+  fetchMs: Math.max(3000, Number(process.env.RELAY_UPDATE_FETCH_MS || 20000)),
+  verifyMs: Math.max(2000, Number(process.env.RELAY_UPDATE_VERIFY_MS || 12000)),
+  minIntervalMs: Math.max(0, Number(process.env.RELAY_UPDATE_MIN_INTERVAL_MS || 60000)),
+  restartDelayMs: 300,
+  restartDrainMs: 5000
+};
+const updateGuard = { running: false, lastAt: 0, lastResult: null, fails: 0, failWindowAt: 0 };
 
 const BASE = {
   emart24: process.env.EMART24_BASE || 'https://everse.emart24.co.kr',
@@ -2679,10 +2714,15 @@ async function diagnose(lat, lng, keyword, radius) {
 
 /* --------------------------------------------------------------- HTTP */
 
-function cors(res) {
-  res.setHeader('access-control-allow-origin', '*');
+function cors(res, req) {
+  /* 조회 API 는 어디서나 부를 수 있게 두고(사이트가 태블릿 주소를 직접 부릅니다),
+     어드민 콘솔(moa-kr.github.io)에서는 X-Admin-Token 까지 쓸 수 있게 허용합니다. */
+  const origin = (req && req.headers && req.headers.origin) || '';
+  const allowed = /^https:\/\/([a-z0-9-]+\.)?moa-kr\.github\.io$/.test(origin);
+  res.setHeader('access-control-allow-origin', allowed ? origin : '*');
+  res.setHeader('vary', 'origin');
   res.setHeader('access-control-allow-methods', 'GET, POST, OPTIONS');
-  res.setHeader('access-control-allow-headers', 'content-type, x-requested-with');
+  res.setHeader('access-control-allow-headers', 'content-type, x-requested-with, x-admin-token, authorization');
   res.setHeader('access-control-max-age', '86400');
 }
 
@@ -2712,8 +2752,219 @@ const HELP_HTML = `<!doctype html><html lang="ko"><meta charset="utf-8">
 <p style="color:#5b6b85">조회 전용입니다. 주문·결제·선점 요청은 만들지 않습니다.</p>
 </body></html>`;
 
+/* ───────────────────────── 자가 업데이트(v2.0) ─────────────────────────
+   어드민 버튼 → POST /admin/update(X-Admin-Token) → 토큰 확인 → 고정 주소에서 새 판
+   내려받기 → 표식·문법 검사 → 백업·교체 → 응답 → 새 프로세스로 재시작.
+   이 구역은 파일을 쓰지만 쓰는 대상이 자기 자신(server.js) 하나로 고정되어 있습니다. */
+function secretEquals(a, b) {
+  const x = Buffer.from(String(a || ''));
+  const y = Buffer.from(String(b || ''));
+  if (!x.length || x.length !== y.length) return false;
+  try { return crypto.timingSafeEqual(x, y); } catch (err) { return false; }
+}
+
+/* 토큰이 살아 있는지 확인한다. ① RELAY_ADMIN_TOKEN 과 같으면 통과(오프라인 대비),
+   ② 아니면 복지모아 서버의 어드민 세션 확인 API 에 물어본다. */
+async function verifyAdminToken(token) {
+  if (UPDATER.sharedKey && secretEquals(token, UPDATER.sharedKey)) {
+    return { ok: true, via: 'shared-key' };
+  }
+  let res;
+  try {
+    res = await fetch(UPDATER.verifyUrl, {
+      headers: {
+        authorization: 'Bearer ' + token,
+        'x-sync-key': token,
+        accept: 'application/json',
+        'user-agent': 'pokemoa-relay/' + VERSION
+      },
+      cache: 'no-store',
+      signal: AbortSignal.timeout(UPDATER.verifyMs)
+    });
+  } catch (err) {
+    return {
+      ok: false,
+      status: 503,
+      error: '관리자 인증 서버(복지모아)에 연결하지 못했습니다. 잠시 뒤 다시 시도해 주세요.',
+      reason: (err && err.message) || 'verify-fetch-failed'
+    };
+  }
+  if (res.status === 200) {
+    let data = null;
+    try { data = await res.json(); } catch (err) { data = null; }
+    if (data && data.ok) return { ok: true, via: 'bokjimoa' };
+    return { ok: false, status: 403, error: '관리자 토큰을 확인하지 못했습니다.', reason: 'verify-body' };
+  }
+  if (res.status === 401 || res.status === 403) {
+    return { ok: false, status: 403, error: '관리자 토큰이 올바르지 않거나 만료되었습니다. 어드민에서 다시 로그인해 주세요.', reason: 'verify-' + res.status };
+  }
+  return { ok: false, status: 502, error: '관리자 인증 확인 응답이 예상과 다릅니다(HTTP ' + res.status + ').', reason: 'verify-http-' + res.status };
+}
+
+/* 고정 주소에서 새 판을 받아 온다 — 받은 내용이 정말 우리 중계 서버인지 표식으로 본다. */
+async function downloadLatestServerSource() {
+  let res;
+  try {
+    res = await fetch(UPDATER.sourceUrl, {
+      headers: { 'user-agent': 'pokemoa-relay-updater/' + VERSION, 'cache-control': 'no-cache' },
+      cache: 'no-store',
+      signal: AbortSignal.timeout(UPDATER.fetchMs)
+    });
+  } catch (err) {
+    throw new Error('최신 판을 내려받지 못했습니다(네트워크·시간 초과). ' + ((err && err.message) || ''));
+  }
+  if (!res.ok) throw new Error('최신 판을 내려받지 못했습니다(HTTP ' + res.status + ').');
+  const text = await res.text();
+  if (!text || text.length < 4000) throw new Error('내려받은 파일이 너무 작습니다(' + (text ? text.length : 0) + ' bytes).');
+  if (text.indexOf(UPDATER.marker) === -1) throw new Error('"' + UPDATER.marker + '" 표식이 없어 다른 파일로 보고 중단했습니다.');
+  if (!/const VERSION = '[^']+'/.test(text)) throw new Error('VERSION 선언이 없어 중단했습니다.');
+  return text;
+}
+
+function versionOfSource(text) {
+  const m = /const VERSION = '([^']+)'/.exec(String(text || ''));
+  return m ? m[1] : '?';
+}
+
+/* 응답을 끝까지 보낸 뒤, 새 프로세스를 먼저 띄우고 기존 연결을 정리하며 스스로 종료한다.
+   새 프로세스가 먼저 떠서 포트가 아직 물려 있으면 listen 재시도가 받아 주고,
+   기존 프로세스는 server.close() 뒤 5초 안에 반드시 빠진다.
+   새 프로세스를 아예 못 띄웠다면 기존 프로세스를 그대로 두고 멈추지 않는다(무서버 상태 방지). */
+function scheduleRestart() {
+  setTimeout(() => {
+    const dir = path.dirname(__filename);
+    let child = null;
+    try {
+      const logFd = fs.openSync(path.join(dir, 'server.log'), 'a');
+      child = cp.spawn(process.execPath, [__filename], {
+        cwd: dir,
+        detached: true,
+        stdio: ['ignore', logFd, logFd],
+        env: process.env
+      });
+      child.on('error', (err) => console.error('[update] 새 프로세스 오류:', (err && err.message) || err));
+      child.unref();
+      try { fs.closeSync(logFd); } catch (err) { /* 자식이 물고 있어도 된다 */ }
+    } catch (err) {
+      child = null;
+      console.error('[update] 새 프로세스 시작 실패:', (err && err.message) || err);
+    }
+    if (!child || !child.pid) {
+      console.error('[update] 새 프로세스를 띄우지 못했습니다 — 기존 프로세스(이 코드)로 계속 돌립니다. 태블릿에서 다시 시작해 주세요.');
+      return;
+    }
+    console.log('[update] 새 프로세스 시작 pid=' + child.pid + ' — 기존 프로세스는 연결을 정리하고 종료합니다');
+    const exitNow = () => { try { process.exit(0); } catch (err) { /* 무시 */ } };
+    try { server.close(exitNow); } catch (err) { exitNow(); }
+    /* 오래 붙어 있는 연결(최대 27초 조회)이 close 를 붙잡으면 여기서 끊고 넘어간다. */
+    setTimeout(exitNow, UPDATER.restartDrainMs).unref();
+  }, UPDATER.restartDelayMs);
+}
+
+async function handleAdminUpdate(req, res) {
+  req.resume(); /* 본문은 쓰지 않는다(프록시가 남긴 본문을 흘려보낸다) */
+  const now = Date.now();
+
+  /* 인증 실패가 반복되면 잠시 잠근다(토큰 대입 시도를 늦추기 위한 최소한의 장치) */
+  if (updateGuard.fails >= 8 && now - updateGuard.failWindowAt < 10 * 60e3) {
+    sendJson(res, 429, { ok: false, error: '인증 실패가 반복되어 잠시 잠갔습니다. 10분 뒤에 다시 시도해 주세요.' });
+    return;
+  }
+  if (!updateGuard.fails || now - updateGuard.failWindowAt >= 10 * 60e3) {
+    updateGuard.fails = 0;
+    updateGuard.failWindowAt = now;
+  }
+
+  const token = String(req.headers['x-admin-token'] || '').trim().slice(0, 4096);
+  if (!token) {
+    updateGuard.fails += 1;
+    console.log('[update] 인증 실패: X-Admin-Token 헤더 없음');
+    sendJson(res, 401, { ok: false, error: 'X-Admin-Token 헤더가 필요합니다.' });
+    return;
+  }
+  const auth = await verifyAdminToken(token);
+  if (!auth.ok) {
+    updateGuard.fails += 1;
+    console.log('[update] 인증 실패: ' + (auth.reason || 'unknown'));
+    sendJson(res, auth.status || 403, { ok: false, error: auth.error });
+    return;
+  }
+
+  if (updateGuard.running) {
+    sendJson(res, 429, { ok: false, error: '업데이트가 이미 진행 중입니다. 잠시 뒤 상태를 확인해 주세요.' });
+    return;
+  }
+  const sinceLast = updateGuard.lastAt ? now - updateGuard.lastAt : Infinity;
+  if (sinceLast < UPDATER.minIntervalMs) {
+    sendJson(res, 429, {
+      ok: false,
+      error: '방금 업데이트를 실행했습니다. ' + Math.ceil((UPDATER.minIntervalMs - sinceLast) / 1000) + '초 뒤에 다시 시도해 주세요.'
+    });
+    return;
+  }
+
+  updateGuard.running = true;
+  const dir = path.dirname(__filename);
+  const nextPath = path.join(dir, 'server.next.js');
+  const bakPath = path.join(dir, 'server.js.bak');
+  try {
+    console.log('[update] 요청 인증 통과(' + (auth.via || 'token') + ') — ' + UPDATER.sourceUrl);
+    const text = await downloadLatestServerSource();
+    const nextVersion = versionOfSource(text);
+    const current = fs.readFileSync(__filename, 'utf8');
+
+    if (text === current) {
+      updateGuard.lastAt = Date.now();
+      sendJson(res, 200, {
+        ok: true, previousVersion: VERSION, nextVersion, restarting: false, updated: false,
+        note: '이미 같은 판입니다(내용이 같아 다시 시작하지 않았습니다).'
+      });
+      console.log('[update] 이미 같은 판(v' + VERSION + ') — 재시작하지 않음');
+      return;
+    }
+
+    fs.writeFileSync(nextPath, text, { mode: 0o644 });
+    const check = cp.spawnSync(process.execPath, ['--check', nextPath], { encoding: 'utf8', timeout: 20000 });
+    if (check.status !== 0) {
+      try { fs.rmSync(nextPath, { force: true }); } catch (err) { /* 무시 */ }
+      const detail = String((check.stderr || (check.error && check.error.message) || '')).split('\n').filter(Boolean).slice(0, 3).join(' / ').slice(0, 300);
+      console.error('[update] 문법 검사 실패 — 기존 server.js 유지:', detail);
+      updateGuard.lastAt = Date.now();
+      sendJson(res, 500, {
+        ok: false,
+        error: '내려받은 파일이 문법 검사를 통과하지 못해 기존 server.js 를 그대로 두었습니다.',
+        detail, previousVersion: VERSION, nextVersion
+      });
+      return;
+    }
+
+    fs.copyFileSync(__filename, bakPath);   /* 직전 판 백업(server.js.bak) */
+    fs.renameSync(nextPath, __filename);    /* 같은 폴더 안 이름 바꾸기 — 원자적 교체 */
+
+    updateGuard.lastAt = Date.now();
+    updateGuard.fails = 0;
+    updateGuard.lastResult = { at: new Date().toISOString(), previousVersion: VERSION, nextVersion };
+    console.log('[update] v' + VERSION + ' → v' + nextVersion + ' 교체 완료(백업 server.js.bak) — 재시작 예약');
+
+    /* 응답을 완전히 보낸 뒤에 재시작한다(res.end 가 끝난 뒤 300ms). */
+    sendJson(res, 200, {
+      ok: true, previousVersion: VERSION, nextVersion, restarting: true, updated: true,
+      backup: 'server.js.bak', at: updateGuard.lastResult.at
+    });
+    scheduleRestart();
+  } catch (err) {
+    console.error('[update] 실패:', (err && err.message) || err);
+    try { fs.rmSync(nextPath, { force: true }); } catch (err2) { /* 무시 */ }
+    if (!res.writableEnded) {
+      sendJson(res, 500, { ok: false, error: (err && err.message) || '업데이트에 실패했습니다.', previousVersion: VERSION });
+    }
+  } finally {
+    updateGuard.running = false;
+  }
+}
+
 const server = http.createServer(async (req, res) => {
-  cors(res);
+  cors(res, req);
   const started = Date.now();
   const url = new URL(req.url || '/', `http://${req.headers.host || '127.0.0.1'}`);
   const path = url.pathname.replace(/\/+$/, '') || '/';
@@ -2723,8 +2974,24 @@ const server = http.createServer(async (req, res) => {
     res.end();
     return;
   }
+
+  /* v2.0 — 어드민 원클릭 자가 업데이트(인증이 필요한 유일한 POST) */
+  if (path === '/admin/update') {
+    if (req.method !== 'POST') {
+      sendJson(res, 405, { ok: false, error: '/admin/update 는 POST 로만 부를 수 있습니다.' });
+      return;
+    }
+    try {
+      await handleAdminUpdate(req, res);
+    } catch (err) {
+      console.error('[update] 처리 중 오류', (err && err.message) || err);
+      if (!res.writableEnded) sendJson(res, 500, { ok: false, error: '업데이트 처리 중 오류가 났습니다.' });
+    }
+    return;
+  }
+
   if (req.method !== 'GET') {
-    sendJson(res, 405, { ok: false, error: '조회 전용 서버입니다 (GET, OPTIONS만 지원)' });
+    sendJson(res, 405, { ok: false, error: '조회 전용 서버입니다 (GET, OPTIONS, 그리고 /admin/update POST 만 지원)' });
     return;
   }
 
@@ -2987,20 +3254,52 @@ const server = http.createServer(async (req, res) => {
 });
 
 function start() {
-server.listen(PORT, HOST, () => {
-  console.log(`포켓몬카드모아 실재고 조회 서버 v${VERSION} — http://${HOST}:${PORT}`);
-  console.log(`  상태 확인: curl http://${HOST}:${PORT}/health`);
-  console.log(`  실재고:    curl "http://${HOST}:${PORT}/api/nearby?lat=${DEFAULT_LAT}&lng=${DEFAULT_LNG}&keyword=${encodeURIComponent(DEFAULT_KEYWORD)}"`);
-  console.log(`  진단:      curl "http://${HOST}:${PORT}/api/diag"`);
-  console.log('  바깥에서 쓰려면: cloudflared tunnel --url http://' + HOST + ':' + PORT);
-});
+  /* v2.0 — 자가 업데이트로 새 프로세스가 뜰 때 기존 프로세스가 포트를 놓는 순간이 있습니다.
+     EADDRINUSE 면 조금씩 더 기다렸다가 다시 listen 합니다(최대 20회 ≈ 8초). */
+  let attempts = 0;
+  let listening = false;
+  const onListening = () => {
+    listening = true;
+    console.log(`포켓몬카드모아 실재고 조회 서버 v${VERSION} — http://${HOST}:${PORT}`);
+    console.log(`  상태 확인: curl http://${HOST}:${PORT}/health`);
+    console.log(`  실재고:    curl "http://${HOST}:${PORT}/api/nearby?lat=${DEFAULT_LAT}&lng=${DEFAULT_LNG}&keyword=${encodeURIComponent(DEFAULT_KEYWORD)}"`);
+    console.log(`  진단:      curl "http://${HOST}:${PORT}/api/diag"`);
+    console.log('  바깥에서 쓰려면: cloudflared tunnel --url http://' + HOST + ':' + PORT);
+    console.log('  자가 업데이트: 모아 어드민 → ⑤ 저장·배포 → 🔌 태블릿 중계 서버 → 최신 버전 업데이트');
+  };
+  server.on('listening', onListening);
+  server.on('error', (err) => {
+    const code = err && err.code;
+    if (code === 'EADDRINUSE' && !listening && attempts < 20) {
+      attempts += 1;
+      const wait = Math.min(2000, 250 * attempts);
+      console.log(`[listen] 포트 ${PORT} 이(가) 아직 사용 중 — ${wait}ms 뒤 다시 시도 (${attempts}/20)`);
+      setTimeout(() => { try { server.listen(PORT, HOST); } catch (e) { /* 다음 error 로 */ } }, wait);
+      return;
+    }
+    console.error('[fatal]', (err && err.message) || err);
+    process.exit(1);
+  });
+  server.listen(PORT, HOST);
 }
+
+/* 멈출 때는 열린 연결을 먼저 닫는다(다음 판이 포트를 바로 쓸 수 있게). */
+function shutdown(signal) {
+  console.log(`[${signal}] 서버를 정리하고 종료합니다`);
+  try { server.close(() => process.exit(0)); } catch (err) { process.exit(0); }
+  setTimeout(() => process.exit(0), 1500).unref();
+}
+['SIGINT', 'SIGTERM', 'SIGHUP'].forEach((signal) => process.on(signal, () => shutdown(signal)));
 
 if (require.main === module) start();
 
 module.exports = {
   start,
   server,
+  UPDATER,
+  verifyAdminToken,
+  downloadLatestServerSource,
+  versionOfSource,
   nearby,
   diagnose,
   mergeStores,
