@@ -305,8 +305,6 @@ window.PokeMoaMap = (function () {
     } catch (e) { return null; }
   }
 
-  /* 드래그를 놓을 때마다 마지막 자리만 기억하고, 잠잠해지면(DRAG_WAIT) 한 번만 조회한다.
-     여러 번 끌어도 조회는 한 번이고, 새 자리가 마지막 것이 된다. */
   /* 드래그를 다시 시작하면 아직 대기 중인 재조회를 버린다(끌던 중간 좌표로 찾지 않게) */
   function onMapDragStart() {
     clearTimeout(st.dragTimer);
@@ -314,6 +312,8 @@ window.PokeMoaMap = (function () {
     st.dragPoint = null;
   }
 
+  /* 드래그를 놓을 때마다 마지막 자리만 기억하고, 잠잠해지면(DRAG_WAIT) 한 번만 조회한다.
+     여러 번 끌어도 조회는 한 번이고, 새 자리가 마지막 것이 된다. */
   function onMapDragEnd() {
     if (!st.ready || !st.map) return;
     if (Date.now() - st.programAt < PROGRAM_GUARD) return;   /* 코드로 옮긴 직후 */
