@@ -120,6 +120,13 @@ window.PokeMoaMap = (function () {
     return D.regions[0];
   }
 
+  /* id 로 정확히 찾는다(없으면 null) — 저장해 둔 지역 id 검사용 */
+  function findRegion(id) {
+    if (!id) return null;
+    for (var i = 0; i < D.regions.length; i++) if (D.regions[i].id === id) return D.regions[i];
+    return null;
+  }
+
   function meters(a, b) {
     var R = 6371008.8;
     var dLat = (b.lat - a.lat) * Math.PI / 180;
@@ -377,9 +384,14 @@ window.PokeMoaMap = (function () {
     if (st.map) return;
     var K = window.kakao.maps;
     var r = region(st.regionId);
+    /* 마지막 검색 위치를 복원했으면 서울로 그렸다가 옮기지 않고 그 자리에서 지도를 연다 */
+    var at = st.origin !== "region" && st.center ? st.center : { lat: r.lat, lng: r.lng };
+    var zoom = st.origin !== "region" && st.center
+      ? (st.radius >= 20000 ? 12 : 15)
+      : (r.zoom || 15);
     st.map = new K.Map(el.container, {
-      center: latlng(r.lat, r.lng),
-      level: levelForZoom(r.zoom || 15),
+      center: latlng(at.lat, at.lng),
+      level: levelForZoom(zoom),
       draggable: true,
       scrollwheel: true,
       disableDoubleClickZoom: false
@@ -402,7 +414,7 @@ window.PokeMoaMap = (function () {
     setTimeout(tilesReady, 2500);
 
     st.ring = new K.Circle({
-      center: latlng(r.lat, r.lng),
+      center: latlng(at.lat, at.lng),
       radius: st.radius,
       strokeWeight: 1.5,
       strokeColor: "#2f6df6",
@@ -1692,10 +1704,11 @@ window.PokeMoaMap = (function () {
     load();
   }
 
-  /* 동네·역 이름 검색 결과(카카오 장소 검색)로 임의 좌표를 볼 때 */
-  function setPoint(point) {
+  /* 동네·역 이름 검색 결과(카카오 장소 검색)로 임의 좌표를 볼 때.
+     origin 을 넘기면 그 값으로 남긴다 — 마지막 검색 위치 복원(geo=내 위치, map=지도 중심)에도 쓴다. */
+  function setPoint(point, origin) {
     if (!point || !isFinite(point.lat) || !isFinite(point.lng)) return;
-    st.origin = "search";
+    st.origin = origin === "geo" || origin === "map" ? origin : "search";
     st.regionId = "";
     st.center = { lat: Number(point.lat), lng: Number(point.lng) };
     st.metro = metroRegions().some(function (r) {
@@ -1826,9 +1839,49 @@ window.PokeMoaMap = (function () {
     el.container.appendChild(wrap);
   }
 
+  /* 첫 조회를 어디서 시작할지 — 마지막 검색 위치(localStorage)·?region= 쿼리로 넘어온 값.
+     { mode: "region", regionId, radius } 또는 { mode: "point", lat, lng, radius, origin }
+     좌표·지역이 잘못됐으면 null 을 돌려주고 부르는 쪽이 기본값(서울 광화문)을 쓴다. */
+  function applyStart(start) {
+    if (!start || typeof start !== "object") return null;
+    var radius = Number(start.radius);
+    if (isFinite(radius) && radius >= 500 && radius <= 50000) st.radius = radius;
+    if (start.mode === "point") {
+      var plat = Number(start.lat), plng = Number(start.lng);
+      if (!isFinite(plat) || !isFinite(plng) || plat < -90 || plat > 90 || plng < -180 || plng > 180) return null;
+      var origin = start.origin === "geo" || start.origin === "map" ? start.origin : "search";
+      /* 지도(SDK)는 아직 없으므로 중심·반경·도심 여부만 먼저 맞춰 두고,
+         실제 지도 이동·조회는 SDK 가 준비된 뒤 setPoint 로 한다 */
+      st.origin = origin;
+      st.regionId = "";
+      st.center = { lat: plat, lng: plng };
+      st.metro = metroRegions().some(function (r) {
+        return meters(st.center, { lat: r.lat, lng: r.lng }) < METRO_RADIUS_M;
+      });
+      st.allow20 = !st.metro;
+      if (!st.allow20 && st.radius > 5000) st.radius = 5000;
+      return { mode: "point", lat: plat, lng: plng, origin: origin };
+    }
+    var r = findRegion(start.regionId);
+    if (!r) return null;
+    st.regionId = r.id;
+    st.origin = "region";
+    st.allow20 = r.allow20 !== false;
+    st.metro = !st.allow20;
+    if (!st.allow20 && st.radius > 5000) st.radius = 5000;
+    st.center = { lat: r.lat, lng: r.lng };
+    return { mode: "region", regionId: r.id };
+  }
+
   function init(opts) {
     el.container = opts.container;
     el.card = opts.card;
+    var start = applyStart(opts.start);
+    /* 첫 조회 — 복원한 위치가 있으면 그 자리에서, 없으면 기본 지역(서울 광화문)에서 */
+    function firstSearch() {
+      if (start && start.mode === "point") setPoint({ lat: start.lat, lng: start.lng }, start.origin);
+      else setRegion(st.regionId);
+    }
 
     ensureKakao(function (ok) {
       if (!ok) {
@@ -1840,11 +1893,11 @@ window.PokeMoaMap = (function () {
         emit("pokemoa:sdk-error", {
           message: "카카오맵을 이 주소에서 열 수 없어 내장 실제 좌표 스냅샷으로 표시합니다. 배포 주소(moa-kr.github.io/pokemoa)에서는 카카오맵이 정상 동작합니다."
         });
-        setRegion(st.regionId);
+        firstSearch();
         return;
       }
       buildMap();
-      setRegion(st.regionId);
+      firstSearch();
     });
 
     document.addEventListener("keydown", function (e) {

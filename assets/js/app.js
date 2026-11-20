@@ -115,6 +115,10 @@
   var mapReady = false;
   var gotFirstData = false;
   var isLoadingMap = true;
+  /* 마지막 검색 위치 복원 — 첫 조회를 어디서 시작할지(map.js init 의 start)와
+     저장 여부(아무것도 안 고른 첫 방문의 기본값은 저장하지 않는다) */
+  var bootMapStart = null;
+  var lastBootSource = "default";
   /* 매장 목록 노출: 모바일은 처음 3곳 + 더보기 5곳씩, 980px 이상 2열에서는 10곳부터.
      필터·지역·반경이 바뀌면 처음 값으로 돌아갑니다. */
   var LIST_START = 3;
@@ -138,7 +142,7 @@
   function ensureMap() {
     if (mapReady || !window.PokeMoaMap || !mapShell) return;
     mapReady = true;
-    window.PokeMoaMap.init({ container: mapShell, card: mapCard });
+    window.PokeMoaMap.init({ container: mapShell, card: mapCard, start: bootMapStart });
     if (filterState.region && window.PokeMoaMap.getState().regionId !== filterState.region) {
       window.PokeMoaMap.setRegion(filterState.region);
     }
@@ -740,6 +744,7 @@
       $$(".radius-btn").forEach(function (b) {
         b.classList.toggle("is-active", Number(b.getAttribute("data-radius")) === radius);
       });
+      lastRememberRadius(radius);
     }
   }
 
@@ -1347,7 +1352,7 @@
     });
   }
 
-  /* 첫 화면: 서울 광화문을 기본 선택 (초기 지도 중심 37.5759, 126.9768) */
+  /* 첫 화면: 저장된 마지막 검색 위치가 없으면 서울 광화문(37.5759, 126.9768) 기준 */
   /* 시·도 목록을 data.js 의 regions 순서·표기로 다시 채운다 — HTML 의 option 이
      빠지거나 겹쳐도 전국 17개 시·도가 한 번씩만 나오게 한다. */
   function syncProvinceOptions() {
@@ -1368,12 +1373,229 @@
   }
   syncProvinceOptions();
 
-  var initialRegion = regionById(filterState.region) || D.regions[0];
-  if (initialRegion) {
-    if (provinceSelect) provinceSelect.value = initialRegion.province;
-    fillDistricts(initialRegion.province, initialRegion.id);
-    filterState.region = initialRegion.id;
+  /* ------------------------------- 마지막 검색 위치 기억 (localStorage)
+     지역 선택·내 위치·동네 검색·지도 드래그로 찾은 자리를 브라우저에 남겨 두고,
+     다음에 열 때 기본값(서울 광화문)이 아니라 그 자리에서 바로 조회한다.
+     저장이 막힌 브라우저(시크릿 모드·저장소 차단)에서는 조용히 넘어간다. */
+  var LAST_KEY = "pokemoa.lastLocation";
+  var LAST_RADII = [1000, 3000, 5000, 20000];
+  var LAST_MODES = ["region", "gps", "search", "drag"];
+
+  function lastMeters(aLat, aLng, bLat, bLng) {
+    var R = 6371008.8;
+    var dLat = (bLat - aLat) * Math.PI / 180;
+    var dLng = (bLng - aLng) * Math.PI / 180;
+    var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(aLat * Math.PI / 180) * Math.cos(bLat * Math.PI / 180) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
   }
+
+  /* 반경 — 화면에서 고를 수 있는 1·3·5·20km 만 쓰고, 도심(allow20 false)은 5km까지 */
+  function lastRadiusValue(value, allow20) {
+    var n = Number(value);
+    if (!isFinite(n) || LAST_RADII.indexOf(n) < 0) n = 3000;
+    if (allow20 === false && n > 5000) n = 5000;
+    return n;
+  }
+
+  /* 동네·내 위치 좌표에 가장 가까운 지역의 시·도 (60km 안) — 드롭다운을 어긋나지 않게 */
+  function lastProvinceOf(lat, lng) {
+    if (!isFinite(lat) || !isFinite(lng)) return "";
+    var best = "", bd = Infinity;
+    D.regions.forEach(function (r) {
+      var d = lastMeters(lat, lng, r.lat, r.lng);
+      if (d < bd) { bd = d; best = r.province || ""; }
+    });
+    return bd <= 60000 ? best : "";
+  }
+
+  function lastRegionLabel(r) {
+    if (!r) return "";
+    return (r.province ? r.province + " · " : "") + (r.district || r.name || "");
+  }
+
+  /* 저장값 검사 — 모드·좌표(NaN·범위 밖)·없는 지역 id 면 null 을 돌려 기본값으로 폴백 */
+  function lastClean(rec) {
+    if (!rec || typeof rec !== "object") return null;
+    var mode = String(rec.mode || "");
+    if (LAST_MODES.indexOf(mode) < 0) return null;
+    var lat = Number(rec.lat), lng = Number(rec.lng);
+    if (!isFinite(lat) || !isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+    var r = null;
+    if (mode === "region") {
+      r = regionById(typeof rec.regionId === "string" ? rec.regionId : "");
+      if (!r) return null;
+      lat = Number(r.lat);
+      lng = Number(r.lng);
+    }
+    var label = typeof rec.label === "string" ? rec.label.slice(0, 60) : "";
+    if (!label) label = r ? lastRegionLabel(r) : (mode === "gps" ? "내 위치" : mode === "drag" ? "지도 중심" : "");
+    return {
+      mode: mode,
+      lat: lat,
+      lng: lng,
+      radius: lastRadiusValue(rec.radius, r ? r.allow20 !== false : true),
+      province: typeof rec.province === "string" ? rec.province : (r ? r.province : ""),
+      regionId: r ? r.id : "",
+      label: label,
+      savedAt: typeof rec.savedAt === "string" && rec.savedAt ? rec.savedAt : new Date().toISOString()
+    };
+  }
+
+  function lastSave(rec) {
+    var clean = lastClean(rec);
+    if (!clean) return null;
+    clean.savedAt = new Date().toISOString();
+    try { localStorage.setItem(LAST_KEY, JSON.stringify(clean)); } catch (e) {}
+    return clean;
+  }
+
+  function lastRead() {
+    var raw = "";
+    try { raw = localStorage.getItem(LAST_KEY) || ""; } catch (e) { return null; }
+    if (!raw) return null;
+    var clean = null;
+    try { clean = lastClean(JSON.parse(raw)); } catch (e) { clean = null; }
+    if (!clean) {
+      /* 손상된 값은 지우고 기본값으로 조용히 폴백한다 */
+      try { localStorage.removeItem(LAST_KEY); } catch (e) {}
+    }
+    return clean;
+  }
+
+  /* 조회가 시작될 때마다 그 자리를 기억한다 — 지역 선택·내 위치·동네 검색·
+     지도 드래그 재검색·반경 변경이 모두 pokemoa:search-start 로 모인다. */
+  function lastRemember(detail) {
+    var origin = String(detail.origin || "");
+    var mode = origin === "region" ? "region" : origin === "geo" ? "gps" : origin === "map" ? "drag" : "search";
+    var c = detail.center || {};
+    var r = mode === "region" ? regionById(detail.regionId || filterState.region || "") : null;
+    if (mode === "region" && !r) return null;
+    var lat = Number(c.lat), lng = Number(c.lng);
+    var label = "";
+    if (r) label = lastRegionLabel(r);
+    else if (mode === "gps") label = "내 위치";
+    else if (mode === "drag") label = "지도 중심";
+    else if (regionSearch) label = String(regionSearch.value || "").trim();
+    return lastSave({
+      mode: mode,
+      lat: lat,
+      lng: lng,
+      radius: detail.radius,
+      province: r ? r.province : lastProvinceOf(lat, lng),
+      regionId: r ? r.id : "",
+      label: label
+    });
+  }
+
+  document.addEventListener("pokemoa:search-start", function (e) {
+    var d = e.detail || {};
+    /* 아무것도 고르지 않은 첫 방문의 기본값(서울)은 '마지막에 검색한 곳'이 아니라 남기지 않는다 */
+    if (d.initial && lastBootSource === "default") { lastBootSource = "shown"; return; }
+    lastRemember(d);
+  });
+
+  /* 반경만 바꾼 경우(조회가 다시 돌지 않는 3km→1km 등)에는 위치는 그대로 두고 반경만 고친다 */
+  function lastRememberRadius(radius) {
+    var rec = lastRead();
+    if (!rec) return;
+    var mstate = window.PokeMoaMap && window.PokeMoaMap.getState ? window.PokeMoaMap.getState() : null;
+    var value = typeof radius === "number" ? radius : (mstate && typeof mstate.radius === "number" ? mstate.radius : rec.radius);
+    var next = lastRadiusValue(value, mstate && typeof mstate.allow20 === "boolean" ? mstate.allow20 : true);
+    if (next === rec.radius) return;
+    rec.radius = next;
+    lastSave(rec);
+  }
+
+  /* 주소에 붙은 ?region= · ?lat=&lng=&r= — 명시적으로 공유한 링크는 저장값보다 먼저 쓴다 */
+  function lastQueryParams() {
+    var out = {};
+    try {
+      var q = new URLSearchParams(location.search);
+      out.region = q.get("region") || "";
+      out.lat = q.get("lat") || "";
+      out.lng = q.get("lng") || "";
+      out.radius = q.get("r") || q.get("radius") || "";
+      out.label = q.get("label") || "";
+    } catch (e) {}
+    return out;
+  }
+
+  function lastBootIntent() {
+    var first = D.regions[0] || { id: "seoul-gwanghwamun" };
+    var q = lastQueryParams();
+    var qr = q.radius ? Number(q.radius) : NaN;
+    if (q.region) {
+      var r = regionById(q.region);
+      if (r) return { source: "url", mode: "region", regionId: r.id, radius: lastRadiusValue(qr, r.allow20 !== false) };
+    }
+    if (q.lat && q.lng) {
+      var qlat = Number(q.lat), qlng = Number(q.lng);
+      if (isFinite(qlat) && isFinite(qlng) && qlat >= -90 && qlat <= 90 && qlng >= -180 && qlng <= 180) {
+        return { source: "url", mode: "search", lat: qlat, lng: qlng, radius: lastRadiusValue(qr, true), label: String(q.label || "").slice(0, 60) };
+      }
+    }
+    var saved = lastRead();
+    if (saved) { saved.source = "saved"; return saved; }
+    return { source: "default", mode: "region", regionId: first.id, radius: 3000 };
+  }
+
+  function lastApplyBoot(intent) {
+    if (intent.mode === "region" && !regionById(intent.regionId)) {
+      intent = { source: "default", mode: "region", regionId: (D.regions[0] || {}).id, radius: 3000 };
+    }
+    lastBootSource = intent.source === "default" ? "default" : "restored";
+    var region = null;
+
+    if (intent.mode === "region") {
+      region = regionById(intent.regionId);
+      filterState.region = region.id;
+      if (provinceSelect) provinceSelect.value = region.province;
+      fillDistricts(region.province, region.id);
+    } else {
+      filterState.region = "";
+      var prov = intent.province || lastProvinceOf(Number(intent.lat), Number(intent.lng));
+      if (prov) {
+        if (provinceSelect) provinceSelect.value = prov;
+        fillDistricts(prov, "");
+      }
+      if (districtSelect) {
+        var old = districtSelect.querySelector("option[data-place-temp]");
+        if (old) old.parentNode.removeChild(old);
+        var opt = document.createElement("option");
+        opt.value = "";
+        opt.setAttribute("data-place-temp", "1");
+        var lab = intent.label || (intent.mode === "gps" ? "내 위치" : "지도 중심");
+        opt.textContent = intent.mode === "search" && intent.label && intent.label !== "지도 중심" ? "검색: " + lab : lab;
+        opt.selected = true;
+        districtSelect.insertBefore(opt, districtSelect.firstChild);
+        districtSelect.value = "";
+      }
+      if (regionSearch) {
+        regionSearch.value = intent.mode === "search" && intent.label && intent.label !== "지도 중심" ? intent.label : "";
+      }
+    }
+
+    filterState.radius = lastRadiusValue(intent.radius, region ? region.allow20 !== false : true);
+    $$(".radius-btn").forEach(function (b) {
+      b.classList.toggle("is-active", Number(b.getAttribute("data-radius")) === filterState.radius);
+    });
+
+    bootMapStart = intent.mode === "region"
+      ? { mode: "region", regionId: intent.regionId, radius: filterState.radius }
+      : {
+        mode: "point", lat: intent.lat, lng: intent.lng, radius: filterState.radius,
+        origin: intent.mode === "gps" ? "geo" : intent.mode === "drag" ? "map" : "search"
+      };
+
+    if (intent.source === "saved" && intent.label) {
+      toast("지난번 찾은 ‘" + intent.label + "’ 자리에서 시작합니다.");
+    }
+    trackEvent("last_location_boot", { source: intent.source, mode: intent.mode, radius_km: filterState.radius / 1000 });
+  }
+
+  /* 첫 위치: ① 주소에 붙은 ?region=·?lat=&lng= ② 저장된 마지막 검색 위치 ③ 기본(서울 광화문) */
+  lastApplyBoot(lastBootIntent());
 
   /* 카드 상품 필터 (data.js cardProducts 로 칩을 만든다) */
   /* 편의점 4사별 현황 요약 (클릭하면 그 브랜드만 보기 · 한 번 더 누르면 전체) */
@@ -1493,6 +1715,7 @@
       filterState.radius = Number(btn.getAttribute("data-radius"));
       resetStoreList();
       if (mapReady) window.PokeMoaMap.setRadius(filterState.radius);
+      lastRememberRadius(mapReady && window.PokeMoaMap ? window.PokeMoaMap.getState().radius : filterState.radius);
       var r = regionById(filterState.region);
       trackEvent("region_search", {
         region: filterState.region,
@@ -1523,6 +1746,7 @@
         window.PokeMoaMap.setRadius(3000);
         window.PokeMoaMap.closeCard();
       }
+      lastRememberRadius(3000);
       toast("필터를 초기화했습니다.");
     });
   }
