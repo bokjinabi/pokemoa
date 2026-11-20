@@ -165,7 +165,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .status-badge.in { background: var(--green-soft); color: var(--green); }
 .status-badge.check { background: #f1f4fa; color: #475569; }
-.status-badge.check::before { background: #fff; border: 1.5px solid #64748b; box-sizing: border-box; }
+.status-badge.check::before { background: #fff; border: 2px solid #64748b; box-sizing: border-box; }
 .status-badge.none { background: var(--grey-soft); color: var(--grey); }
 /* 세븐일레븐 정책상 매장 위치만 안내 — 실패(주황)가 아닌 중립 안내 톤 */
 .status-badge.policy { background: #edf2fa; color: #3d5474; }
@@ -965,9 +965,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 /* 미조회 — 고정 색을 주지 않고 '흰 바탕 + 회색 테두리 빈 원(○)'으로 구분한다.
    (노란 이마트24 배지·점과 헷갈리지 않게, 어떤 브랜드 색과도 겹치지 않는 모양) */
 .map-legend .l-check {
-  width: 10px; height: 10px;
+  width: 11px; height: 11px;
   background: #fff;
-  border: 1.5px solid #64748b;
+  border: 2px solid #64748b;
   box-sizing: border-box;
 }
 .map-legend .l-none { background: #94a3b8; }
@@ -2636,12 +2636,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
   border: 2px solid #fff;
   box-shadow: 0 0 0 1px #cfd9e8;
 }
-.map-legend .l-check {
-  width: 10px; height: 10px;
-  background: #fff;
-  border: 1.5px solid #64748b;
-  box-sizing: border-box;
-}
 .map-legend .l-policy { background: #8aa0bd; }
 .map-shell.is-card-open .map-legend { opacity: 0; transition: opacity 0.15s; }
 
@@ -2699,7 +2693,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 /* 재고 있음 — 브랜드 색 위에서도 초록 점이 보이게 흰 테두리를 둔다 */
 .pm-pill .pm-dot.is-in { background: #0f9d63; box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.92); }
 /* 미조회 — 색이 아니라 '빈 원'으로 구분(노란 브랜드 색과 겹치지 않게) */
-.pm-pill .pm-dot.is-hollow { width: 8px; height: 8px; background: #fff; border: 1.5px solid #64748b; box-sizing: border-box; }
+.pm-pill .pm-dot.is-hollow { width: 9px; height: 9px; background: #fff; border: 2px solid #64748b; box-sizing: border-box; }
 .pm-marker.status-check .pm-pill,
 .pm-marker.status-none .pm-pill { box-shadow: 0 2px 6px rgba(16, 31, 60, 0.14); }
 .pm-marker:hover { z-index: 900 !important; }
