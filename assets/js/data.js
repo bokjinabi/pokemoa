@@ -2083,7 +2083,7 @@ window.POKEMOA_DATA = (function () {
     var list = [
       {
         id: "pokemonstore",
-        short: "포켓몬 스토어",
+        short: "포켓몬스토어",
         initial: "P",
         brand: "#ffcb05",
         brandInk: "#3a2c00",

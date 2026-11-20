@@ -2683,7 +2683,7 @@
         ? '<span class="store-state ' + (st.stateKind || "none") + '">' + escapeHtml(st.state) + "</span>"
         : '<span class="store-sub">' + escapeHtml(st.sub || "검색 바로가기") + "</span>";
       return '<a class="store-shortcut" href="' + st.url + '" target="_blank" rel="noopener" data-store="' + st.id + '"' +
-        ' aria-label="' + escapeHtml((st.short || "") + " · " + (st.label || "") + " (새 창)") + '">' +
+        ' aria-label="' + escapeHtml((st.label && st.label.indexOf(st.short || "") === 0 ? st.label : (st.short || "") + " · " + (st.label || "")) + " (새 창)") + '">' +
         '<span class="store-badge" style="--brand:' + (st.brand || "#e9eef7") + ';--brand-ink:' + (st.brandInk || "#10203c") + '">' + escapeHtml(st.initial || "") + "</span>" +
         '<span class="store-shortcut-body"><strong class="store-shortcut-name">' + escapeHtml(st.short || "") + "</strong>" + line + "</span>" +
         '<span class="store-go" aria-hidden="true">↗</span>' +
