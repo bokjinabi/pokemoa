@@ -469,7 +469,7 @@ window.PokeMoaMap = (function () {
     var brandVar = '--brand:' + b.color + ';--brand-ink:' + (b.ink || "#ffffff");
     var html;
     if (st.compact) {
-      /* 넓게 볼 때는 점·칩만 남긴다 — 세븐일레븐 점은 '미조회(점선빈원)'가 아닌 중립 회청색 */
+      /* 넓게 볼 때는 점·칩만 남긴다 — 세븐일레븐 점은 '미조회(빈 원)'가 아닌 중립 회청색 */
       var compactPolicy = isPolicyBrand(s.brand) ? " is-policy" : "";
       html = s.status === "in"
         ? '<span class="pm-pill is-chip status-in' + compactPolicy + '" style="' + brandVar + '">' +
@@ -503,7 +503,7 @@ window.PokeMoaMap = (function () {
         "<span>" + b.short + " · 없음</span></span>";
     } else {
       /* 아직 재고 조회가 닿지 않은 브랜드 — '미조회' (모호한 '확인' 금지).
-         브랜드 색·노란 점과 겹치지 않도록 '점선 빈 원'으로 구분한다. */
+         브랜드 색·노란 점과 겹치지 않도록 '빈 원(○)'으로 구분한다. */
       html = '<span class="pm-pill status-check is-unchecked" style="--brand:' + b.color + ';--brand-ink:' + (b.ink || "#ffffff") + '">' +
         '<i class="pm-dot is-hollow"></i>' +
         "<span>" + b.short + " · 미조회</span></span>";
