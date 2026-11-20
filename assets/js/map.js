@@ -45,11 +45,11 @@ window.PokeMoaMap = (function () {
   var DIRS8 = [0, 45, 90, 135, 180, 225, 270, 315];
   var BRAND_QUERY = { gs25: "GS25", cu: "CU", seven: "세븐일레븐", emart24: "이마트24" };
   var BRAND_ORDER_LIST = ["gs25", "cu", "seven", "emart24"];
-  /* 정책상 매장 위치만 안내하는 브랜드 — 세븐일레븐은 자사 앱·점포 API 가 외부 조회를 403 으로
+  /* 세븐일레븐 정책상 매장 위치만 안내하는 브랜드 — 세븐일레븐은 자사 앱·점포 API 가 외부 조회를 403 으로
      막아(2026-11-20 집 태블릿 IP·앱 UA 로 재확인) 재고는 받을 수 없다. 매장 위치·핀·길찾기는
-     그대로 두고, 재고는 세븐앱에서 확인하도록 안내한다(실패가 아니라 정책 안내). */
+     그대로 두고, 재고는 세븐앱에서 확인하도록 안내한다(실패가 아니라 세븐일레븐 정책 안내). */
   var POLICY_LOCATION_ONLY = { seven: 1 };
-  var POLICY_NOTICE = "정책상 재고 확인 불가 · 세븐앱에서 확인";
+  var POLICY_NOTICE = "세븐일레븐 정책상 재고 확인 불가 · 세븐앱에서 확인";
   function isPolicyBrand(b) { return !!POLICY_LOCATION_ONLY[b]; }
   /* 오프라인 판매처(마트·아트박스·공식 자판기·공인 카드샵) — 편의점 4사와 함께 지도에 올린다.
      재고 공개 데이터가 없어 모두 '매장 확인' 또는 '공식 설치 지점'으로만 표시한다. */
@@ -476,7 +476,7 @@ window.PokeMoaMap = (function () {
         '<i class="pm-dot" style="background:' + b.color + '"></i>' +
         "<span>" + b.short + " · 매장확인</span></span>";
     } else if (isPolicyBrand(s.brand)) {
-      /* 세븐일레븐 — 재고는 정책상 안내하지 않고 매장 위치만 (실패 색 아님) */
+      /* 세븐일레븐 — 재고는 세븐일레븐 정책상 안내하지 않고 매장 위치만 (실패 색 아님) */
       html = '<span class="pm-pill status-check is-policy" style="--brand:' + b.color + '">' +
         '<i class="pm-dot" style="background:#8aa0bd"></i>' +
         "<span>" + b.short + " · 위치 안내</span></span>";
@@ -1513,7 +1513,7 @@ window.PokeMoaMap = (function () {
     if (!st.center) return 0;
     st.relayPayload = payload || null;
     var raw = ((payload && payload.stores) || []).map(toRelayStore).filter(Boolean);
-    /* 세븐일레븐은 정책상 재고를 안내하지 않는다 — 응답에 섞여 와도 위치만 쓰고 수량은 버린다 */
+    /* 세븐일레븐은 세븐일레븐 정책상 재고를 안내하지 않는다 — 응답에 섞여 와도 위치만 쓰고 수량은 버린다 */
     raw = raw.filter(function (r) { return !isPolicyBrand(r.brand); });
     /* 같은 점포가 두 번 실려 오면 하나만 남긴다 */
     var seen = {};

@@ -144,7 +144,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .status-badge.in { background: var(--green-soft); color: var(--green); }
 .status-badge.check { background: var(--amber-soft); color: var(--amber); }
 .status-badge.none { background: var(--grey-soft); color: var(--grey); }
-/* 정책상 매장 위치만 안내 — 실패(주황)가 아닌 중립 안내 톤 */
+/* 세븐일레븐 정책상 매장 위치만 안내 — 실패(주황)가 아닌 중립 안내 톤 */
 .status-badge.policy { background: #edf2fa; color: #3d5474; }
 
 .eyebrow {
@@ -2376,7 +2376,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .bp-row[data-state="err"] .bp-status { color: #b4541f; }
 .bp-row[data-state="off"] .bp-bar i { background: #c3ccda; }
 .bp-row[data-state="off"] .bp-status { color: #8a6d1f; }
-/* 정책상 재고 미지원 — 안내 문구가 잘리지 않게 두 줄까지 허용 */
+/* 세븐일레븐 정책상 재고 미지원 — 안내 문구가 잘리지 않게 두 줄까지 허용 */
 .bp-row[data-state="info"] .bp-bar i { background: #9db2cd; }
 .bp-row[data-state="info"] .bp-pct { color: #4a5f7d; }
 .bp-row[data-state="info"] .bp-status { color: #3d5474; white-space: normal; overflow: visible; line-height: 1.35; }

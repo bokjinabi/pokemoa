@@ -201,10 +201,10 @@
   var BP_BRANDS = ["gs25", "cu", "seven", "emart24"];
   /* 재고 조회는 GS25·CU·이마트24 세 브랜드만 한다. GS25는 우리동네GS 로그인 세션이 있어야
      숫자가 오고, 세션이 없으면 중계가 「GS25 로그인 세션 필요」로 답한다(그때는 매장 위치만 보인다).
-     세븐일레븐은 앱·점포 API 가 외부 조회를 403 으로 막아(2026-11-20 확인) 재고는 정책상 확인하지
-     않고, 카카오 장소 검색으로 잡힌 매장 위치만 안내한다. */
+     세븐일레븐은 앱·점포 API 가 외부 조회를 403 으로 막아(2026-11-20 확인) 재고는 세븐일레븐 정책상
+     확인하지 않고, 카카오 장소 검색으로 잡힌 매장 위치만 안내한다. */
   var BP_RELAY = { gs25: 1, cu: 1, seven: 0, emart24: 1 };
-  /* 정책상 매장 위치만 안내하는 브랜드 — 실패가 아니라 안내이므로 오류 색을 쓰지 않는다 */
+  /* 세븐일레븐 정책상 매장 위치만 안내하는 브랜드 — 실패가 아니라 안내이므로 오류 색을 쓰지 않는다 */
   var BP_POLICY_ONLY = { seven: 1 };
   function policyOnlyBrand(b) { return !!BP_POLICY_ONLY[b]; }
   var bp = {
@@ -251,11 +251,11 @@
   }
   bpBuildRows();
 
-  /* 세븐일레븐 안내 문구 — 장소 검색으로 잡힌 매장 수만 말하고 재고는 정책상 미지원임을 적는다 */
+  /* 세븐일레븐 안내 문구 — 장소 검색으로 잡힌 매장 수만 말하고 재고는 세븐일레븐 정책상 미지원임을 적는다 */
   function bpPolicyText() {
     var row = (bp.counts || {}).seven;
     var n = row && isFinite(row.total) ? row.total : null;
-    return (n == null ? "매장 위치만 안내" : "위치 " + n + "곳 확인") + " · 정책상 재고 미지원";
+    return (n == null ? "매장 위치만 안내" : "위치 " + n + "곳 확인") + " · 세븐일레븐 정책상 재고 미지원";
   }
 
   function bpSet(id, pct, text, state) {
@@ -511,7 +511,7 @@
       /* 카카오맵을 못 그리는 주소·검색 제한 — 내장 좌표로 표시했음을 그대로 적는다 */
       bp.sourceLabel = "내장 좌표로 표시";
       BP_BRANDS.forEach(function (id) {
-        if (policyOnlyBrand(id)) { bpSet(id, 100, "매장 위치 미확인 · 정책상 재고 미지원", "info"); return; }
+        if (policyOnlyBrand(id)) { bpSet(id, 100, "매장 위치 미확인 · 세븐일레븐 정책상 재고 미지원", "info"); return; }
         bpSet(id, 100, "미연동 · 매장 위치만", "off");
       });
       bpRenderOverall();
@@ -648,7 +648,7 @@
         (s.offline
           ? '<span class="chip chip-offline">재고 미확인</span>'
           : (policyOnlyBrand(s.brand)
-            ? '<span class="chip chip-policy">정책상 재고 확인 불가 · 세븐앱에서 확인</span>'
+            ? '<span class="chip chip-policy">세븐일레븐 정책상 재고 확인 불가 · 세븐앱에서 확인</span>'
             : (s.relay
               ? '<span class="chip chip-relay">실시간 ' + (s.relayQty || 0) + '개</span>'
               : '<span class="chip chip-check">수량 미확인</span>'))) +
