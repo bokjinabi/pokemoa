@@ -345,21 +345,23 @@
     bpCollapse(bp.stage === 3 && !!bp.userCollapsed);
   }
 
-  function bpLabel(regionId) {
+  function bpLabel(regionId, origin) {
     var r = regionId ? regionById(regionId) : null;
     var km = (filterState.radius || 3000) / 1000;
+    /* 지도를 드래그해 찾은 경우에는 고른 지역이 아니라 '지도 중심'을 기준으로 표시한다 */
+    if (origin === "map" && !r) return "지도 중심 · " + km + "km";
     if (r) return r.district ? r.district.replace(/\s*\(.*\)$/, "") + " · " + km + "km" : r.name + " · " + km + "km";
     return km + "km 반경";
   }
 
-  function bpReset(regionId) {
+  function bpReset(regionId, origin) {
     clearTimeout(bp.collapseTimer);
     bp.stage = 1;
     bp.userCollapsed = false;
     bp.searchDone = false;
     bp.counts = null;
     bp.sourceLabel = "";
-    if (bpRegionEl) bpRegionEl.textContent = bpLabel(regionId);
+    if (bpRegionEl) bpRegionEl.textContent = bpLabel(regionId, origin);
     if (bpSummaryEl) { bpSummaryEl.hidden = true; bpSummaryEl.innerHTML = ""; }
     BP_BRANDS.forEach(function (id) { bpSet(id, 0, "매장 탐색 중", "run"); });
     if (bpEl) bpEl.setAttribute("data-state", "running");
@@ -461,8 +463,12 @@
 
   document.addEventListener("pokemoa:search-start", function (e) {
     var d = e.detail || {};
-    bpReset(d.regionId);
+    bpReset(d.regionId, d.origin);
     if (d.initial) { bp.quiet = true; return; }
+    /* 지도를 드래그해 새 중심으로 다시 찾을 때만 짧게 알려 준다 */
+    if (d.origin === "map") {
+      toast("지도 중심 기준으로 주변 매장을 다시 찾습니다 · " + ((d.radius || filterState.radius || 3000) / 1000) + "km");
+    }
     bpShow(true);
   });
 

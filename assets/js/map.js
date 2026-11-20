@@ -8,6 +8,10 @@
  *   카카오 장소 검색은 한 번에 최대 45건이라, 3km 이하는 중심 1곳에서 3페이지를,
  *   5km·20km는 중심 + 방위 오프셋 격자로 여러 번 나눠 조회해 외곽 매장까지 받는다.
  * · 동네·역 이름 검색도 카카오 장소 검색(keywordSearch)으로 즉시 조회한다.
+ * · 지도를 드래그해 놓으면 그 자리(지도 중심)를 새 중심으로 주변 매장을 다시 찾는다.
+ *   코드로 옮기는 이동(지역 선택·반경 맞춤·클러스터 확대·매장 이동)은 900ms 가드로,
+ *   연속 드래그는 450ms 디바운스와 '진행 중 조회는 끝난 뒤 한 번만' 으로 묶어
+ *   중계 서버에 불필요한 요청이 쌓이지 않는다.
  * · 매장 마커는 둥근 핀 대신 상태가 바로 읽히는 말풍선(알약) 마커
  *   (kakao.maps.CustomOverlay): 재고 있음 = 브랜드 색 말풍선(`CU · 입고 2종`),
  *   확인/없음 = 화이트·그레이 알약. 매장마다 보유·취급 카드 상품명을 함께 표시한다.
@@ -29,6 +33,10 @@ window.PokeMoaMap = (function () {
     "&libraries=services&autoload=false";
   var SDK_TIMEOUT = 9000;        /* SDK·지도 초기화를 이 시간까지 기다린다 */
   var SEARCH_TIMEOUT = 8000;     /* 다점 격자 조회가 늦으면 내장 좌표로 먼저 표시 */
+  /* 사용자가 지도를 드래그해 놓았을 때 — 그 자리를 새 중심으로 다시 찾는다 */
+  var DRAG_WAIT = 450;           /* 드래그를 놓은 뒤 이만큼 조용하면 한 번만 조회한다 */
+  var DRAG_MIN_M = 150;          /* 중심이 이보다 덜 움직였으면 같은 자리로 본다(헛 조회 방지) */
+  var PROGRAM_GUARD = 900;       /* 코드로 지도를 옮긴 직후 들어온 dragend 는 무시한다 */
   var MAX_MARKERS = 450;         /* 1km·3km — v1.8: 중계가 최대 470곳을 주므로 400~500곳까지 그린다 */
   var MAX_MARKERS_5 = 500;       /* 5km — 내링·외링 17점 격자로 받은 외곽 매장까지 */
   var MAX_MARKERS_20 = 500;      /* 20km — 반경 전역(포항 남구·양덕·유강·오천 등) */
@@ -87,7 +95,10 @@ window.PokeMoaMap = (function () {
     relay: null,        /* 실시간 재고 조회 요약 { ok, sources, at, count } */
     relayPayload: null, /* 마지막 조회 응답 — 지도 매장을 새로 그린 뒤에도 다시 얹는다 */
     relayAt: "",
-    started: false      /* 첫 자동 조회를 했는지 — 첫 화면은 진행률 패널을 띄우지 않는다 */
+    started: false,     /* 첫 자동 조회를 했는지 — 첫 화면은 진행률 패널을 띄우지 않는다 */
+    programAt: 0,       /* 코드로 지도를 마지막으로 옮긴 시각(setView·fitRing·panTo·확대) */
+    dragTimer: null,    /* 드래그 후 재조회 대기 타이머 */
+    dragPoint: null     /* 드래그로 들어온 가장 최근 중심(조용해지면 이 자리로 조회) */
   };
 
   var el = {};
@@ -269,6 +280,79 @@ window.PokeMoaMap = (function () {
 
   function latlng(lat, lng) { return new window.kakao.maps.LatLng(lat, lng); }
 
+  /* --------------------------------------- 지도 드래그 → 중심 기준 재검색 */
+  /* 사용자가 지도를 끌어 놓은 자리(지도 중심)를 새 검색 중심으로 삼아 주변 매장을
+     다시 찾는다. 코드로 지도를 옮기는 동작(setView·fitRing·클러스터 확대·매장 이동)은
+     `programMove()`로 시각을 남겨 두고, 그 직후 들어온 dragend 는 재조회하지 않는다
+     (지도 이동 → 재조회 → 다시 지도 이동 같은 무한 루프 방지). */
+  function programMove() { st.programAt = Date.now(); }
+
+  function mapCenterPoint() {
+    if (!st.map) return null;
+    try {
+      var c = st.map.getCenter();
+      if (!c) return null;
+      var lat = typeof c.getLat === "function" ? c.getLat() : c.lat;
+      var lng = typeof c.getLng === "function" ? c.getLng() : c.lng;
+      if (!isFinite(lat) || !isFinite(lng)) return null;
+      return { lat: Number(lat), lng: Number(lng) };
+    } catch (e) { return null; }
+  }
+
+  /* 드래그를 놓을 때마다 마지막 자리만 기억하고, 잠잠해지면(DRAG_WAIT) 한 번만 조회한다.
+     여러 번 끌어도 조회는 한 번이고, 새 자리가 마지막 것이 된다. */
+  function onMapDragEnd() {
+    if (!st.ready || !st.map) return;
+    if (Date.now() - st.programAt < PROGRAM_GUARD) return;   /* 코드로 옮긴 직후 */
+    var c = mapCenterPoint();
+    if (!c) return;
+    st.dragPoint = c;
+    clearTimeout(st.dragTimer);
+    st.dragTimer = setTimeout(runDragSearch, DRAG_WAIT);
+  }
+
+  function runDragSearch() {
+    clearTimeout(st.dragTimer);
+    st.dragTimer = null;
+    var c = st.dragPoint;
+    st.dragPoint = null;
+    if (!c) return;
+    if (st.center && meters(st.center, c) < DRAG_MIN_M) return;  /* 같은 자리 — 그대로 둔다 */
+    /* 앞선 조회가 아직 도는 중이면 버리지 않고, 끝난 뒤 이 자리로 한 번만 다시 찾는다 */
+    if (st.loading.data) { st.dragPoint = c; return; }
+    searchAtCenter(c);
+  }
+
+  /* 지도 중심 기준 재조회 — 지역 선택과 같은 초기화 경로를 쓰되,
+     사용자가 끌어 놓은 화면은 되돌리지 않는다(fitRing·setView 없음). */
+  function searchAtCenter(point) {
+    st.origin = "map";
+    st.regionId = "";
+    st.center = { lat: point.lat, lng: point.lng };
+    st.metro = metroRegions().some(function (r) {
+      return meters(st.center, { lat: r.lat, lng: r.lng }) < METRO_RADIUS_M;
+    });
+    st.allow20 = !st.metro;
+    if (!st.allow20 && st.radius > 5000) st.radius = 5000;
+    resetStateForNewCenter();
+    /* 반경 원이 곧 '검색 중심' 표시 — 새 중심으로 옮겨 어디를 기준으로 찾는지 보이게 한다 */
+    if (st.ring) {
+      try {
+        st.ring.setPosition(latlng(st.center.lat, st.center.lng));
+        st.ring.setRadius(st.radius);
+      } catch (e) {}
+    }
+    st.loading.tiles = false;
+    renderMarkers();
+    emit("pokemoa:center-changed", {
+      lat: st.center.lat,
+      lng: st.center.lng,
+      radius: st.radius,
+      origin: "map"
+    });
+    load();
+  }
+
   function buildMap() {
     if (st.map) return;
     var K = window.kakao.maps;
@@ -314,6 +398,10 @@ window.PokeMoaMap = (function () {
       K.event.addListener(st.map, "zoom_changed", function () {
         if (applyZoomMode()) renderMarkers();
       });
+    } catch (e) {}
+    /* 사용자가 지도를 끌어 놓으면 그 중심으로 다시 찾는다(코드 이동은 programMove로 제외) */
+    try {
+      K.event.addListener(st.map, "dragend", onMapDragEnd);
     } catch (e) {}
   }
 
@@ -490,6 +578,7 @@ window.PokeMoaMap = (function () {
     node.setAttribute("tabindex", "0");
     node.setAttribute("aria-label", g.n + "곳 (" + node.title + ")");
     function zoomIn() {
+      programMove();
       st.map.setLevel(Math.max(1, st.map.getLevel() - (step || 3)));
       st.map.setCenter(latlng(ll.lat, ll.lng));
     }
@@ -1252,6 +1341,8 @@ window.PokeMoaMap = (function () {
       error: st.lastError
     });
     st.badgeWasSnapshot = st.source === "snapshot";
+    /* 드래그로 미뤄 둔 중심이 있으면 이 조회가 끝난 뒤 그 자리로 한 번만 다시 찾는다 */
+    if (st.dragPoint && !st.dragTimer) runDragSearch();
   }
 
   /* ------------------------------------ 실시간 재고 조회(relay) 반영 */
@@ -1454,6 +1545,7 @@ window.PokeMoaMap = (function () {
   /* ---------------------------------------------------------- 공개 API */
   function setView(center, zoom) {
     if (!st.ready) return;
+    programMove();
     st.map.setCenter(latlng(center.lat, center.lng));
     st.map.setLevel(levelForZoom(zoom || 15));
     if (st.ring) {
@@ -1471,6 +1563,7 @@ window.PokeMoaMap = (function () {
 
   function fitRing() {
     if (!st.ready || !st.ring) return;
+    programMove();
     try { st.map.setBounds(st.ring.getBounds()); } catch (e) {}
   }
 
@@ -1656,6 +1749,7 @@ window.PokeMoaMap = (function () {
     for (var i = 0; i < st.visible.length; i++) if (st.visible[i].id === id) s = st.visible[i];
     if (!s) return;
     if (st.ready) {
+      programMove();
       st.map.setLevel(Math.min(st.map.getLevel(), 4));
       st.map.panTo(latlng(s.lat, s.lng));
     }
