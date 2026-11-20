@@ -199,9 +199,14 @@
   var bpToggleEl = $("#bpToggle");
   var bpTitleEl = $("#bpTitle");
   var BP_BRANDS = ["gs25", "cu", "seven", "emart24"];
-  /* 네 브랜드 모두 중계가 수량을 돌려준다. GS25만 우리동네GS 로그인 세션이 있어야 숫자가 오고,
-     세션이 없으면 중계가 「GS25 로그인 세션 필요」로 답한다(그때는 매장 위치만 보인다). */
-  var BP_RELAY = { gs25: 1, cu: 1, seven: 1, emart24: 1 };
+  /* 재고 조회는 GS25·CU·이마트24 세 브랜드만 한다. GS25는 우리동네GS 로그인 세션이 있어야
+     숫자가 오고, 세션이 없으면 중계가 「GS25 로그인 세션 필요」로 답한다(그때는 매장 위치만 보인다).
+     세븐일레븐은 앱·점포 API 가 외부 조회를 403 으로 막아(2026-11-20 확인) 재고는 정책상 확인하지
+     않고, 카카오 장소 검색으로 잡힌 매장 위치만 안내한다. */
+  var BP_RELAY = { gs25: 1, cu: 1, seven: 0, emart24: 1 };
+  /* 정책상 매장 위치만 안내하는 브랜드 — 실패가 아니라 안내이므로 오류 색을 쓰지 않는다 */
+  var BP_POLICY_ONLY = { seven: 1 };
+  function policyOnlyBrand(b) { return !!BP_POLICY_ONLY[b]; }
   var bp = {
     rows: {},
     stage: 0,        /* 0 대기 · 1 매장 탐색 · 2 재고 조회 · 3 완료 */
@@ -245,6 +250,13 @@
     });
   }
   bpBuildRows();
+
+  /* 세븐일레븐 안내 문구 — 장소 검색으로 잡힌 매장 수만 말하고 재고는 정책상 미지원임을 적는다 */
+  function bpPolicyText() {
+    var row = (bp.counts || {}).seven;
+    var n = row && isFinite(row.total) ? row.total : null;
+    return (n == null ? "매장 위치만 안내" : "위치 " + n + "곳 확인") + " · 정책상 재고 미지원";
+  }
 
   function bpSet(id, pct, text, state) {
     var r = bp.rows[id];
@@ -301,7 +313,8 @@
       var row = c[id];
       var n = row && isFinite(row.total) ? row.total : null;
       return '<span class="bp-sum-item"><i class="bp-dot" style="--brand:' + meta.color + '" aria-hidden="true"></i>' +
-        meta.label + " <b>" + (n == null ? "-" : n) + "</b>곳</span>";
+        meta.label + " <b>" + (n == null ? "-" : n) + "</b>곳" +
+        (policyOnlyBrand(id) ? ' <em class="bp-sum-note">재고 미지원</em>' : "") + "</span>";
     });
     bpSummaryEl.innerHTML = '<span class="bp-sum-item"><b>' + escapeHtml(bp.sourceLabel || "조회 완료") + "</b></span>" +
       bits.join("");
@@ -325,7 +338,7 @@
     }
     bp.quiet = false;
     bp.active = true;
-    if (bpTitleEl) bpTitleEl.textContent = "재고 조회 완료";
+    if (bpTitleEl) bpTitleEl.textContent = "매장·재고 조회 완료";
     bpRenderSummary();
     clearTimeout(bp.collapseTimer);
     /* 끝난 뒤에도 4사 % 막대와 결과 문구를 그대로 남긴다(자동으로 접지 않는다).
@@ -341,7 +354,7 @@
     clearTimeout(bp.collapseTimer);
     bpEl.hidden = false;
     bpEl.setAttribute("data-state", bp.stage === 3 ? "done" : "running");
-    if (bpTitleEl) bpTitleEl.textContent = bp.stage === 3 ? "재고 조회 완료" : "편의점 4사 재고 조회";
+    if (bpTitleEl) bpTitleEl.textContent = bp.stage === 3 ? "매장·재고 조회 완료" : "편의점 4사 매장·재고 조회";
     bpCollapse(bp.stage === 3 && !!bp.userCollapsed);
   }
 
@@ -363,7 +376,10 @@
     bp.sourceLabel = "";
     if (bpRegionEl) bpRegionEl.textContent = bpLabel(regionId, origin);
     if (bpSummaryEl) { bpSummaryEl.hidden = true; bpSummaryEl.innerHTML = ""; }
-    BP_BRANDS.forEach(function (id) { bpSet(id, 0, "매장 탐색 중", "run"); });
+    BP_BRANDS.forEach(function (id) {
+      if (policyOnlyBrand(id)) { bpSet(id, 0, "매장 위치 확인 중", "run"); return; }
+      bpSet(id, 0, "매장 탐색 중", "run");
+    });
     if (bpEl) bpEl.setAttribute("data-state", "running");
   }
 
@@ -386,6 +402,7 @@
       row.qty += qty;
     });
     BP_BRANDS.forEach(function (id) {
+      if (policyOnlyBrand(id)) { bpSet(id, 100, bpPolicyText(), "info"); return; }
       if (!BP_RELAY[id]) {
         /* 재고 조회 대상이 아닌 브랜드 — 매장 위치만 보여 준다 */
         bpSet(id, 100, "미연동 · 매장 위치만", "off");
@@ -480,7 +497,9 @@
     var found = d.found || {};
     BP_BRANDS.forEach(function (id) {
       var n = found[id] || 0;
-      bpSet(id, pct, n ? "매장 " + n + "곳 찾는 중" : "매장 탐색 중", "run");
+      bpSet(id, pct, n
+        ? (policyOnlyBrand(id) ? "위치 " + n + "곳 확인 중" : "매장 " + n + "곳 찾는 중")
+        : (policyOnlyBrand(id) ? "매장 위치 확인 중" : "매장 탐색 중"), "run");
     });
   });
 
@@ -491,12 +510,17 @@
     if (d.source !== "live") {
       /* 카카오맵을 못 그리는 주소·검색 제한 — 내장 좌표로 표시했음을 그대로 적는다 */
       bp.sourceLabel = "내장 좌표로 표시";
-      BP_BRANDS.forEach(function (id) { bpSet(id, 100, "미연동 · 매장 위치만", "off"); });
+      BP_BRANDS.forEach(function (id) {
+        if (policyOnlyBrand(id)) { bpSet(id, 100, "매장 위치 미확인 · 정책상 재고 미지원", "info"); return; }
+        bpSet(id, 100, "미연동 · 매장 위치만", "off");
+      });
       bpRenderOverall();
       return;
     }
     bp.sourceLabel = "실시간 조회 완료";
     bp.stage = 2;
+    /* 세븐일레븐은 재고 조회 대상이 아니다 — 장소 검색으로 잡힌 매장 위치만 확인하고 끝낸다 */
+    BP_BRANDS.forEach(function (id) { if (policyOnlyBrand(id)) bpSet(id, 100, bpPolicyText(), "info"); });
     var rs = relayStateNow();
     if (rs === "online" || rs === "checking") {
       BP_BRANDS.forEach(function (id) {
@@ -567,14 +591,18 @@
     var list = sortStores(currentStores);
     var counts = { in: 0, check: 0, none: 0 };
     var offlineN = 0;
+    var policyN = 0;
     list.forEach(function (s) {
       counts[s.status] += 1;
       if (s.offline) offlineN += 1;
+      /* 세븐일레븐은 재고를 확인하지 않는다 — '미조회'에 삼키지 않고 위치 안내로 따로 센다 */
+      if (policyOnlyBrand(s.brand)) policyN += 1;
     });
     if (mapCountEl) {
       mapCountEl.innerHTML = "표시 중 <b>" + list.length + "</b>곳" +
         (offlineN ? " · 오프라인 " + offlineN + "곳" : "") +
-        " · 재고 " + counts.in + " · 미조회 " + (counts.check - offlineN) + " · 없음 " + counts.none;
+        " · 재고 " + counts.in + " · 미조회 " + (counts.check - offlineN - policyN) +
+        (policyN ? " · 위치안내 " + policyN : "") + " · 없음 " + counts.none;
     }
     if (sideSummary) {
       sideSummary.textContent = list.length
@@ -602,11 +630,12 @@
       var dist = s.distance < 1000 ? Math.round(s.distance) + "m" : (s.distance / 1000).toFixed(1) + "km";
       var sLabel = s.offline
         ? (s.brand === "vending" ? "공식 설치 지점" : s.brand === "cardshop" ? "공인 카드샵" : "매장 확인")
-        : (!s.relay && s.status === "none" ? "미조회" : statusText[s.status]);
+        : (policyOnlyBrand(s.brand) ? "위치 안내" : (!s.relay && s.status === "none" ? "미조회" : statusText[s.status]));
       var item = document.createElement("li");
       var btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "store-item is-" + s.status + (s.offline ? " is-offline" : "");
+      btn.className = "store-item is-" + s.status + (s.offline ? " is-offline" : "") +
+        (policyOnlyBrand(s.brand) ? " is-policy" : "");
       btn.setAttribute("data-store", s.id);
       btn.innerHTML =
         '<span class="s-top">' +
@@ -615,12 +644,14 @@
         '<span class="s-dist">' + dist + "</span>" +
         "</span>" +
         '<span class="s-meta">' +
-        '<span class="status-badge ' + s.status + '">' + sLabel + "</span>" +
+        '<span class="status-badge ' + (policyOnlyBrand(s.brand) ? "policy" : s.status) + '">' + sLabel + "</span>" +
         (s.offline
           ? '<span class="chip chip-offline">재고 미확인</span>'
-          : (s.relay
-            ? '<span class="chip chip-relay">실시간 ' + (s.relayQty || 0) + '개</span>'
-            : '<span class="chip chip-check">수량 미확인</span>')) +
+          : (policyOnlyBrand(s.brand)
+            ? '<span class="chip chip-policy">정책상 재고 확인 불가 · 세븐앱에서 확인</span>'
+            : (s.relay
+              ? '<span class="chip chip-relay">실시간 ' + (s.relayQty || 0) + '개</span>'
+              : '<span class="chip chip-check">수량 미확인</span>'))) +
         (s.street ? "<small>" + escapeHtml(s.street) + "</small>" : "") +
         "</span>" +
         productTagsHtml(s);
@@ -1350,10 +1381,14 @@
   function renderBrandSummary(counts, activeBrand) {
     if (!brandSummary || !counts) return;
     var all = counts.all || { total: 0, in: 0, check: 0, none: 0 };
+    /* 전체에서도 세븐일레븐 위치는 '미조회'와 따로 세어 섞는다 */
+    var seven = counts.seven || { total: 0, in: 0, check: 0, none: 0 };
     var html = '<button type="button" class="bs-card bs-all' + (activeBrand === "all" ? " is-active" : "") + '" data-brand="all">' +
       '<span class="bs-head"><span class="bs-name">전체</span></span>' +
       '<strong class="bs-count">' + all.total + '<small>곳</small></strong>' +
-      '<span class="bs-sub">재고 ' + all.in + " · 없음 " + all.none + " · 미조회 " + all.check + "</span></button>";
+      '<span class="bs-sub">재고 ' + all.in + " · 없음 " + all.none +
+        (seven.total ? " · 세븐 위치 " + seven.total : "") +
+        " · 미조회 " + (all.check - seven.check) + "</span></button>";
     BRAND_ORDER.forEach(function (id) {
       var meta = D.brandMeta[id] || { label: id, short: id, color: "#1b2a4a" };
       var c = counts[id] || { total: 0, in: 0, check: 0, none: 0 };
@@ -1361,6 +1396,10 @@
         '<span class="bs-head"><i class="bs-dot"></i><span class="bs-name">' + meta.label + "</span></span>" +
         '<strong class="bs-count">' + c.total + "<small>곳</small></strong>" +
         '<span class="bs-sub">' + (function () {
+          /* 세븐일레븐은 재고를 확인하지 않는다 — '미조회' 대신 위치 안내로 적는다 */
+          if (policyOnlyBrand(id)) {
+            return c.total ? "위치 " + c.total + "곳 · 재고 미지원" : "표시할 매장 없음";
+          }
           var bits = [];
           if (c.in) bits.push("재고 " + c.in + "곳");
           if (c.none) bits.push("없음 " + c.none + "곳");

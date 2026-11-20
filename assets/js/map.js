@@ -45,6 +45,12 @@ window.PokeMoaMap = (function () {
   var DIRS8 = [0, 45, 90, 135, 180, 225, 270, 315];
   var BRAND_QUERY = { gs25: "GS25", cu: "CU", seven: "세븐일레븐", emart24: "이마트24" };
   var BRAND_ORDER_LIST = ["gs25", "cu", "seven", "emart24"];
+  /* 정책상 매장 위치만 안내하는 브랜드 — 세븐일레븐은 자사 앱·점포 API 가 외부 조회를 403 으로
+     막아(2026-11-20 집 태블릿 IP·앱 UA 로 재확인) 재고는 받을 수 없다. 매장 위치·핀·길찾기는
+     그대로 두고, 재고는 세븐앱에서 확인하도록 안내한다(실패가 아니라 정책 안내). */
+  var POLICY_LOCATION_ONLY = { seven: 1 };
+  var POLICY_NOTICE = "정책상 재고 확인 불가 · 세븐앱에서 확인";
+  function isPolicyBrand(b) { return !!POLICY_LOCATION_ONLY[b]; }
   /* 오프라인 판매처(마트·아트박스·공식 자판기·공인 카드샵) — 편의점 4사와 함께 지도에 올린다.
      재고 공개 데이터가 없어 모두 '매장 확인' 또는 '공식 설치 지점'으로만 표시한다. */
   var OFFLINE_IDS = ["mart", "artbox", "vending", "cardshop"];
@@ -450,9 +456,11 @@ window.PokeMoaMap = (function () {
     var b = D.brandMeta[s.brand] || { short: "?", color: "#1b2a4a" };
     var html;
     if (st.compact) {
+      /* 넓게 볼 때는 점·칩만 남긴다 — 세븐일레븐 점은 '미조회(주황)'가 아닌 중립 회청색 */
+      var compactPolicy = isPolicyBrand(s.brand) ? " is-policy" : "";
       html = s.status === "in"
-        ? '<span class="pm-pill is-chip status-in" style="--brand:' + b.color + '">' + b.short + "</span>"
-        : '<span class="pm-pill is-dot status-' + s.status + '"></span>';
+        ? '<span class="pm-pill is-chip status-in' + compactPolicy + '" style="--brand:' + b.color + '">' + b.short + "</span>"
+        : '<span class="pm-pill is-dot status-' + s.status + compactPolicy + '"></span>';
     } else if (s.status === "in" && s.relay) {
       /* 실제 조회에서 수량 1개 이상 확인 — 초록 강조 */
       var q = s.relayQty || 0;
@@ -467,6 +475,11 @@ window.PokeMoaMap = (function () {
       html = '<span class="pm-pill status-' + s.status + ' is-offline" style="--brand:' + b.color + '">' +
         '<i class="pm-dot" style="background:' + b.color + '"></i>' +
         "<span>" + b.short + " · 매장확인</span></span>";
+    } else if (isPolicyBrand(s.brand)) {
+      /* 세븐일레븐 — 재고는 정책상 안내하지 않고 매장 위치만 (실패 색 아님) */
+      html = '<span class="pm-pill status-check is-policy" style="--brand:' + b.color + '">' +
+        '<i class="pm-dot" style="background:#8aa0bd"></i>' +
+        "<span>" + b.short + " · 위치 안내</span></span>";
     } else if (s.relay) {
       /* 실제 조회가 성공했고 재고 0으로 확인 — 차분한 회색 '없음' */
       html = '<span class="pm-pill status-none is-relay-none" style="--brand:' + b.color + '">' +
@@ -629,7 +642,7 @@ window.PokeMoaMap = (function () {
   /* 매장 하나 = 말풍선(알약) 또는 저줌에서는 브랜드 칩·점 */
   function drawPill(s) {
     var stocked = stockedProducts(s);
-    var label = s.name + " · " + placeLabel(s) +
+    var label = s.name + " · " + (isPolicyBrand(s.brand) ? POLICY_NOTICE : placeLabel(s)) +
       (stocked.length
         ? " · " + stocked.map(function (p) { return p.short + " " + p.stateLabel; }).join(", ")
         : "");
@@ -687,6 +700,8 @@ window.PokeMoaMap = (function () {
     if (s.brand === "vending") return "공식 설치 지점";
     if (s.brand === "cardshop") return "공인 카드샵";
     if (s.brand === "mart" || s.brand === "artbox") return "매장 확인 (방문·문의)";
+    /* 세븐일레븐은 재고를 확인하지 않는다 — '미조회'가 아니라 위치 안내로 표기 */
+    if (isPolicyBrand(s.brand)) return "위치 안내";
     if (s.relay) return statusLabel(s.status);
     if (s.status === "none") return "미조회";
     return statusLabel(s.status);
@@ -794,21 +809,25 @@ window.PokeMoaMap = (function () {
       '<button type="button" class="pm-card-close" aria-label="닫기">×</button>' +
       "</div>" +
       '<div class="pm-card-meta">' +
-      '<span class="status-badge ' + s.status + '">' + placeLabel(s) + "</span>" +
+      '<span class="status-badge ' + (isPolicyBrand(s.brand) ? "policy" : s.status) + '">' + placeLabel(s) + "</span>" +
       (s.offline
         ? '<span class="chip chip-offline">재고 미확인</span>'
-        : (s.relay
-          ? '<span class="chip chip-relay">실시간 재고</span>'
-          : '<span class="chip chip-check">수량 미확인</span>')) +
+        : (isPolicyBrand(s.brand)
+          ? '<span class="chip chip-policy">' + POLICY_NOTICE + "</span>"
+          : (s.relay
+            ? '<span class="chip chip-relay">실시간 재고</span>'
+            : '<span class="chip chip-check">수량 미확인</span>'))) +
       (s.observed ? '<span class="chip">' + s.observed + "</span>" : "") +
       (s.phone ? '<span class="chip">' + escapeHtml(s.phone) + "</span>" : "") +
       "</div>" +
       productTagsHtml(s, "pm-card-products", true) +
       (s.offline
         ? '<p class="pm-card-note">' + offlineNote(s) + "</p>"
-        : (s.relay
-          ? '<p class="pm-card-note">편의점 앱에서 <b>실시간으로 조회한 실제 재고</b>입니다(조회 ' + escapeHtml(s.observed) + '). 수량은 조회 시점 기준이므로 방문 전 매장 전화로 한 번 더 확인하세요.</p>'
-          : '<p class="pm-card-note">매장 위치·상호는 카카오맵 실제 장소 데이터입니다. 이 매장은 <b>재고 수량을 받지 못해</b> 「미조회」로 표시합니다(수량·취급 상품을 지어내지 않습니다). 조회가 연결되면 실제 재고가 자동으로 채워지고, 그 전에는 방문 전 공식 앱·매장 전화로 확인하세요.</p>')) +
+        : (isPolicyBrand(s.brand)
+          ? '<p class="pm-card-note">세븐일레븐은 자사 앱·점포 API 가 외부 재고 조회를 막고 있어(2026-11-20 확인) 이 사이트에서는 <b>재고를 확인하지 않습니다</b>. 매장 위치·상호는 카카오맵 실제 장소 데이터이고, <b>재고는 세븐일레븐 앱</b>에서 확인해 주세요.</p>'
+          : (s.relay
+            ? '<p class="pm-card-note">편의점 앱에서 <b>실시간으로 조회한 실제 재고</b>입니다(조회 ' + escapeHtml(s.observed) + '). 수량은 조회 시점 기준이므로 방문 전 매장 전화로 한 번 더 확인하세요.</p>'
+            : '<p class="pm-card-note">매장 위치·상호는 카카오맵 실제 장소 데이터입니다. 이 매장은 <b>재고 수량을 받지 못해</b> 「미조회」로 표시합니다(수량·취급 상품을 지어내지 않습니다). 조회가 연결되면 실제 재고가 자동으로 채워지고, 그 전에는 방문 전 공식 앱·매장 전화로 확인하세요.</p>'))) +
       '<a class="btn btn-sm btn-dark pm-card-link" target="_blank" rel="noopener" href="' + navLink + '">네이버 지도에서 보기</a>';
     el.card.querySelector(".pm-card-close").addEventListener("click", function (e) {
       e.stopPropagation();
@@ -865,7 +884,8 @@ window.PokeMoaMap = (function () {
       var names = [];
       RELAY_ORDER.forEach(function (k) {
         var src = (st.relay.sources || {})[k];
-        if (src && src.ok && src.count) names.push(RELAY_LABEL[k]);
+        /* 세븐일레븐은 재고 조회 대상이 아니다 — 배지 이름에도 넣지 않는다 */
+        if (src && src.ok && src.count && !isPolicyBrand(k)) names.push(RELAY_LABEL[k]);
       });
       return {
         kind: "relay",
@@ -1493,6 +1513,8 @@ window.PokeMoaMap = (function () {
     if (!st.center) return 0;
     st.relayPayload = payload || null;
     var raw = ((payload && payload.stores) || []).map(toRelayStore).filter(Boolean);
+    /* 세븐일레븐은 정책상 재고를 안내하지 않는다 — 응답에 섞여 와도 위치만 쓰고 수량은 버린다 */
+    raw = raw.filter(function (r) { return !isPolicyBrand(r.brand); });
     /* 같은 점포가 두 번 실려 오면 하나만 남긴다 */
     var seen = {};
     var list = [];

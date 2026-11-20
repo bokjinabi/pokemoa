@@ -37,7 +37,7 @@
 <meta name="twitter:image:alt" content="포켓몬카드모아 — 내 주변 편의점 재고 · 인기 카드 시세 · 도감">
 <meta name="theme-color" content="#101f3c">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23101f3c'/%3E%3Crect x='7' y='7' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05'/%3E%3Crect x='17.5' y='7' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05' opacity='.7'/%3E%3Crect x='7' y='17.5' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05' opacity='.7'/%3E%3Crect x='17.5' y='17.5' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="assets/css/style.css?v=101">
+<link rel="stylesheet" href="assets/css/style.css?v=102">
 <!-- 카카오맵 JavaScript SDK — autoload=false로 불러 두고 map.js가 kakao.maps.load()로 초기화합니다.
      JavaScript 키 도메인에는 https://moa-kr.github.io 만 등록되어 있어, 그 밖의 주소(미등록 프리뷰)에서는
      지도 대신 내장 좌표 스냅샷 안내가 표시됩니다. -->
@@ -74,7 +74,7 @@
         {
           "@type": "Question",
           "name": "포켓몬카드모아에 보이는 재고는 실제인가요?",
-          "acceptedAnswer": { "@type": "Answer", "text": "지도의 매장 위치와 이름은 카카오맵 실제 장소 데이터이고, 실시간 조회가 지연되면 내장된 실제 좌표로 대체합니다. 매장별 포켓몬카드 재고는 편의점 앱에서 실시간으로 조회한 실제 수량만 표시하고, 재고가 0으로 확인되면 「없음」, 수량을 받지 못한 매장은 「미조회」로 표시합니다(샘플·추정 수량 없음). 방문 전 각 편의점 공식 앱과 매장 전화로 확인하세요." }
+          "acceptedAnswer": { "@type": "Answer", "text": "지도의 매장 위치와 이름은 카카오맵 실제 장소 데이터이고, 실시간 조회가 지연되면 내장된 실제 좌표로 대체합니다. 매장별 포켓몬카드 재고는 편의점 앱에서 실시간으로 조회한 실제 수량만 표시하고, 재고가 0으로 확인되면 「없음」, 수량을 받지 못한 매장은 「미조회」로 표시합니다(샘플·추정 수량 없음). 세븐일레븐은 정책상 재고를 조회하지 않고 매장 위치만 안내합니다. 방문 전 각 편의점 공식 앱과 매장 전화로 확인하세요." }
         },
         {
           "@type": "Question",
@@ -489,18 +489,18 @@
     <div class="map-page-head">
       <span class="eyebrow" data-copy="mapEyebrow">동네에서 찾기 · 첫 화면</span>
       <h1 id="map-title" data-copy="mapTitle">내 주변 편의점과 오프라인 판매처, 어떤 카드가 있는지 한눈에</h1>
-      <p data-copy-html="mapLead">카카오맵 실제 지도 위에 주변 <b>편의점 4사(GS25·CU·세븐일레븐·이마트24)</b>와 <b>오프라인 판매처(대형마트·아트박스·공식 자판기·공인 카드샵)</b>를 함께 표시합니다. 마트·아트박스는 카카오 장소 검색으로 실시간 조회하고, 공식 자판기(전국 176곳)와 공인 카드샵(전국 16곳)은 포켓몬코리아 공식 목록에서 가져와 반경 안에 들어오면 지도에 올립니다. 지도 말풍선과 매장 카드는 편의점 앱에서 실시간으로 <b>확인한 재고 상품·수량</b>만 표시하고, 재고가 0으로 확인되면 <b>「없음」</b>, 확인되지 않은 매장은 <b>「미조회」</b>로 둡니다. <b>전국 17개 시·도 · 230개 시·군·구</b>를 시·도 → 시·군·구 드롭다운에서 빠짐없이 고르거나 동네 이름으로 검색하고, <b>'내 위치로 찾기'</b>를 누르면 그 반경의 매장을 새로 조회합니다.</p>
+      <p data-copy-html="mapLead">카카오맵 실제 지도 위에 주변 <b>편의점 4사(GS25·CU·세븐일레븐·이마트24)</b>와 <b>오프라인 판매처(대형마트·아트박스·공식 자판기·공인 카드샵)</b>를 함께 표시합니다. 마트·아트박스는 카카오 장소 검색으로 실시간 조회하고, 공식 자판기(전국 176곳)와 공인 카드샵(전국 16곳)은 포켓몬코리아 공식 목록에서 가져와 반경 안에 들어오면 지도에 올립니다. 지도 말풍선과 매장 카드는 편의점 앱에서 실시간으로 <b>확인한 재고 상품·수량</b>만 표시하고, 재고가 0으로 확인되면 <b>「없음」</b>, 확인되지 않은 매장은 <b>「미조회」</b>로 둡니다. <b>세븐일레븐은 정책상 재고를 확인하지 않고 카카오맵으로 확인한 매장 위치만</b> 안내합니다(재고는 세븐일레븐 앱에서 확인). <b>전국 17개 시·도 · 230개 시·군·구</b>를 시·도 → 시·군·구 드롭다운에서 빠짐없이 고르거나 동네 이름으로 검색하고, <b>'내 위치로 찾기'</b>를 누르면 그 반경의 매장을 새로 조회합니다.</p>
     </div>
 
     <div class="demo-notice">
       <span class="demo-icon" aria-hidden="true">i</span>
-      <div class="notice-long"><b>매장 위치·이름은 실제 카카오맵 데이터</b>이고, <b>오프라인 판매처·자판기·카드샵은 위치만 공식/실시간 데이터</b>입니다. 방문 전 공식 앱·매장 전화로 확인하세요.</div>
-      <div class="notice-short"><b>매장 위치·이름은 실제 카카오맵 데이터</b>이고, 오프라인 판매처·자판기·카드샵은 <b>위치만 공식/실시간 데이터</b>입니다. 방문 전 공식 앱·매장 전화로 확인하세요.</div>
+      <div class="notice-long"><b>매장 위치·이름은 실제 카카오맵 데이터</b>이고, <b>오프라인 판매처·자판기·카드샵은 위치만 공식/실시간 데이터</b>입니다. <b>세븐일레븐은 정책상 재고 없이 매장 위치만</b> 안내합니다. 방문 전 공식 앱·매장 전화로 확인하세요.</div>
+      <div class="notice-short"><b>매장 위치·이름은 실제 카카오맵 데이터</b>이고, 오프라인 판매처·자판기·카드샵은 <b>위치만 공식/실시간 데이터</b>입니다. <b>세븐일레븐은 정책상 위치만</b> 안내합니다. 방문 전 공식 앱·매장 전화로 확인하세요.</div>
     </div>
 
-    <div class="brand-progress" id="brandProgress" data-state="idle" role="group" aria-label="편의점 4사 재고 조회 진행률" hidden>
+    <div class="brand-progress" id="brandProgress" data-state="idle" role="group" aria-label="편의점 4사 매장·재고 조회 진행률" hidden>
       <div class="bp-head">
-        <span class="bp-title"><span class="bp-spin" aria-hidden="true"></span><b id="bpTitle">편의점 4사 재고 조회</b></span>
+        <span class="bp-title"><span class="bp-spin" aria-hidden="true"></span><b id="bpTitle">편의점 4사 매장·재고 조회</b></span>
         <span class="bp-region" id="bpRegion"></span>
         <span class="bp-overall" id="bpOverall">0%</span>
         <button type="button" class="bp-toggle" id="bpToggle" aria-expanded="true" aria-controls="bpRows">접기</button>
@@ -641,6 +641,7 @@
           <span><i class="l-in"></i>재고 있음</span>
           <span><i class="l-none"></i>없음</span>
           <span><i class="l-check"></i>미조회</span>
+          <span><i class="l-policy"></i>세븐 위치만</span>
           <span><i class="l-offline"></i>오프라인 판매처</span>
         </div>
       </div>
@@ -670,6 +671,7 @@
       <div><b data-copy="status2Title">미조회</b><span data-copy="status2Desc">아직 실시간 조회 대상이 아니거나 수량을 받지 못한 매장입니다. 수량을 지어내지 않고 위치만 표시합니다.</span></div>
       <div><b data-copy="status4Title">보유 카드 표시</b><span data-copy="status4Desc">실시간 조회에서 확인한 상품명과 수량만 붙습니다.</span></div>
       <div><b data-copy="status5Title">오프라인 판매처</b><span data-copy="status5Desc">대형마트·아트박스는 카카오 장소 검색으로 위치만 표시하고, 공식 자판기(포켓몬코리아 자판기 안내, 176곳)·공인 카드샵(16곳)은 공식 목록의 설치 장소를 옮겨 온 것입니다.</span></div>
+      <div><b>세븐일레븐 위치 안내</b><span>자사 앱·점포 API가 외부 재고 조회를 막아(2026-11-20 확인) 재고는 조회하지 않고, 카카오맵으로 확인한 <b>매장 위치만</b> 안내합니다. 재고는 세븐일레븐 앱에서 확인하세요.</span></div>
     </div>
 
     <div data-section="map-channels">
@@ -695,7 +697,7 @@
       <ul class="channel-features">
         <li><strong>GS25</strong> — 우리동네GS 앱의 매장별 재고 찾기에서 상품 수량을 확인할 수 있습니다. 수량 0은 “아직 입고 전”과 “이미 판매됨”이 섞여 있어 앱만으로는 구분되지 않습니다.</li>
         <li><strong>CU</strong> — 포켓CU 앱에서 상품을 검색해 매장 재고를 봅니다. 예약 발주 물량은 매장 도착 뒤 전산에 반영되므로 발주일과 도착일 사이에 시차가 있습니다.</li>
-        <li><strong>세븐일레븐</strong> — 앱·홈페이지는 매장 위치·영업 정보 중심이고, 상품 수량 표시는 상품·매장에 따라 제한적입니다. 수량이 보이지 않으면 전화 확인이 가장 빠릅니다.</li>
+        <li><strong>세븐일레븐</strong> — 이 지도는 세븐일레븐 재고를 조회하지 않습니다(자사 앱·점포 API가 외부 조회를 막습니다). 카카오맵으로 찾은 <strong>매장 위치만</strong> 보여 주니 재고는 세븐일레븐 앱에서 확인하고, 급하면 매장에 전화하는 편이 가장 빠릅니다.</li>
         <li><strong>이마트24</strong> — 앱 재고 조회는 조회 가능한 상품·매장에 한해 표시됩니다. 표시가 없다고 재고가 없는 것은 아닙니다.</li>
       </ul>
       <p><strong>방문 전 체크</strong> — ① 앱에서 수량 1개 이상인 매장만 후보로 두기 ② 이동 거리가 길면 전화로 카드팩 재고 확인 ③ 박스(20팩)가 목적이면 판매 단위를 먼저 묻기 ④ 1인 구매 수량을 제한하는 매장이 있다는 점 기억하기. 카드팩은 낱팩 위주로 풀리고, 박스 판매는 점포 정책이라 같은 브랜드에서도 다릅니다.</p>
@@ -1162,7 +1164,7 @@
         </details>
         <details class="faq-item">
           <summary><span class="q-mark">Q</span>포켓몬카드모아에 보이는 재고는 실제인가요?<span class="plus">+</span></summary>
-          <div class="faq-answer"><p>나뉩니다. 지도의 매장 위치·이름은 카카오맵 장소 검색(카카오맵 JavaScript SDK)으로 조회해 표시하고, 실시간 조회가 지연되면 내장된 실제 좌표로 대체합니다. 매장별 포켓몬카드 재고는 편의점 앱에서 실시간으로 조회한 실제 수량만 표시하고, 재고가 0으로 확인되면 「없음」, 수량을 받지 못한 매장은 「미조회」로 표시합니다(샘플·추정 수량 없음). 방문 전에는 각 편의점 공식 앱과 매장 전화로 확인하세요.</p></div>
+          <div class="faq-answer"><p>나뉩니다. 지도의 매장 위치·이름은 카카오맵 장소 검색(카카오맵 JavaScript SDK)으로 조회해 표시하고, 실시간 조회가 지연되면 내장된 실제 좌표로 대체합니다. 매장별 포켓몬카드 재고는 편의점 앱에서 실시간으로 조회한 실제 수량만 표시하고, 재고가 0으로 확인되면 「없음」, 수량을 받지 못한 매장은 「미조회」로 표시합니다(샘플·추정 수량 없음). 세븐일레븐은 정책상 재고를 조회하지 않고 카카오맵 매장 위치만 안내합니다. 방문 전에는 각 편의점 공식 앱과 매장 전화로 확인하세요.</p></div>
         </details>
         <details class="faq-item">
           <summary><span class="q-mark">Q</span>포켓몬스토어 추첨에 당첨되면 자동 결제되나요?<span class="plus">+</span></summary>
@@ -1330,7 +1332,7 @@
 
     <div class="footer-note">
       <p data-copy="footerNote1">포켓몬카드모아는 포켓몬·포켓몬코리아와 무관한 비공식 정보 사이트입니다. ‘포켓몬’, ‘포켓몬 카드 게임’ 및 관련 명칭·이미지의 권리는 각 권리자에게 있습니다. 본 사이트는 공식 로고와 카드 이미지를 사용하지 않으며, 카드 정보는 공개된 상품 정보를 정리한 것입니다.</p>
-      <p data-copy="footerNote2">지도에 표시된 매장 위치·이름은 카카오맵 실제 장소 데이터이며, 매장별 재고는 편의점 앱에서 실시간으로 조회한 실제 수량만 표시하고, 확인되지 않은 매장은 「미조회」로 둡니다. 구매 판단과 그 결과는 이용자 본인에게 있습니다.</p>
+      <p data-copy="footerNote2">지도에 표시된 매장 위치·이름은 카카오맵 실제 장소 데이터이며, 매장별 재고는 편의점 앱에서 실시간으로 조회한 실제 수량만 표시하고, 확인되지 않은 매장은 「미조회」로 둡니다. 세븐일레븐은 정책상 재고 없이 카카오맵 매장 위치만 안내합니다. 구매 판단과 그 결과는 이용자 본인에게 있습니다.</p>
       <p data-copy="footerNote3">광고·제휴 고지: 본 사이트는 Google AdSense 광고와 쿠팡 파트너스 활동을 통해 수수료를 받을 수 있습니다. 제휴 링크를 통한 구매 시 사이트에 일정액의 수수료가 지급될 수 있으며, 이용자 가격에는 영향이 없습니다.</p>
     </div>
 
@@ -1369,7 +1371,7 @@
     </ul>
 
     <h4>데이터에 대해</h4>
-    <p>가격과 일정은 공개된 공식 상품 정보와 보도를 2026-11-17 기준으로 정리했습니다. 지도의 매장 위치·이름은 카카오맵 실제 장소 데이터이고, <strong>매장별 재고는 편의점 앱에서 실시간으로 조회한 실제 수량만</strong> 표시하고, 확인되지 않은 매장은 「미조회」로 둡니다(샘플·추정 수량 없음).</p>
+    <p>가격과 일정은 공개된 공식 상품 정보와 보도를 2026-11-17 기준으로 정리했습니다. 지도의 매장 위치·이름은 카카오맵 실제 장소 데이터이고, <strong>매장별 재고는 편의점 앱에서 실시간으로 조회한 실제 수량만</strong> 표시하고, 확인되지 않은 매장은 「미조회」로 둡니다(샘플·추정 수량 없음). <strong>세븐일레븐은 정책상 재고 없이 매장 위치만</strong> 안내합니다.</p>
 
     <h4>운영 원칙</h4>
     <p>정가보다 비싼 구매를 부추기지 않습니다. 리셀 시세를 단정하지 않고, 정가라는 기준선과 계산 방법을 제공하는 데 집중합니다. 광고와 제휴 링크가 있는 경우 본문과 구분해 표시합니다.</p>
@@ -1433,7 +1435,7 @@
     <h4>3. 정보의 정확성과 한계</h4>
     <ul>
       <li>가격·일정·재고는 공개 자료를 정리한 것으로, 판매처 사정에 따라 달라질 수 있습니다.</li>
-      <li>지도의 매장 위치·이름은 카카오맵 실제 장소 데이터이고, 매장별 재고는 편의점 앱에서 실시간으로 조회한 실제 수량만 표시합니다(확인되지 않은 매장은 「미조회」).</li>
+      <li>지도의 매장 위치·이름은 카카오맵 실제 장소 데이터이고, 매장별 재고는 편의점 앱에서 실시간으로 조회한 실제 수량만 표시합니다(확인되지 않은 매장은 「미조회」, 세븐일레븐은 정책상 매장 위치만).</li>
       <li>리셀 시세는 KREAM 등 공개 시세를 관측일과 함께 참고 값으로 표시하며, 거래 시점·상태에 따라 달라질 수 있고 특정 가격을 보장하지 않습니다.</li>
       <li>구매·응모·투자 등 모든 판단과 결과의 책임은 이용자에게 있습니다.</li>
     </ul>
@@ -1495,12 +1497,12 @@
   </div>
 </template>
 
-<script src="assets/js/data.js?v=101"></script>
-<script src="assets/js/map.js?v=101"></script>
-<script src="assets/js/app.js?v=101"></script>
+<script src="assets/js/data.js?v=102"></script>
+<script src="assets/js/map.js?v=102"></script>
+<script src="assets/js/app.js?v=102"></script>
 <!-- 모아 어드민(moa-kr/moa-admin)이 커밋하는 assets/config/site-config.json 을 화면에 적용합니다.
      공지 바·팝업·탭/섹션 순서와 노출·문구가 이 파일 값으로 바뀝니다. -->
-<script src="assets/js/site-config-loader.js?v=101" defer
+<script src="assets/js/site-config-loader.js?v=102" defer
         data-config="assets/config/site-config.json"
         data-track-site="pokemoa"
         data-tab-container=".main-nav"
