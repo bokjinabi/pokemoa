@@ -193,7 +193,7 @@
     "linkUrl": "",
     "linkLabel": "",
     "style": "info",
-    "updatedAt": "2026-11-19T22:11:11.057Z"
+    "updatedAt": "2026-11-20T15:07:08.496Z"
   },
   "popup": {
     "enabled": false,
@@ -380,7 +380,7 @@
   ],
   "meta": {
     "updatedBy": "moa-admin (@Acewoni)",
-    "updatedAt": "2026-11-19T22:11:11.057Z",
+    "updatedAt": "2026-11-20T15:07:08.496Z",
     "note": "모아 어드민이 관리하는 공통 설정 파일입니다. 형식: https://moa-kr.github.io/moa-admin/SCHEMA.md"
   }
 }
