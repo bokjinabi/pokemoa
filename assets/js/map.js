@@ -49,7 +49,7 @@ window.PokeMoaMap = (function () {
      막아(2026-11-20 집 태블릿 IP·앱 UA 로 재확인) 재고는 받을 수 없다. 매장 위치·핀·길찾기는
      그대로 두고, 재고는 세븐앱에서 확인하도록 안내한다(실패가 아니라 세븐일레븐 정책 안내). */
   var POLICY_LOCATION_ONLY = { seven: 1 };
-  var POLICY_NOTICE = "세븐일레븐 정책상 재고 확인 불가 · 세븐앱에서 확인";
+  var POLICY_NOTICE = "세븐일레븐 앱에서 확인";
   function isPolicyBrand(b) { return !!POLICY_LOCATION_ONLY[b]; }
   /* 오프라인 판매처(마트·아트박스·공식 자판기·공인 카드샵) — 편의점 4사와 함께 지도에 올린다.
      재고 공개 데이터가 없어 모두 '매장 확인' 또는 '공식 설치 지점'으로만 표시한다. */
@@ -836,10 +836,10 @@ window.PokeMoaMap = (function () {
       (s.offline
         ? '<p class="pm-card-note">' + offlineNote(s) + "</p>"
         : (isPolicyBrand(s.brand)
-          ? '<p class="pm-card-note">세븐일레븐은 자사 앱·점포 API 가 외부 재고 조회를 막고 있어(2026-11-20 확인) 이 사이트에서는 <b>재고를 확인하지 않습니다</b>. 매장 위치·상호는 카카오맵 실제 장소 데이터이고, <b>재고는 세븐일레븐 앱</b>에서 확인해 주세요.</p>'
+          ? '<p class="pm-card-note">세븐일레븐은 앱에서만 재고를 확인할 수 있습니다. 매장 위치·상호는 카카오맵 장소 정보이고, <b>재고는 세븐일레븐 앱</b>에서 확인해 주세요.</p>'
           : (s.relay
             ? '<p class="pm-card-note">편의점 앱에서 <b>실시간으로 조회한 실제 재고</b>입니다(조회 ' + escapeHtml(s.observed) + '). 수량은 조회 시점 기준이므로 방문 전 매장 전화로 한 번 더 확인하세요.</p>'
-            : '<p class="pm-card-note">매장 위치·상호는 카카오맵 실제 장소 데이터입니다. 이 매장은 <b>재고 수량을 받지 못해</b> 「미조회」로 표시합니다(수량·취급 상품을 지어내지 않습니다). 조회가 연결되면 실제 재고가 자동으로 채워지고, 그 전에는 방문 전 공식 앱·매장 전화로 확인하세요.</p>'))) +
+            : '<p class="pm-card-note">매장 위치·상호는 카카오맵 장소 정보입니다. 이 매장은 <b>재고 수량을 확인하지 못해</b> 「미조회」로 표시합니다. 조회가 되면 실제 재고가 자동으로 채워지고, 그 전에는 방문 전 앱·매장 전화로 확인하세요.</p>'))) +
       '<a class="btn btn-sm btn-dark pm-card-link" target="_blank" rel="noopener" href="' + navLink + '">네이버 지도에서 보기</a>';
     el.card.querySelector(".pm-card-close").addEventListener("click", function (e) {
       e.stopPropagation();
@@ -883,8 +883,8 @@ window.PokeMoaMap = (function () {
       return {
         kind: "snapshot",
         text: st.snapshotEmpty
-          ? "카카오맵을 이 주소에서 열 수 없고, 이 지역은 내장 실제 좌표 스냅샷도 없습니다 (등록 도메인 https://moa-kr.github.io 에서 지도가 열립니다)"
-          : "카카오맵을 이 주소에서 열 수 없어 내장 실제 좌표로 표시합니다 (등록 도메인 https://moa-kr.github.io 에서 지도가 열립니다)",
+          ? "지도를 불러오지 못했습니다. 이 지역은 미리 저장한 매장 목록도 없어 매장 정보를 보여 드리기 어렵습니다"
+          : "지도를 불러오지 못해 미리 저장한 매장 목록으로 표시합니다",
         action: true
       };
     }
@@ -914,9 +914,10 @@ window.PokeMoaMap = (function () {
         if (isOfflineBrand(s.brand)) offN += 1; else convN += 1;
       });
       var txt = st.all.length > cap
-        ? "실시간 조회 · 카카오맵 주변 매장 " + st.all.length + "곳 중 가까운 " + cap + "곳 표시"
-        : "실시간 조회 · 편의점 4사 " + convN + "곳";
+        ? "매장 위치 · 카카오맵 주변 매장 " + st.all.length + "곳 중 가까운 " + cap + "곳 표시"
+        : "매장 위치 · 편의점 4사 " + convN + "곳";
       if (offN) txt += " · 오프라인 " + offN + "곳";
+      txt += " · 재고는 ‘선택 지역 찾기’ 후";
       return { kind: "live", text: txt, action: false };
     }
     var snapKm = Math.round(((D.osmSnapshot || {}).radius || 3000) / 1000);
@@ -925,15 +926,15 @@ window.PokeMoaMap = (function () {
     if (st.snapshotEmpty) {
       return {
         kind: "snapshot",
-        text: "실시간 조회 실패/제한 · 이 지역은 내장 좌표 스냅샷이 없어 카카오 장소 검색 결과로만 표시합니다" + wideNote,
+        text: "실시간 재고 조회는 되지 않아 이 지역은 매장 위치만 표시합니다" + wideNote,
         action: true
       };
     }
     return {
       kind: "snapshot",
       text: (st.pendingLive
-        ? "카카오 장소 검색이 늦어 내장 실제 좌표(반경 " + snapKm + "km)로 먼저 표시 (조금 더 기다리는 중 · " + st.snapshotLabel + ")"
-        : "실시간 조회 실패/제한 → 내장 실제 좌표 스냅샷(반경 " + snapKm + "km) 사용 (" + st.snapshotLabel + ")" + wideNote),
+        ? "지도 검색이 늦어 미리 저장한 매장 목록(반경 " + snapKm + "km)으로 먼저 표시 (조금 더 기다리는 중 · " + st.snapshotLabel + ")"
+        : "미리 저장한 매장 목록으로 표시 중 (반경 " + snapKm + "km · " + st.snapshotLabel + ")" + wideNote),
       action: true
     };
   }
@@ -1818,14 +1819,12 @@ window.PokeMoaMap = (function () {
     select(id, false);
   }
 
-  /* SDK를 못 쓰는 주소(미등록 도메인·차단)에서 지도 자리에 남기는 안내 */
+  /* 지도를 못 쓰는 주소(미등록 도메인·차단)에서 지도 자리에 남기는 안내 */
   function sdkNoticeHtml() {
     return '<div class="pm-sdk-note" role="status">' +
-      '<strong>카카오맵을 이 주소에서는 열 수 없습니다</strong>' +
-      '<p>카카오 JavaScript 키에 등록된 도메인은 <b>https://moa-kr.github.io</b> 하나입니다. ' +
-      '배포 주소 <a href="https://moa-kr.github.io/pokemoa/" target="_blank" rel="noopener">moa-kr.github.io/pokemoa</a>에서 열면 ' +
-      '카카오맵 지도와 실제 편의점 4사 매장이 표시됩니다.</p>' +
-      '<p>아래 매장 목록은 내장된 실제 좌표 스냅샷(2026-11-17)으로 계산한 값이라 그대로 확인할 수 있습니다.</p>' +
+      '<strong>지도를 불러오지 못했습니다</strong>' +
+      '<p>지도 표시가 안 되는 주소에서는 매장 목록과 위치만 보여 드립니다. ' +
+      '<a href="https://moa-kr.github.io/pokemoa/" target="_blank" rel="noopener">moa-kr.github.io/pokemoa</a>에서 열면 지도가 함께 나옵니다.</p>' +
       '</div>';
   }
 
@@ -1889,9 +1888,9 @@ window.PokeMoaMap = (function () {
         st.ready = false;
         st.loading.tiles = false;
         showSdkNotice();
-        emit("pokemoa:loading", { active: false, phase: "error", message: "카카오맵 SDK를 불러오지 못했습니다", progress: 0 });
+        emit("pokemoa:loading", { active: false, phase: "error", message: "지도를 불러오지 못했습니다", progress: 0 });
         emit("pokemoa:sdk-error", {
-          message: "카카오맵을 이 주소에서 열 수 없어 내장 실제 좌표 스냅샷으로 표시합니다. 배포 주소(moa-kr.github.io/pokemoa)에서는 카카오맵이 정상 동작합니다."
+          message: "지도를 불러오지 못해 미리 저장한 매장 목록으로 표시합니다."
         });
         firstSearch();
         return;

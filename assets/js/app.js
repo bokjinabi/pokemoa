@@ -111,6 +111,7 @@
   var geoBtn = $("#geoBtn");
   var regionBtn = $("#regionBtn");
   var sideSummary = $("#sideSummary");
+  var mapNoticeEl = $("#mapNotice");
   var mapCard = $("#mapCard");
   var mapReady = false;
   var gotFirstData = false;
@@ -188,6 +189,21 @@
     if (storeSkeleton) storeSkeleton.hidden = !!(gotFirstData && !isLoadingMap);
     if (storeListEl) storeListEl.hidden = !(gotFirstData && !isLoadingMap);
   }
+
+  /* 429·일시 안내 — 빨간 오류 대신 지도 위에 한 줄로 보여 준다 */
+  var mapNoticeTimer = null;
+  function showMapNotice(text, autoHideMs) {
+    if (!mapNoticeEl) return;
+    mapNoticeEl.textContent = text;
+    mapNoticeEl.hidden = false;
+    clearTimeout(mapNoticeTimer);
+    if (autoHideMs) mapNoticeTimer = setTimeout(hideMapNotice, autoHideMs);
+  }
+  function hideMapNotice() {
+    clearTimeout(mapNoticeTimer);
+    if (mapNoticeEl) mapNoticeEl.hidden = true;
+  }
+  var RATE_NOTICE = "⏳ 지금 이용자가 많아 잠시 후(약 1~2분 뒤) 다시 조회해 주세요. 매장 위치는 그대로 보실 수 있습니다.";
 
   /* ------------------------------------- 편의점 4사 조회 진행률 패널 */
   /* 매장 탐색(카카오 장소 검색) 0→40%, 실시간 재고 조회 40→100% 를 4사별로 보여 준다.
@@ -603,10 +619,14 @@
       if (policyOnlyBrand(s.brand)) policyN += 1;
     });
     if (mapCountEl) {
-      mapCountEl.innerHTML = "표시 중 <b>" + list.length + "</b>곳" +
-        (offlineN ? " · 오프라인 " + offlineN + "곳" : "") +
-        " · 재고 " + counts.in + " · 미조회 " + (counts.check - offlineN - policyN) +
-        (policyN ? " · 위치안내 " + policyN : "") + " · 없음 " + counts.none;
+      /* 항목을 한 덩어리씩 감싸 줄바꿈이 항목 경계에서 일어나게 한다(줄 끝에 '·'만 남지 않게) */
+      var mcParts = ['<span class="mc">표시 중 <b>' + list.length + "</b>곳</span>"];
+      if (offlineN) mcParts.push('<span class="mc">오프라인 ' + offlineN + "곳</span>");
+      mcParts.push('<span class="mc">재고 ' + counts.in + "</span>");
+      mcParts.push('<span class="mc">미조회 ' + (counts.check - offlineN - policyN) + "</span>");
+      if (policyN) mcParts.push('<span class="mc">위치안내 ' + policyN + "</span>");
+      mcParts.push('<span class="mc">없음 ' + counts.none + "</span>");
+      mapCountEl.innerHTML = mcParts.join("");
     }
     if (sideSummary) {
       sideSummary.textContent = list.length
@@ -774,7 +794,7 @@
   document.addEventListener("pokemoa:loaded", function (e) {
     var d = e.detail || {};
     if (d.source === "snapshot") {
-      toast("실시간 조회가 지연되어 내장 실제 좌표로 표시합니다.");
+      toast("실시간 조회가 지연되어 미리 저장한 매장 목록으로 표시합니다.");
     } else if (d.source === "live" && d.late) {
       toast("실시간 주변 매장 데이터를 받아 지도에 반영했습니다.");
     }
@@ -925,6 +945,15 @@
       "&keyword=" + encodeURIComponent("포켓몬카드") + "&radius=" + radiusM;
     fetch(url, { signal: ctrl.signal, mode: "cors", cache: "no-store" })
       .then(function (res) {
+        if (res.status === 429) {
+          /* 과다 요청 방어(중계 v2.1) — 잠시 뒤 다시 부탁드리는 안내로 처리한다 */
+          var limited = new Error("rate_limited");
+          limited.rateLimited = true;
+          return res.json().catch(function () { return null; }).then(function (body) {
+            limited.retryAfterSec = (body && body.retryAfterSec) || 90;
+            throw limited;
+          });
+        }
         if (!res.ok) throw new Error("HTTP " + res.status);
         return res.json();
       })
@@ -933,10 +962,21 @@
         relay.lastCount = n;
         relay.state = "online";
         relayRender();
+        hideMapNotice();
         bpRelayDone(payload && payload.sources, payload && payload.stores);
         if (manual && n) toast("실제 재고 " + n + "곳을 지도에 반영했습니다.");
       })
-      .catch(function () {
+      .catch(function (err) {
+        if (err && err.rateLimited) {
+          /* 이미 받아 둔 재고는 지우지 않고, 안내만 띄운 뒤 잠시 뒤 한 번 더 시도한다 */
+          relay.state = "online";
+          relayRender();
+          showMapNotice(RATE_NOTICE);
+          trackEvent("relay_rate_limited", { retry_after_sec: err.retryAfterSec || 90 });
+          clearTimeout(relay.timer);
+          relay.timer = setTimeout(function () { relayRefresh(false); }, 90000);
+          return;
+        }
         relay.state = "error";
         relay.lastCount = 0;
         relayRender();
@@ -1490,8 +1530,8 @@
 
   document.addEventListener("pokemoa:search-start", function (e) {
     var d = e.detail || {};
-    /* 아무것도 고르지 않은 첫 방문의 기본값(서울)은 '마지막에 검색한 곳'이 아니라 남기지 않는다 */
-    if (d.initial && lastBootSource === "default") { lastBootSource = "shown"; return; }
+    /* 아무것도 고르지 않은 첫 방문의 기본값(서울)·고정 지역은 '마지막에 검색한 곳'이 아니라 남기지 않는다 */
+    if (d.initial && (lastBootSource === "default" || lastBootSource === "pinned")) { lastBootSource = "shown"; return; }
     lastRemember(d);
   });
 
@@ -1506,6 +1546,97 @@
     rec.radius = next;
     lastSave(rec);
   }
+
+  /* ------------------------------- 📌 이 지역 고정 (2026-11-20)
+     체크하면 지금 보고 있는 지역을 pokemoa.pinnedLocation 에 남겨 두고, 다음 접속에는 다른 곳을
+     드래그·검색했더라도 항상 이 자리에서 시작한다. 체크를 풀면 예전처럼 '마지막 검색 위치'를 따른다.
+     ※ ?region=·?lat= 같은 공유 링크가 있으면 그쪽이 먼저다. */
+  var PIN_KEY = "pokemoa.pinnedLocation";
+  var pinInput = $("#pinLocation");
+  var pinLabel = $("#pinLocationLabel");
+
+  function pinRead() {
+    var raw = "";
+    try { raw = localStorage.getItem(PIN_KEY) || ""; } catch (e) { return null; }
+    if (!raw) return null;
+    try { return lastClean(JSON.parse(raw)); } catch (e) { return null; }
+  }
+
+  function pinSync() {
+    var rec = pinRead();
+    if (pinInput) pinInput.checked = !!rec;
+    if (pinLabel) {
+      pinLabel.classList.toggle("is-on", !!rec);
+      pinLabel.title = rec
+        ? "‘" + (rec.label || "고정한 지역") + "’에서 항상 시작합니다. 체크를 풀면 마지막으로 본 곳에서 시작합니다."
+        : "체크하면 다음에 열 때도 이 지역에서 시작합니다. 체크를 풀면 마지막으로 본 곳에서 시작합니다.";
+    }
+    return rec;
+  }
+
+  function pinWrite(rec) {
+    var clean = lastClean(rec);
+    if (!clean) return null;
+    clean.savedAt = new Date().toISOString();
+    try { localStorage.setItem(PIN_KEY, JSON.stringify(clean)); } catch (e) {}
+    pinSync();
+    return clean;
+  }
+
+  function pinRemove() {
+    try { localStorage.removeItem(PIN_KEY); } catch (e) {}
+    pinSync();
+  }
+
+  /* 지금 화면이 보고 있는 자리 — 시·구를 골랐으면 지역 id, 포인트면 좌표 */
+  function pinCurrent() {
+    var m = window.PokeMoaMap && window.PokeMoaMap.getState ? window.PokeMoaMap.getState() : null;
+    var reg = filterState.region ? regionById(filterState.region) : null;
+    var radius = m && typeof m.radius === "number" ? m.radius : filterState.radius;
+    if (reg && (!m || m.origin === "region" || m.regionId === reg.id)) {
+      return {
+        mode: "region",
+        regionId: reg.id,
+        lat: Number(reg.lat),
+        lng: Number(reg.lng),
+        radius: radius,
+        province: reg.province,
+        label: lastRegionLabel(reg)
+      };
+    }
+    var center = (m && m.center) || {};
+    var lat = Number(center.lat), lng = Number(center.lng);
+    if (!isFinite(lat) || !isFinite(lng)) return null;
+    return {
+      mode: m && m.origin === "geo" ? "gps" : m && m.origin === "search" ? "search" : "drag",
+      lat: lat,
+      lng: lng,
+      radius: radius,
+      province: lastProvinceOf(lat, lng),
+      label: (regionSearch && String(regionSearch.value || "").trim()) || (m && m.origin === "geo" ? "내 위치" : "지도 중심")
+    };
+  }
+
+  if (pinInput) {
+    pinInput.addEventListener("change", function () {
+      if (pinInput.checked) {
+        var rec = pinCurrent();
+        if (!rec || !pinWrite(rec)) {
+          if (pinInput) pinInput.checked = false;
+          pinSync();
+          toast("고정할 지역을 먼저 골라 주세요.");
+          return;
+        }
+        toast("‘" + (rec.label || "이 지역") + "’을 고정했습니다. 다음에도 이 자리에서 시작합니다.");
+        trackEvent("pin_location", { on: 1, mode: rec.mode });
+      } else {
+        pinRemove();
+        toast("지역 고정을 풀었습니다. 이제 마지막으로 본 곳에서 시작합니다.");
+        trackEvent("pin_location", { on: 0 });
+      }
+    });
+  }
+  pinSync();
 
   /* 주소에 붙은 ?region= · ?lat=&lng=&r= — 명시적으로 공유한 링크는 저장값보다 먼저 쓴다 */
   function lastQueryParams() {
@@ -1535,6 +1666,9 @@
         return { source: "url", mode: "search", lat: qlat, lng: qlng, radius: lastRadiusValue(qr, true), label: String(q.label || "").slice(0, 60) };
       }
     }
+    /* 📌 고정한 지역이 있으면 마지막 검색 위치보다 먼저 쓴다 */
+    var pinned = pinRead();
+    if (pinned) { pinned.source = "pinned"; return pinned; }
     var saved = lastRead();
     if (saved) { saved.source = "saved"; return saved; }
     return { source: "default", mode: "region", regionId: first.id, radius: 3000 };
@@ -1544,7 +1678,7 @@
     if (intent.mode === "region" && !regionById(intent.regionId)) {
       intent = { source: "default", mode: "region", regionId: (D.regions[0] || {}).id, radius: 3000 };
     }
-    lastBootSource = intent.source === "default" ? "default" : "restored";
+    lastBootSource = intent.source === "default" ? "default" : intent.source === "pinned" ? "pinned" : "restored";
     var region = null;
 
     if (intent.mode === "region") {
@@ -1590,6 +1724,8 @@
 
     if (intent.source === "saved" && intent.label) {
       toast("지난번 찾은 ‘" + intent.label + "’ 자리에서 시작합니다.");
+    } else if (intent.source === "pinned" && intent.label) {
+      toast("고정한 ‘" + intent.label + "’ 자리에서 시작합니다.");
     }
     trackEvent("last_location_boot", { source: intent.source, mode: intent.mode, radius_km: filterState.radius / 1000 });
   }
@@ -1609,8 +1745,8 @@
       '<span class="bs-head"><span class="bs-name">전체</span></span>' +
       '<strong class="bs-count">' + all.total + '<small>곳</small></strong>' +
       '<span class="bs-sub">재고 ' + all.in + " · 없음 " + all.none +
-        (seven.total ? " · 세븐 위치 " + seven.total : "") +
-        " · 미조회 " + (all.check - seven.check) + "</span></button>";
+        " · 미조회 " + (all.check - seven.check) +
+        (seven.total ? " · 위치 " + seven.total : "") + "</span></button>";
     BRAND_ORDER.forEach(function (id) {
       var meta = D.brandMeta[id] || { label: id, short: id, color: "#1b2a4a" };
       var c = counts[id] || { total: 0, in: 0, check: 0, none: 0 };
@@ -1959,7 +2095,7 @@
     if (s.official) links.push('<a href="' + s.official + '" target="_blank" rel="noopener">공식 제품 정보 ↗</a>');
     if (s.extraLink) links.push('<a href="' + s.extraLink.url + '" target="_blank" rel="noopener">' + s.extraLink.label + " ↗</a>");
     (s.kream || []).forEach(function (k, i) {
-      links.push('<a href="' + k.url + '" target="_blank" rel="noopener">KREAM 시세' + (i > 0 ? " (" + (i + 1) + ")" : "") + " ↗</a>");
+      links.push('<a href="' + k.url + '" target="_blank" rel="noopener">' + (k.label || "KREAM") + " 시세 ↗</a>");
     });
 
     setSummary.innerHTML =
@@ -3050,9 +3186,9 @@
   function renderPopRelay(payload, context) {
     if (!popRelayStatus) return;
     if (!payload) {
-      popRelayStatus.textContent = relayUrl()
-        ? "실시간 팝수 조회를 요청할 수 있습니다."
-        : "팝수는 공식 사이트만 공개합니다. 번호를 복사해 선택한 회사의 조회 페이지에서 확인하세요.";
+      /* v2.1 — 중계의 /api/pop 은 아직 준비되지 않았습니다(501). ‘실시간 팝수 조회’를 약속하지 않고
+         공식 사이트로 넘기는 안내만 짧게 보여 줍니다. */
+      popRelayStatus.textContent = "팝수는 각 등급사 공식 페이지에서 확인합니다. 번호를 복사해 열어 드립니다.";
       return;
     }
     var rows = payload.items || payload.results || [];
@@ -3087,23 +3223,8 @@
         ? "\u201c" + value + "\u201d를 복사하고 " + popCompanyInfo().label + " 조회 페이지를 열었습니다."
         : "조회 페이지를 열었습니다. 검색창에 \u201c" + value + "\u201d를 붙여넣으세요.");
     });
-    var base = relayUrl();
-    if (!base) {
-      renderPopRelay(null, context);
-      return;
-    }
-    var seq = ++popRelaySeq;
-    var ctrl = new AbortController();
-    var timer = setTimeout(function () { ctrl.abort(); }, 7000);
-    fetch(base + "/api/pop?q=" + encodeURIComponent(value) + "&company=" + popCompany, { signal: ctrl.signal, mode: "cors", cache: "no-store" })
-      .then(function (res) { return res.ok ? res.json() : null; })
-      .then(function (payload) {
-        if (seq === popRelaySeq) renderPopRelay(payload || { ok: false }, context);
-      })
-      .catch(function () {
-        if (seq === popRelaySeq) renderPopRelay({ ok: false }, context);
-      })
-      .finally(function () { clearTimeout(timer); });
+    /* 실시간 팝수 중계(/api/pop)는 아직 준비 중이라 부르지 않습니다 — 헛요청·오류 문구를 남기지 않는다. */
+    renderPopRelay(null, context);
   }
 
   function initPop() {

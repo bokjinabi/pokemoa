@@ -2468,11 +2468,20 @@ window.POKEMOA_DATA = (function () {
   var cardIssues = [
     {
       date: "2026-11-18", tag: "마감", kind: "urgent",
-      title: "Team Masters 2027 추첨 발표가 11/20로 연기 · 참가 약관 동의는 오늘 23:59까지",
+      title: "Team Masters 2027 추첨 발표가 11/20로 연기 · 참가 약관 동의는 11/18 23:59까지",
       body: "주최 측이 11/13 공지에서 추첨 결과 발표를 11/13 14시에서 11/20 14시(한국 시간)로 미뤘습니다. 팀원 전원이 약관에 동의해야 엔트리가 끝나고, 동의 기간은 11/13 14시 ~ 11/18 23:59입니다. 이 기간에는 신규 접수나 멤버 변경을 받지 않습니다. 대회는 2027-01-23~24 킨텍스.",
       links: [
         { label: "공식 공지", url: "https://www.pokemon-team-masters.com/pages/news/news-detail/news-detail?id=8" },
         { label: "TCG뉴스 정리", url: "https://tcgnews.kr/article/234" }
+      ]
+    },
+    {
+      date: "2026-11-18", tag: "해외", kind: "release",
+      title: "일본 「하도우시커」 11/27 발매 · 로손은 1인 10팩 제한",
+      body: "일본 포켓몬 카드 공식이 MEGA 확장팩 「하도우시커」(1팩 200엔)를 11/27 발매한다고 확정했습니다. 로손은 11/27 7시부터 계산당 10팩으로 제한하고 예약·보관은 받지 않습니다. 한국어판 발매 일정은 아직 공지되지 않았습니다.",
+      links: [
+        { label: "TCG뉴스(판매)", url: "https://tcgnews.kr/article/256" },
+        { label: "수록 카드 공개", url: "https://tcgnews.kr/article/236" }
       ]
     },
     {
@@ -2511,15 +2520,6 @@ window.POKEMOA_DATA = (function () {
         { label: "Collectory 기사", url: "https://collectory.cc/news/30%EC%A3%BC%EB%85%84-%EB%AE%A4-fur-%EB%AC%B4%EB%93%B1%EA%B8%89%EC%9D%80-3%EC%A3%BC-%EB%A7%8C%EC%97%90-5%EB%A7%8C-%EC%9B%90%EC%97%90%EC%84%9C-3%EB%A7%8C-1%EC%B2%9C-%EC%9B%90%EC%9D%B4-%EB%90%90%EA%B3%A0-%EB%A9%94%EA%B0%80%ED%8C%AC%ED%85%80-sar-psa10%EC%9D%80-22%EB%A7%8C-%EC%9B%90%EB%8C%80%EB%A5%BC-%EC%A7%80%EC%BC%B0%EC%8A%B5%EB%8B%88%EB%8B%A4-mvxro3ge" }
       ]
     },
-    {
-      date: "2026-11-18", tag: "해외", kind: "release",
-      title: "일본 「하도우시커」 11/27 발매 · 로손은 1인 10팩 제한",
-      body: "일본 포켓몬 카드 공식이 MEGA 확장팩 「하도우시커」(1팩 200엔)를 11/27 발매한다고 확정했습니다. 로손은 11/27 7시부터 계산당 10팩으로 제한하고 예약·보관은 받지 않습니다. 한국어판 발매 일정은 아직 공지되지 않았습니다.",
-      links: [
-        { label: "TCG뉴스(판매)", url: "https://tcgnews.kr/article/256" },
-        { label: "수록 카드 공개", url: "https://tcgnews.kr/article/236" }
-      ]
-    }
   ];
 
   /* -------------------------------------------------- 신규 팩 발매 소식 */

@@ -38,6 +38,10 @@
    허용 출처는 https://moa-kr.github.io 와 로컬 테스트(localhost·127.0.0.1)뿐입니다.
    미리보기 중에는 방문자의 ‘다시 보지 않기’ 저장소를 건드리지 않고, 팝업 기간도 무시해
    어드민에서 만든 화면 그대로 보여 줍니다.
+   v4.3 — 미리보기 클릭 → 어드민 입력칸 이동 (2026-11-20)
+   어드민 미리보기(iframe)에서 data-copy·data-section·data-moa-focus 가 붙은 곳을 누르면
+   기본 링크 이동을 막고 { type: “moa-preview-focus”, target:{ kind, key|id } } 를 부모(어드민)에
+   보냅니다. 어드민은 해당 탭을 열고 그 입력칸으로 스크롤·포커스합니다.
    v4.2 — 기능 스위치(features)
    site-config.json 의 features 값이 false 인 요소를 숨깁니다. 요소는 data-feature="플래그"
    로 표시해 둡니다(포케모아: 반경 버튼 5km·20km). 지금 고른 반경이 꺼진 반경이면 3km 로
@@ -52,7 +56,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "4.2";
+  const VERSION = "4.3";
   const STYLE_ID = "moa-site-config-style";
   const DISMISS_PREFIX = "moa:popup:";
   const TAB_SELECTOR = "[data-tab],[data-nav]";
@@ -71,7 +75,8 @@
     config: "moa-preview-config",
     ready: "moa-preview-ready",
     applied: "moa-preview-applied",
-    request: "moa-preview-request"
+    request: "moa-preview-request",
+    focus: "moa-preview-focus"
   };
   const PREVIEW_PARENTS = [
     "https://moa-kr.github.io",
@@ -122,6 +127,7 @@
   /* 숨김 클래스 규칙은 배너·팝업을 그릴 때만 주입되므로, 기능 스위치·탭/섹션 숨김이
      배너·팝업 모두 꺼진 화면에서도 동작하도록 규칙 하나를 따로 보장한다. */
   const HIDDEN_STYLE_ID = "moa-hidden-style";
+  const PREVIEW_STYLE_ID = "moa-preview-style";
   function ensureHiddenStyle() {
     if (document.getElementById(STYLE_ID) || document.getElementById(HIDDEN_STYLE_ID)) return;
     const style = document.createElement("style");
@@ -148,6 +154,7 @@
     const el = document.createElement("div");
     el.className = "moa-banner";
     el.setAttribute("role", "status");
+    el.setAttribute("data-moa-focus", JSON.stringify({ kind: "banner" }));
     el.style.background = options.background || palette[0];
     el.style.color = options.color || palette[1];
     const text = document.createElement("span");
@@ -228,6 +235,7 @@
 
     const title = document.createElement("h3");
     title.textContent = popup.title || "";
+    title.setAttribute("data-moa-focus", JSON.stringify({ kind: "popup" }));
     const body = document.createElement("p");
     body.textContent = popup.body || "";
     box.appendChild(title);
@@ -718,8 +726,69 @@
     state.preview = true;
     apply(cfg, state.options || {});
     if (activeTab) activateTab(activeTab);
+    enablePreviewClick();
     postToParent({ type: PREVIEW.applied, ok: true, at: Date.now(), tab: activeTab || "", version: VERSION });
     return cfg;
+  }
+
+  /* ─────────── v4.3 미리보기 클릭 → 어드민 입력칸 이동 ───────────
+     미리보기(iframe) 안에서 고칠 수 있는 요소를 누르면 그 요소가 어느 설정 값인지
+     (data-copy · data-section · data-moa-focus) 찾아 어드민에 알린다. 어드민은 해당 탭을
+     열고 그 입력칸으로 스크롤·포커스한다. 기본 링크 이동·제출은 막는다. */
+  const PREVIEW_HIT_SELECTOR = "[data-moa-focus],[data-copy-html],[data-copy],[data-section-title],[data-section]";
+
+  function previewTargetOf(node) {
+    const hit = node && node.closest ? node.closest(PREVIEW_HIT_SELECTOR) : null;
+    if (!hit) return null;
+    /* 탭 버튼·링크는 미리보기 둘러보기용이라 그대로 둔다 */
+    if (hit.matches("[data-tab],[data-nav]")) return null;
+    const raw = hit.getAttribute("data-moa-focus");
+    if (raw) {
+      try { return JSON.parse(raw); } catch (err) { return null; }
+    }
+    if (hit.hasAttribute("data-copy")) return { kind: "copy", key: hit.getAttribute("data-copy") };
+    if (hit.hasAttribute("data-copy-html")) return { kind: "copy", key: hit.getAttribute("data-copy-html") };
+    const section = hit.closest("[data-section]");
+    if (section) return { kind: "section", id: section.getAttribute("data-section") };
+    return null;
+  }
+
+  function flashPreviewHit(node) {
+    const hit = node && node.closest ? node.closest(PREVIEW_HIT_SELECTOR) : null;
+    if (!hit || !hit.classList) return;
+    hit.classList.remove("moa-preview-hit");
+    void hit.offsetWidth;
+    hit.classList.add("moa-preview-hit");
+    setTimeout(() => hit.classList.remove("moa-preview-hit"), 1200);
+  }
+
+  function onPreviewClick(event) {
+    if (!state.preview) return;
+    const target = previewTargetOf(event.target);
+    if (!target) return;
+    if (event.preventDefault) event.preventDefault();
+    if (event.stopPropagation) event.stopPropagation();
+    postToParent({ type: PREVIEW.focus, target, at: Date.now() });
+    flashPreviewHit(event.target);
+  }
+
+  function enablePreviewClick() {
+    document.documentElement.classList.add("moa-preview-mode");
+    if (!document.getElementById(PREVIEW_STYLE_ID)) {
+      const style = document.createElement("style");
+      style.id = PREVIEW_STYLE_ID;
+      const hoverSelectors = PREVIEW_HIT_SELECTOR.split(",")
+        .map((sel) => "html.moa-preview-mode " + sel.trim() + ":hover")
+        .join(",");
+      style.textContent =
+        hoverSelectors + "{cursor:pointer;outline:2px dashed rgba(240,165,0,.9);outline-offset:2px;border-radius:6px}" +
+        ".moa-preview-hit{outline:3px solid #ffcb05 !important;outline-offset:2px;background:rgba(255,203,5,.14) !important}";
+      document.head.appendChild(style);
+    }
+    if (!enablePreviewClick.bound) {
+      document.addEventListener("click", onPreviewClick, true);
+      enablePreviewClick.bound = true;
+    }
   }
 
   window.addEventListener("message", (event) => {

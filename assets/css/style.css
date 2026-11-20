@@ -19,7 +19,7 @@
   --ink: #14203a;
   --ink-2: #33415c;
   --muted: #65718a;
-  --muted-2: #8b96ab;
+  --muted-2: #6b7689;
   --green: #12854a;
   --green-soft: #e5f6ec;
   --amber: #b26a06;
@@ -107,6 +107,28 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .btn-ghost:hover { border-color: var(--navy); }
 .btn-white { background: #fff; color: var(--navy); box-shadow: var(--shadow-sm); }
 .btn-sm { padding: 9px 14px; font-size: 13px; border-radius: 10px; }
+
+/* ── 헤더 「문의하기」 (2026-11-20) ──
+   회색 글자처럼 보이던 문제 수정: 흰 바탕 + 남색 1.5px 테두리(대배 15:1)에 ✉ 아이콘,
+   높이 38px · 13.5px 굵은 글자. å 작은 화면(359px 이하)에서도 숨기지 않습니다. */
+.header-actions .btn.header-inquiry {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 9px 15px;
+  background: #fff;
+  color: var(--navy);
+  border: 1.5px solid var(--navy);
+  font-size: 13.5px;
+  font-weight: 800;
+  box-shadow: 0 1px 2px rgba(16, 31, 60, 0.08);
+}
+.header-actions .btn.header-inquiry::before { content: "✉"; font-size: 13px; font-weight: 400; }
+.header-actions .btn.header-inquiry:hover { background: var(--navy); color: #fff; border-color: var(--navy); }
+@media (max-width: 679px) {
+  .header-actions .btn.header-inquiry { min-height: 36px; padding: 7px 11px; font-size: 13px; }
+}
 .btn-block { width: 100%; }
 
 .chip {
@@ -747,6 +769,15 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .toolbar-spacer { margin-left: auto; }
 .toolbar-count { font-size: 12px; color: var(--muted); font-weight: 600; }
 .toolbar-count b { color: var(--ink); }
+/* 항목 단위로 줄바꿈 — 줄 끝에 '·' 만 남는 일이 없게 */
+.toolbar-count {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px 6px;
+}
+.toolbar-count .mc { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
+.toolbar-count .mc + .mc::before { content: "·"; color: var(--muted-2); margin-right: 2px; }
 
 .map-body {
   display: grid;
@@ -1187,6 +1218,31 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .guide-prose ul { margin: 0 0 12px; }
 .guide-prose .channel-features li { font-size: 12.8px; line-height: 1.7; color: var(--ink-2); }
 .guide-prose a { color: var(--blue); text-decoration: underline; }
+
+/* 접어 두는 안내 카드(편의점 재고 읽는 법) — 첫 화면이 길어지지 않게 */
+.guide-fold > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  list-style: none;
+}
+.guide-fold > summary::-webkit-details-marker { display: none; }
+.guide-fold > summary::after {
+  content: "＋";
+  flex: none;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--muted);
+}
+.guide-fold[open] > summary { margin-bottom: 8px; }
+.guide-fold[open] > summary::after { content: "－"; }
+.guide-fold-body { margin-top: 4px; }
 
 .week-table { width: 100%; border-collapse: collapse; font-size: 12.8px; }
 .week-table th, .week-table td { text-align: left; padding: 9px 8px; border-bottom: 1px solid var(--line-2); vertical-align: top; }
@@ -1740,8 +1796,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .contact-form textarea { min-height: 92px; }
 }
 @media (max-width: 359px) {
-  /* 320px 급 화면에서는 헤더 한 줄을 지키기 위해 관리자 문의는 푸터·탭 하단 카드로만 둔다 */
-  .header-actions .header-inquiry { display: none; }
+  /* 320px 급 화면에서도 문의 진입점은 유지한다 — 글자만 조금 줄인다 */
+  .header-actions .btn.header-inquiry { display: inline-flex; padding: 7px 9px; font-size: 12.5px; }
+  .header-actions .btn.header-inquiry::before { display: none; }
 }
 
 .dex-modal-card { display: flex; gap: 16px; align-items: flex-start; }
@@ -2098,6 +2155,48 @@ button { font: inherit; color: inherit; cursor: pointer; }
   color: var(--navy);
 }
 .ms-retry:hover { border-color: #cbd5e5; }
+
+/* 현재 상태 바로 아래 한 줄 안내 — 429(이용자 많음)·캐시 응답 등 */
+.map-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 13px;
+  margin: 0;
+  border: 1px solid #f2d08a;
+  border-left: 4px solid #e0a11c;
+  border-radius: 10px;
+  background: #fff8e8;
+  color: #6b4a05;
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.map-notice[hidden] { display: none; }
+.map-notice.is-info { border-color: #bfd6f6; border-left-color: #2f6df6; background: #eff5ff; color: #17417f; }
+.map-notice b { font-weight: 900; }
+
+/* 📌 이 지역 고정 */
+.pin-location {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-2);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.pin-location:hover { border-color: #cbd5e5; }
+.pin-location input { width: 14px; height: 14px; accent-color: var(--navy); }
+.pin-location.is-on { border-color: var(--navy); background: #f4f8ff; color: var(--navy); }
+@media (max-width: 679px) {
+  .pin-location { font-size: 11.5px; padding: 4px 8px; }
+}
 
 .chip.chip-relay { background: #e6f7ef; border: 1px solid #b9e6d2; color: #0b7a4b; font-weight: 700; }
 .pm-pill.is-relay { box-shadow: 0 3px 10px rgba(15, 157, 99, 0.28); }
@@ -2457,6 +2556,14 @@ button { font: inherit; color: inherit; cursor: pointer; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* 「전체」 카드는 미조회까지 보여야 하므로 서브 문구를 두 줄까지 허용한다(… 로 사라지지 않게) */
+.bs-all .bs-sub {
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.35;
+}
 
 /* 정렬 · 재고 토글 */
 .select-sort select { min-width: 132px; padding: 8px 30px 8px 12px; font-size: 13px; }
@@ -2616,10 +2723,12 @@ button { font: inherit; color: inherit; cursor: pointer; }
     display: flex;
     gap: 7px;
     overflow-x: auto;
+    overflow-y: hidden;
     padding: 10px;
-    scrollbar-width: thin;
+    scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
   }
+  .brand-summary::-webkit-scrollbar { display: none; }
   .bs-card { flex: 0 0 auto; min-width: 104px; padding: 8px 10px; }
   .brand-summary {
     -webkit-mask-image: linear-gradient(90deg, #000 0, #000 92%, transparent 100%);
@@ -3085,9 +3194,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
   grid-column: 1 / -1;
   grid-row: 2;
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   min-width: 0;
-  overflow-x: auto;
   padding-bottom: 2px;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
