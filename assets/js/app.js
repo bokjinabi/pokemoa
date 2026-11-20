@@ -1187,7 +1187,7 @@
     }, 220);
   }
 
-  /* 제안 목록 그리기 — 지역(내장 55개) 먼저, 그 뒤에 카카오 장소 검색 결과 */
+  /* 제안 목록 그리기 — 지역(내장 232개, 전국 230개 시·군·구) 먼저, 그 뒤에 카카오 장소 검색 결과 */
   function drawSuggest(query) {
     if (!regionSuggest || !regionSearch) return;
     regionSuggest.innerHTML = "";

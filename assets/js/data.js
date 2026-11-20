@@ -653,7 +653,19 @@ window.POKEMOA_DATA = (function () {
   };
 
   /* 지역 메타데이터: id · 이름 · 시/도 · 시군구 · 동네 · 좌표 · 20km 허용 여부 */
-  /* allow20: false = 도심(5km까지) / true = 지방·외곽(20km까지) */
+  /* allow20: false = 도심(5km까지) / true = 지방·외곽(20km까지)
+     ── 2026-11-20 전국 확장: 처음 56개 거점(README 의 「55개 지역」)은 id·좌표·allow20 을
+        한 글자도 바꾸지 않고 그대로 두고, 빠져 있던 시·군·구를 뒤에 덧붙였다.
+        합계 232개 항목 = 전국 230개 기초자치단체 전부 + 거점이 둘인 서울 종로(광화문·명동)와
+        포항(북구·남구). 좌표는 각 시·군·구청(대표 중심지)을 Nominatim(OpenStreetMap)으로
+        확인해 소수점 5자리까지 넣었다.
+        allow20 기준: 서울·부산·대구·인천·광주·대전·울산의 구(도심)와 서울 생활권에 붙은
+        경기 도심 시(수원·성남·용인·고양·부천·안양·광명·과천·구리·하남·군포·시흥·의왕)는 false,
+        그 밖의 시·군(지방 중소도시·군 지역)은 true.
+        2026-07-01 인천 「2군 9구」 개편(중구 내륙+동구→제물포구, 중구 영종→영종구,
+        서구→서해구·검단구)을 반영해 인천은 11개 구·군이다. 옛 이름은 label 에 남겨
+        「중구」·「서구」로도 검색된다. 옹진군은 군청이 미추홀구에 있어 섬 지역 대표
+        중심지인 백령면을 좌표로 썼다. */
   var regions = [
     /* 첫 화면 기본값 — 서울 광화문 */
     { id: "seoul-gwanghwamun", name: "서울 · 종로 · 광화문", short: "서울 종로 광화문", label: "광화문", province: "서울", district: "종로 · 광화문", lat: 37.5759, lng: 126.9768, zoom: 15, allow20: false },
@@ -712,12 +724,220 @@ window.POKEMOA_DATA = (function () {
     { id: "gyeongnam-yangsan", name: "경남 · 양산", short: "경남 양산", label: "물금읍", province: "경남", district: "양산", lat: 35.31022, lng: 128.98654, zoom: 15, allow20: true },
     { id: "jeju-jejusi", name: "제주 · 제주시", short: "제주 제주시", label: "이도동", province: "제주", district: "제주시", lat: 33.5059, lng: 126.5278, zoom: 15, allow20: true },
     { id: "jeju-seogwipo", name: "제주 · 서귀포시", short: "제주 서귀포시", label: "서귀포시", province: "제주", district: "서귀포시", lat: 33.25285, lng: 126.56103, zoom: 15, allow20: true },
+
+    /* ── 서울 19곳 추가 */
+    { id: "seoul-junggu", name: "서울 · 중구", short: "서울 중구", label: "중구", province: "서울", district: "중구", lat: 37.56376, lng: 126.99757, zoom: 15, allow20: false },
+    { id: "seoul-yongsan", name: "서울 · 용산구", short: "서울 용산구", label: "용산구", province: "서울", district: "용산구", lat: 37.53258, lng: 126.99042, zoom: 15, allow20: false },
+    { id: "seoul-seongdong", name: "서울 · 성동구", short: "서울 성동구", label: "성동구", province: "서울", district: "성동구", lat: 37.56347, lng: 127.0369, zoom: 15, allow20: false },
+    { id: "seoul-gwangjin", name: "서울 · 광진구", short: "서울 광진구", label: "광진구", province: "서울", district: "광진구", lat: 37.53632, lng: 127.0878, zoom: 15, allow20: false },
+    { id: "seoul-dongdaemun", name: "서울 · 동대문구", short: "서울 동대문구", label: "동대문구", province: "서울", district: "동대문구", lat: 37.57431, lng: 127.04004, zoom: 15, allow20: false },
+    { id: "seoul-jungnang", name: "서울 · 중랑구", short: "서울 중랑구", label: "중랑구", province: "서울", district: "중랑구", lat: 37.60648, lng: 127.09283, zoom: 15, allow20: false },
+    { id: "seoul-seongbuk", name: "서울 · 성북구", short: "서울 성북구", label: "성북구", province: "서울", district: "성북구", lat: 37.58944, lng: 127.01673, zoom: 15, allow20: false },
+    { id: "seoul-gangbuk", name: "서울 · 강북구", short: "서울 강북구", label: "강북구", province: "서울", district: "강북구", lat: 37.63972, lng: 127.02569, zoom: 15, allow20: false },
+    { id: "seoul-dobong", name: "서울 · 도봉구", short: "서울 도봉구", label: "도봉구", province: "서울", district: "도봉구", lat: 37.66872, lng: 127.0473, zoom: 15, allow20: false },
+    { id: "seoul-eunpyeong", name: "서울 · 은평구", short: "서울 은평구", label: "은평구", province: "서울", district: "은평구", lat: 37.60278, lng: 126.92918, zoom: 15, allow20: false },
+    { id: "seoul-seodaemun", name: "서울 · 서대문구", short: "서울 서대문구", label: "서대문구", province: "서울", district: "서대문구", lat: 37.57836, lng: 126.93613, zoom: 15, allow20: false },
+    { id: "seoul-yangcheon", name: "서울 · 양천구", short: "서울 양천구", label: "양천구", province: "서울", district: "양천구", lat: 37.51711, lng: 126.86677, zoom: 15, allow20: false },
+    { id: "seoul-gangseo", name: "서울 · 강서구", short: "서울 강서구", label: "강서구", province: "서울", district: "강서구", lat: 37.55108, lng: 126.84956, zoom: 15, allow20: false },
+    { id: "seoul-guro", name: "서울 · 구로구", short: "서울 구로구", label: "구로구", province: "서울", district: "구로구", lat: 37.49544, lng: 126.88732, zoom: 15, allow20: false },
+    { id: "seoul-geumcheon", name: "서울 · 금천구", short: "서울 금천구", label: "금천구", province: "서울", district: "금천구", lat: 37.4569, lng: 126.89538, zoom: 15, allow20: false },
+    { id: "seoul-dongjak", name: "서울 · 동작구", short: "서울 동작구", label: "동작구", province: "서울", district: "동작구", lat: 37.50422, lng: 126.94022, zoom: 15, allow20: false },
+    { id: "seoul-gwanak", name: "서울 · 관악구", short: "서울 관악구", label: "관악구", province: "서울", district: "관악구", lat: 37.47829, lng: 126.95149, zoom: 15, allow20: false },
+    { id: "seoul-seocho", name: "서울 · 서초구", short: "서울 서초구", label: "서초구", province: "서울", district: "서초구", lat: 37.48365, lng: 127.03271, zoom: 15, allow20: false },
+    { id: "seoul-gangdong", name: "서울 · 강동구", short: "서울 강동구", label: "강동구", province: "서울", district: "강동구", lat: 37.53014, lng: 127.12384, zoom: 15, allow20: false },
+
+    /* ── 부산 12곳 추가 */
+    { id: "busan-seo", name: "부산 · 서구", short: "부산 서구", label: "서구", province: "부산", district: "서구", lat: 35.09778, lng: 129.02366, zoom: 15, allow20: false },
+    { id: "busan-dong", name: "부산 · 동구", short: "부산 동구", label: "동구", province: "부산", district: "동구", lat: 35.12936, lng: 129.04531, zoom: 15, allow20: false },
+    { id: "busan-yeongdo", name: "부산 · 영도구", short: "부산 영도구", label: "영도구", province: "부산", district: "영도구", lat: 35.09125, lng: 129.06789, zoom: 15, allow20: false },
+    { id: "busan-dongnae", name: "부산 · 동래구", short: "부산 동래구", label: "동래구", province: "부산", district: "동래구", lat: 35.19642, lng: 129.09357, zoom: 15, allow20: false },
+    { id: "busan-nam", name: "부산 · 남구", short: "부산 남구", label: "남구", province: "부산", district: "남구", lat: 35.13654, lng: 129.08442, zoom: 15, allow20: false },
+    { id: "busan-saha", name: "부산 · 사하구", short: "부산 사하구", label: "사하구", province: "부산", district: "사하구", lat: 35.103, lng: 128.97504, zoom: 15, allow20: false },
+    { id: "busan-geumjeong", name: "부산 · 금정구", short: "부산 금정구", label: "금정구", province: "부산", district: "금정구", lat: 35.24241, lng: 129.09318, zoom: 15, allow20: false },
+    { id: "busan-gangseo", name: "부산 · 강서구", short: "부산 강서구", label: "강서구", province: "부산", district: "강서구", lat: 35.21198, lng: 128.98053, zoom: 15, allow20: true },
+    { id: "busan-yeonje", name: "부산 · 연제구", short: "부산 연제구", label: "연제구", province: "부산", district: "연제구", lat: 35.17621, lng: 129.07972, zoom: 15, allow20: false },
+    { id: "busan-suyeong", name: "부산 · 수영구", short: "부산 수영구", label: "수영구", province: "부산", district: "수영구", lat: 35.14555, lng: 129.11313, zoom: 15, allow20: false },
+    { id: "busan-sasangu", name: "부산 · 사상구", short: "부산 사상구", label: "사상구", province: "부산", district: "사상구", lat: 35.1521, lng: 128.9911, zoom: 15, allow20: false },
+    { id: "busan-gijang", name: "부산 · 기장", short: "부산 기장", label: "기장군", province: "부산", district: "기장", lat: 35.24439, lng: 129.22217, zoom: 15, allow20: true },
+
+    /* ── 대구 6곳 추가 */
+    { id: "daegu-dong", name: "대구 · 동구", short: "대구 동구", label: "동구", province: "대구", district: "동구", lat: 35.88658, lng: 128.63561, zoom: 15, allow20: false },
+    { id: "daegu-seo", name: "대구 · 서구", short: "대구 서구", label: "서구", province: "대구", district: "서구", lat: 35.87172, lng: 128.55917, zoom: 15, allow20: false },
+    { id: "daegu-nam", name: "대구 · 남구", short: "대구 남구", label: "남구", province: "대구", district: "남구", lat: 35.84572, lng: 128.5973, zoom: 15, allow20: false },
+    { id: "daegu-buk", name: "대구 · 북구", short: "대구 북구", label: "북구", province: "대구", district: "북구", lat: 35.88566, lng: 128.58292, zoom: 15, allow20: false },
+    { id: "daegu-dalseong", name: "대구 · 달성", short: "대구 달성", label: "달성군", province: "대구", district: "달성", lat: 35.77457, lng: 128.43146, zoom: 15, allow20: true },
+    { id: "daegu-gunwi", name: "대구 · 군위", short: "대구 군위", label: "군위군", province: "대구", district: "군위", lat: 36.24303, lng: 128.57301, zoom: 15, allow20: true },
+
+    /* ── 인천 8곳 추가 */
+    { id: "incheon-jemulpo", name: "인천 · 제물포구", short: "인천 제물포구", label: "제물포구(중구·동구)", province: "인천", district: "제물포구", lat: 37.47358, lng: 126.62176, zoom: 15, allow20: false },
+    { id: "incheon-yeongjong", name: "인천 · 영종구", short: "인천 영종구", label: "영종구(중구 영종)", province: "인천", district: "영종구", lat: 37.48447, lng: 126.48626, zoom: 15, allow20: false },
+    { id: "incheon-michuhol", name: "인천 · 미추홀구", short: "인천 미추홀구", label: "미추홀구", province: "인천", district: "미추홀구", lat: 37.4638, lng: 126.65046, zoom: 15, allow20: false },
+    { id: "incheon-gyeyang", name: "인천 · 계양구", short: "인천 계양구", label: "계양구", province: "인천", district: "계양구", lat: 37.53745, lng: 126.7378, zoom: 15, allow20: false },
+    { id: "incheon-seohae", name: "인천 · 서해구", short: "인천 서해구", label: "서해구(서구)", province: "인천", district: "서해구", lat: 37.54541, lng: 126.67605, zoom: 15, allow20: false },
+    { id: "incheon-geomdan", name: "인천 · 검단구", short: "인천 검단구", label: "검단구(서구 검단)", province: "인천", district: "검단구", lat: 37.59152, lng: 126.68164, zoom: 15, allow20: false },
+    { id: "incheon-ganghwa", name: "인천 · 강화", short: "인천 강화", label: "강화군", province: "인천", district: "강화", lat: 37.74656, lng: 126.48797, zoom: 15, allow20: true },
+    { id: "incheon-ongjin", name: "인천 · 옹진", short: "인천 옹진", label: "옹진군", province: "인천", district: "옹진", lat: 37.94861, lng: 124.67981, zoom: 15, allow20: true },
+
+    /* ── 광주 3곳 추가 */
+    { id: "gwangju-nam", name: "광주 · 남구", short: "광주 남구", label: "남구", province: "광주", district: "남구", lat: 35.13279, lng: 126.90246, zoom: 15, allow20: false },
+    { id: "gwangju-buk", name: "광주 · 북구", short: "광주 북구", label: "북구", province: "광주", district: "북구", lat: 35.17435, lng: 126.91215, zoom: 15, allow20: false },
+    { id: "gwangju-gwangsan", name: "광주 · 광산구", short: "광주 광산구", label: "광산구", province: "광주", district: "광산구", lat: 35.13952, lng: 126.79372, zoom: 15, allow20: false },
+
+    /* ── 대전 3곳 추가 */
+    { id: "daejeon-dong", name: "대전 · 동구", short: "대전 동구", label: "동구", province: "대전", district: "동구", lat: 36.31182, lng: 127.45481, zoom: 15, allow20: false },
+    { id: "daejeon-junggu", name: "대전 · 중구", short: "대전 중구", label: "중구", province: "대전", district: "중구", lat: 36.32558, lng: 127.42149, zoom: 15, allow20: false },
+    { id: "daejeon-daedeok", name: "대전 · 대덕구", short: "대전 대덕구", label: "대덕구", province: "대전", district: "대덕구", lat: 36.34667, lng: 127.41557, zoom: 15, allow20: false },
+
+    /* ── 울산 3곳 추가 */
+    { id: "ulsan-dong", name: "울산 · 동구", short: "울산 동구", label: "동구", province: "울산", district: "동구", lat: 35.5049, lng: 129.41665, zoom: 15, allow20: false },
+    { id: "ulsan-buk", name: "울산 · 북구", short: "울산 북구", label: "북구", province: "울산", district: "북구", lat: 35.58272, lng: 129.3613, zoom: 15, allow20: false },
+    { id: "ulsan-ulju", name: "울산 · 울주", short: "울산 울주", label: "울주군", province: "울산", district: "울주", lat: 35.5219, lng: 129.24244, zoom: 15, allow20: true },
+
+    /* ── 경기 23곳 추가 */
+    { id: "gyeonggi-anyang", name: "경기 · 안양", short: "경기 안양", label: "안양시", province: "경기", district: "안양", lat: 37.39429, lng: 126.95687, zoom: 15, allow20: false },
+    { id: "gyeonggi-gwangmyeong", name: "경기 · 광명", short: "경기 광명", label: "광명시", province: "경기", district: "광명", lat: 37.47856, lng: 126.86464, zoom: 15, allow20: false },
+    { id: "gyeonggi-dongducheon", name: "경기 · 동두천", short: "경기 동두천", label: "동두천시", province: "경기", district: "동두천", lat: 37.90357, lng: 127.06048, zoom: 15, allow20: true },
+    { id: "gyeonggi-ansan", name: "경기 · 안산", short: "경기 안산", label: "안산시", province: "경기", district: "안산", lat: 37.32202, lng: 126.83083, zoom: 15, allow20: true },
+    { id: "gyeonggi-gwacheon", name: "경기 · 과천", short: "경기 과천", label: "과천시", province: "경기", district: "과천", lat: 37.42922, lng: 126.98759, zoom: 15, allow20: false },
+    { id: "gyeonggi-guri", name: "경기 · 구리", short: "경기 구리", label: "구리시", province: "경기", district: "구리", lat: 37.59435, lng: 127.12965, zoom: 15, allow20: false },
+    { id: "gyeonggi-namyangju", name: "경기 · 남양주", short: "경기 남양주", label: "남양주시", province: "경기", district: "남양주", lat: 37.6105, lng: 127.1712, zoom: 15, allow20: true },
+    { id: "gyeonggi-osan", name: "경기 · 오산", short: "경기 오산", label: "오산시", province: "경기", district: "오산", lat: 37.14986, lng: 127.07748, zoom: 15, allow20: true },
+    { id: "gyeonggi-siheung", name: "경기 · 시흥", short: "경기 시흥", label: "시흥시", province: "경기", district: "시흥", lat: 37.38007, lng: 126.80308, zoom: 15, allow20: false },
+    { id: "gyeonggi-gunpo", name: "경기 · 군포", short: "경기 군포", label: "군포시", province: "경기", district: "군포", lat: 37.36144, lng: 126.93537, zoom: 15, allow20: false },
+    { id: "gyeonggi-uiwang", name: "경기 · 의왕", short: "경기 의왕", label: "의왕시", province: "경기", district: "의왕", lat: 37.34471, lng: 126.96825, zoom: 15, allow20: false },
+    { id: "gyeonggi-hanam", name: "경기 · 하남", short: "경기 하남", label: "하남시", province: "경기", district: "하남", lat: 37.53931, lng: 127.2149, zoom: 15, allow20: false },
+    { id: "gyeonggi-paju", name: "경기 · 파주", short: "경기 파주", label: "파주시", province: "경기", district: "파주", lat: 37.75989, lng: 126.77963, zoom: 15, allow20: true },
+    { id: "gyeonggi-icheon", name: "경기 · 이천", short: "경기 이천", label: "이천시", province: "경기", district: "이천", lat: 37.27235, lng: 127.43502, zoom: 15, allow20: true },
+    { id: "gyeonggi-anseong", name: "경기 · 안성", short: "경기 안성", label: "안성시", province: "경기", district: "안성", lat: 37.0081, lng: 127.27977, zoom: 15, allow20: true },
+    { id: "gyeonggi-gimpo", name: "경기 · 김포", short: "경기 김포", label: "김포시", province: "경기", district: "김포", lat: 37.61549, lng: 126.71543, zoom: 15, allow20: true },
+    { id: "gyeonggi-gwangju", name: "경기 · 광주", short: "경기 광주", label: "광주시", province: "경기", district: "광주", lat: 37.42951, lng: 127.25517, zoom: 15, allow20: true },
+    { id: "gyeonggi-yangju", name: "경기 · 양주", short: "경기 양주", label: "양주시", province: "경기", district: "양주", lat: 37.78533, lng: 127.0458, zoom: 15, allow20: true },
+    { id: "gyeonggi-pocheon", name: "경기 · 포천", short: "경기 포천", label: "포천시", province: "경기", district: "포천", lat: 37.89493, lng: 127.20035, zoom: 15, allow20: true },
+    { id: "gyeonggi-yeoju", name: "경기 · 여주", short: "경기 여주", label: "여주시", province: "경기", district: "여주", lat: 37.29823, lng: 127.63714, zoom: 15, allow20: true },
+    { id: "gyeonggi-yeoncheon", name: "경기 · 연천", short: "경기 연천", label: "연천군", province: "경기", district: "연천", lat: 38.09652, lng: 127.07528, zoom: 15, allow20: true },
+    { id: "gyeonggi-gapyeong", name: "경기 · 가평", short: "경기 가평", label: "가평군", province: "경기", district: "가평", lat: 37.83123, lng: 127.50958, zoom: 15, allow20: true },
+    { id: "gyeonggi-yangpyeong", name: "경기 · 양평", short: "경기 양평", label: "양평군", province: "경기", district: "양평", lat: 37.49167, lng: 127.48791, zoom: 15, allow20: true },
+
+    /* ── 강원 15곳 추가 */
+    { id: "gangwon-donghae", name: "강원 · 동해", short: "강원 동해", label: "동해시", province: "강원", district: "동해", lat: 37.52476, lng: 129.11449, zoom: 15, allow20: true },
+    { id: "gangwon-taebaek", name: "강원 · 태백", short: "강원 태백", label: "태백시", province: "강원", district: "태백", lat: 37.1641, lng: 128.98576, zoom: 15, allow20: true },
+    { id: "gangwon-sokcho", name: "강원 · 속초", short: "강원 속초", label: "속초시", province: "강원", district: "속초", lat: 38.20732, lng: 128.59197, zoom: 15, allow20: true },
+    { id: "gangwon-samcheok", name: "강원 · 삼척", short: "강원 삼척", label: "삼척시", province: "강원", district: "삼척", lat: 37.44991, lng: 129.16519, zoom: 15, allow20: true },
+    { id: "gangwon-hongcheon", name: "강원 · 홍천", short: "강원 홍천", label: "홍천군", province: "강원", district: "홍천", lat: 37.69722, lng: 127.88876, zoom: 15, allow20: true },
+    { id: "gangwon-hoengseong", name: "강원 · 횡성", short: "강원 횡성", label: "횡성군", province: "강원", district: "횡성", lat: 37.49174, lng: 127.98512, zoom: 15, allow20: true },
+    { id: "gangwon-yeongwol", name: "강원 · 영월", short: "강원 영월", label: "영월군", province: "강원", district: "영월", lat: 37.1837, lng: 128.46184, zoom: 15, allow20: true },
+    { id: "gangwon-pyeongchang", name: "강원 · 평창", short: "강원 평창", label: "평창군", province: "강원", district: "평창", lat: 37.37077, lng: 128.3902, zoom: 15, allow20: true },
+    { id: "gangwon-jeongseon", name: "강원 · 정선", short: "강원 정선", label: "정선군", province: "강원", district: "정선", lat: 37.38061, lng: 128.66086, zoom: 15, allow20: true },
+    { id: "gangwon-cheorwon", name: "강원 · 철원", short: "강원 철원", label: "철원군", province: "강원", district: "철원", lat: 38.14676, lng: 127.31339, zoom: 15, allow20: true },
+    { id: "gangwon-hwacheon", name: "강원 · 화천", short: "강원 화천", label: "화천군", province: "강원", district: "화천", lat: 38.10622, lng: 127.70823, zoom: 15, allow20: true },
+    { id: "gangwon-yanggu", name: "강원 · 양구", short: "강원 양구", label: "양구군", province: "강원", district: "양구", lat: 38.10998, lng: 127.98995, zoom: 15, allow20: true },
+    { id: "gangwon-inje", name: "강원 · 인제", short: "강원 인제", label: "인제군", province: "강원", district: "인제", lat: 38.06972, lng: 128.17039, zoom: 15, allow20: true },
+    { id: "gangwon-goseong", name: "강원 · 고성", short: "강원 고성", label: "고성군", province: "강원", district: "고성", lat: 38.38063, lng: 128.46787, zoom: 15, allow20: true },
+    { id: "gangwon-yangyang", name: "강원 · 양양", short: "강원 양양", label: "양양군", province: "강원", district: "양양", lat: 38.07549, lng: 128.619, zoom: 15, allow20: true },
+
+    /* ── 충북 9곳 추가 */
+    { id: "chungbuk-jecheon", name: "충북 · 제천", short: "충북 제천", label: "제천시", province: "충북", district: "제천", lat: 37.13264, lng: 128.19104, zoom: 15, allow20: true },
+    { id: "chungbuk-boeun", name: "충북 · 보은", short: "충북 보은", label: "보은군", province: "충북", district: "보은", lat: 36.48928, lng: 127.73037, zoom: 15, allow20: true },
+    { id: "chungbuk-okcheon", name: "충북 · 옥천", short: "충북 옥천", label: "옥천군", province: "충북", district: "옥천", lat: 36.30651, lng: 127.57148, zoom: 15, allow20: true },
+    { id: "chungbuk-yeongdong", name: "충북 · 영동", short: "충북 영동", label: "영동군", province: "충북", district: "영동", lat: 36.17502, lng: 127.78343, zoom: 15, allow20: true },
+    { id: "chungbuk-jeungpyeong", name: "충북 · 증평", short: "충북 증평", label: "증평군", province: "충북", district: "증평", lat: 36.78533, lng: 127.58151, zoom: 15, allow20: true },
+    { id: "chungbuk-jincheon", name: "충북 · 진천", short: "충북 진천", label: "진천군", province: "충북", district: "진천", lat: 36.85543, lng: 127.43577, zoom: 15, allow20: true },
+    { id: "chungbuk-goesan", name: "충북 · 괴산", short: "충북 괴산", label: "괴산군", province: "충북", district: "괴산", lat: 36.81536, lng: 127.78664, zoom: 15, allow20: true },
+    { id: "chungbuk-eumseong", name: "충북 · 음성", short: "충북 음성", label: "음성군", province: "충북", district: "음성", lat: 36.9402, lng: 127.69048, zoom: 15, allow20: true },
+    { id: "chungbuk-danyang", name: "충북 · 단양", short: "충북 단양", label: "단양군", province: "충북", district: "단양", lat: 36.98467, lng: 128.36555, zoom: 15, allow20: true },
+
+    /* ── 충남 13곳 추가 */
+    { id: "chungnam-gongju", name: "충남 · 공주", short: "충남 공주", label: "공주시", province: "충남", district: "공주", lat: 36.44679, lng: 127.11911, zoom: 15, allow20: true },
+    { id: "chungnam-boryeong", name: "충남 · 보령", short: "충남 보령", label: "보령시", province: "충남", district: "보령", lat: 36.33368, lng: 126.61293, zoom: 15, allow20: true },
+    { id: "chungnam-seosan", name: "충남 · 서산", short: "충남 서산", label: "서산시", province: "충남", district: "서산", lat: 36.78491, lng: 126.45036, zoom: 15, allow20: true },
+    { id: "chungnam-nonsan", name: "충남 · 논산", short: "충남 논산", label: "논산시", province: "충남", district: "논산", lat: 36.18728, lng: 127.09869, zoom: 15, allow20: true },
+    { id: "chungnam-gyeryong", name: "충남 · 계룡", short: "충남 계룡", label: "계룡시", province: "충남", district: "계룡", lat: 36.27447, lng: 127.24852, zoom: 15, allow20: true },
+    { id: "chungnam-dangjin", name: "충남 · 당진", short: "충남 당진", label: "당진시", province: "충남", district: "당진", lat: 36.88995, lng: 126.64577, zoom: 15, allow20: true },
+    { id: "chungnam-geumsan", name: "충남 · 금산", short: "충남 금산", label: "금산군", province: "충남", district: "금산", lat: 36.1089, lng: 127.48805, zoom: 15, allow20: true },
+    { id: "chungnam-buyeo", name: "충남 · 부여", short: "충남 부여", label: "부여군", province: "충남", district: "부여", lat: 36.27531, lng: 126.91002, zoom: 15, allow20: true },
+    { id: "chungnam-seocheon", name: "충남 · 서천", short: "충남 서천", label: "서천군", province: "충남", district: "서천", lat: 36.07814, lng: 126.70276, zoom: 15, allow20: true },
+    { id: "chungnam-cheongyang", name: "충남 · 청양", short: "충남 청양", label: "청양군", province: "충남", district: "청양", lat: 36.45935, lng: 126.80198, zoom: 15, allow20: true },
+    { id: "chungnam-hongseong", name: "충남 · 홍성", short: "충남 홍성", label: "홍성군", province: "충남", district: "홍성", lat: 36.60129, lng: 126.6608, zoom: 15, allow20: true },
+    { id: "chungnam-yesan", name: "충남 · 예산", short: "충남 예산", label: "예산군", province: "충남", district: "예산", lat: 36.68087, lng: 126.84509, zoom: 15, allow20: true },
+    { id: "chungnam-taean", name: "충남 · 태안", short: "충남 태안", label: "태안군", province: "충남", district: "태안", lat: 36.74569, lng: 126.29805, zoom: 15, allow20: true },
+
+    /* ── 전북 11곳 추가 */
+    { id: "jeonbuk-jeongeup", name: "전북 · 정읍", short: "전북 정읍", label: "정읍시", province: "전북", district: "정읍", lat: 35.56992, lng: 126.85601, zoom: 15, allow20: true },
+    { id: "jeonbuk-namwon", name: "전북 · 남원", short: "전북 남원", label: "남원시", province: "전북", district: "남원", lat: 35.41642, lng: 127.39046, zoom: 15, allow20: true },
+    { id: "jeonbuk-gimje", name: "전북 · 김제", short: "전북 김제", label: "김제시", province: "전북", district: "김제", lat: 35.80382, lng: 126.88056, zoom: 15, allow20: true },
+    { id: "jeonbuk-wanju", name: "전북 · 완주", short: "전북 완주", label: "완주군", province: "전북", district: "완주", lat: 35.90456, lng: 127.16153, zoom: 15, allow20: true },
+    { id: "jeonbuk-jinan", name: "전북 · 진안", short: "전북 진안", label: "진안군", province: "전북", district: "진안", lat: 35.79166, lng: 127.42481, zoom: 15, allow20: true },
+    { id: "jeonbuk-muju", name: "전북 · 무주", short: "전북 무주", label: "무주군", province: "전북", district: "무주", lat: 36.00684, lng: 127.66077, zoom: 15, allow20: true },
+    { id: "jeonbuk-jangsu", name: "전북 · 장수", short: "전북 장수", label: "장수군", province: "전북", district: "장수", lat: 35.64726, lng: 127.52105, zoom: 15, allow20: true },
+    { id: "jeonbuk-imshil", name: "전북 · 임실", short: "전북 임실", label: "임실군", province: "전북", district: "임실", lat: 35.61769, lng: 127.28891, zoom: 15, allow20: true },
+    { id: "jeonbuk-sunchang", name: "전북 · 순창", short: "전북 순창", label: "순창군", province: "전북", district: "순창", lat: 35.37447, lng: 127.13735, zoom: 15, allow20: true },
+    { id: "jeonbuk-gochang", name: "전북 · 고창", short: "전북 고창", label: "고창군", province: "전북", district: "고창", lat: 35.43581, lng: 126.7021, zoom: 15, allow20: true },
+    { id: "jeonbuk-buan", name: "전북 · 부안", short: "전북 부안", label: "부안군", province: "전북", district: "부안", lat: 35.73183, lng: 126.73327, zoom: 15, allow20: true },
+
+    /* ── 전남 19곳 추가 */
+    { id: "jeonnam-naju", name: "전남 · 나주", short: "전남 나주", label: "나주시", province: "전남", district: "나주", lat: 35.01607, lng: 126.71084, zoom: 15, allow20: true },
+    { id: "jeonnam-gwangyang", name: "전남 · 광양", short: "전남 광양", label: "광양시", province: "전남", district: "광양", lat: 34.94065, lng: 127.69595, zoom: 15, allow20: true },
+    { id: "jeonnam-damyang", name: "전남 · 담양", short: "전남 담양", label: "담양군", province: "전남", district: "담양", lat: 35.32119, lng: 126.98824, zoom: 15, allow20: true },
+    { id: "jeonnam-gokseong", name: "전남 · 곡성", short: "전남 곡성", label: "곡성군", province: "전남", district: "곡성", lat: 35.28202, lng: 127.29198, zoom: 15, allow20: true },
+    { id: "jeonnam-gurye", name: "전남 · 구례", short: "전남 구례", label: "구례군", province: "전남", district: "구례", lat: 35.20252, lng: 127.4629, zoom: 15, allow20: true },
+    { id: "jeonnam-goheung", name: "전남 · 고흥", short: "전남 고흥", label: "고흥군", province: "전남", district: "고흥", lat: 34.60452, lng: 127.27552, zoom: 15, allow20: true },
+    { id: "jeonnam-boseong", name: "전남 · 보성", short: "전남 보성", label: "보성군", province: "전남", district: "보성", lat: 34.77149, lng: 127.08006, zoom: 15, allow20: true },
+    { id: "jeonnam-hwasun", name: "전남 · 화순", short: "전남 화순", label: "화순군", province: "전남", district: "화순", lat: 35.06432, lng: 126.9865, zoom: 15, allow20: true },
+    { id: "jeonnam-jangheung", name: "전남 · 장흥", short: "전남 장흥", label: "장흥군", province: "전남", district: "장흥", lat: 34.68164, lng: 126.9071, zoom: 15, allow20: true },
+    { id: "jeonnam-gangjin", name: "전남 · 강진", short: "전남 강진", label: "강진군", province: "전남", district: "강진", lat: 34.64197, lng: 126.76701, zoom: 15, allow20: true },
+    { id: "jeonnam-haenam", name: "전남 · 해남", short: "전남 해남", label: "해남군", province: "전남", district: "해남", lat: 34.57392, lng: 126.5994, zoom: 15, allow20: true },
+    { id: "jeonnam-yeongam", name: "전남 · 영암", short: "전남 영암", label: "영암군", province: "전남", district: "영암", lat: 34.80023, lng: 126.69683, zoom: 15, allow20: true },
+    { id: "jeonnam-muan", name: "전남 · 무안", short: "전남 무안", label: "무안군", province: "전남", district: "무안", lat: 34.99046, lng: 126.48171, zoom: 15, allow20: true },
+    { id: "jeonnam-hampyeong", name: "전남 · 함평", short: "전남 함평", label: "함평군", province: "전남", district: "함평", lat: 35.06597, lng: 126.51668, zoom: 15, allow20: true },
+    { id: "jeonnam-yeonggwang", name: "전남 · 영광", short: "전남 영광", label: "영광군", province: "전남", district: "영광", lat: 35.27728, lng: 126.51204, zoom: 15, allow20: true },
+    { id: "jeonnam-jangseong", name: "전남 · 장성", short: "전남 장성", label: "장성군", province: "전남", district: "장성", lat: 35.30193, lng: 126.78478, zoom: 15, allow20: true },
+    { id: "jeonnam-wando", name: "전남 · 완도", short: "전남 완도", label: "완도군", province: "전남", district: "완도", lat: 34.31099, lng: 126.75512, zoom: 15, allow20: true },
+    { id: "jeonnam-jindo", name: "전남 · 진도", short: "전남 진도", label: "진도군", province: "전남", district: "진도", lat: 34.48683, lng: 126.26353, zoom: 15, allow20: true },
+    { id: "jeonnam-sinan", name: "전남 · 신안", short: "전남 신안", label: "신안군", province: "전남", district: "신안", lat: 34.83356, lng: 126.35141, zoom: 15, allow20: true },
+
+    /* ── 경북 18곳 추가 */
+    { id: "gyeongbuk-gimcheon", name: "경북 · 김천", short: "경북 김천", label: "김천시", province: "경북", district: "김천", lat: 36.13988, lng: 128.11365, zoom: 15, allow20: true },
+    { id: "gyeongbuk-yeongju", name: "경북 · 영주", short: "경북 영주", label: "영주시", province: "경북", district: "영주", lat: 36.80567, lng: 128.62406, zoom: 15, allow20: true },
+    { id: "gyeongbuk-yeongcheon", name: "경북 · 영천", short: "경북 영천", label: "영천시", province: "경북", district: "영천", lat: 35.97334, lng: 128.93889, zoom: 15, allow20: true },
+    { id: "gyeongbuk-sangju", name: "경북 · 상주", short: "경북 상주", label: "상주시", province: "경북", district: "상주", lat: 36.41101, lng: 128.15911, zoom: 15, allow20: true },
+    { id: "gyeongbuk-mungyeong", name: "경북 · 문경", short: "경북 문경", label: "문경시", province: "경북", district: "문경", lat: 36.58658, lng: 128.18717, zoom: 15, allow20: true },
+    { id: "gyeongbuk-gyeongsan", name: "경북 · 경산", short: "경북 경산", label: "경산시", province: "경북", district: "경산", lat: 35.82509, lng: 128.74151, zoom: 15, allow20: true },
+    { id: "gyeongbuk-uiseong", name: "경북 · 의성", short: "경북 의성", label: "의성군", province: "경북", district: "의성", lat: 36.3527, lng: 128.69718, zoom: 15, allow20: true },
+    { id: "gyeongbuk-cheongsong", name: "경북 · 청송", short: "경북 청송", label: "청송군", province: "경북", district: "청송", lat: 36.43627, lng: 129.05709, zoom: 15, allow20: true },
+    { id: "gyeongbuk-yeongyang", name: "경북 · 영양", short: "경북 영양", label: "영양군", province: "경북", district: "영양", lat: 36.66674, lng: 129.11243, zoom: 15, allow20: true },
+    { id: "gyeongbuk-yeongdeok", name: "경북 · 영덕", short: "경북 영덕", label: "영덕군", province: "경북", district: "영덕", lat: 36.41502, lng: 129.36527, zoom: 15, allow20: true },
+    { id: "gyeongbuk-cheongdo", name: "경북 · 청도", short: "경북 청도", label: "청도군", province: "경북", district: "청도", lat: 35.64701, lng: 128.73396, zoom: 15, allow20: true },
+    { id: "gyeongbuk-goryeong", name: "경북 · 고령", short: "경북 고령", label: "고령군", province: "경북", district: "고령", lat: 35.72609, lng: 128.26291, zoom: 15, allow20: true },
+    { id: "gyeongbuk-seongju", name: "경북 · 성주", short: "경북 성주", label: "성주군", province: "경북", district: "성주", lat: 35.91922, lng: 128.28307, zoom: 15, allow20: true },
+    { id: "gyeongbuk-chilgok", name: "경북 · 칠곡", short: "경북 칠곡", label: "칠곡군", province: "경북", district: "칠곡", lat: 35.99558, lng: 128.40176, zoom: 15, allow20: true },
+    { id: "gyeongbuk-yecheon", name: "경북 · 예천", short: "경북 예천", label: "예천군", province: "경북", district: "예천", lat: 36.64695, lng: 128.43739, zoom: 15, allow20: true },
+    { id: "gyeongbuk-bonghwa", name: "경북 · 봉화", short: "경북 봉화", label: "봉화군", province: "경북", district: "봉화", lat: 36.89313, lng: 128.73249, zoom: 15, allow20: true },
+    { id: "gyeongbuk-uljin", name: "경북 · 울진", short: "경북 울진", label: "울진군", province: "경북", district: "울진", lat: 36.99308, lng: 129.40063, zoom: 15, allow20: true },
+    { id: "gyeongbuk-ulleung", name: "경북 · 울릉", short: "경북 울릉", label: "울릉군", province: "경북", district: "울릉", lat: 37.48442, lng: 130.90578, zoom: 15, allow20: true },
+
+    /* ── 경남 14곳 추가 */
+    { id: "gyeongnam-tongyeong", name: "경남 · 통영", short: "경남 통영", label: "통영시", province: "경남", district: "통영", lat: 34.85406, lng: 128.4334, zoom: 15, allow20: true },
+    { id: "gyeongnam-sacheon", name: "경남 · 사천", short: "경남 사천", label: "사천시", province: "경남", district: "사천", lat: 35.00363, lng: 128.06453, zoom: 15, allow20: true },
+    { id: "gyeongnam-miryang", name: "경남 · 밀양", short: "경남 밀양", label: "밀양시", province: "경남", district: "밀양", lat: 35.50365, lng: 128.74608, zoom: 15, allow20: true },
+    { id: "gyeongnam-geoje", name: "경남 · 거제", short: "경남 거제", label: "거제시", province: "경남", district: "거제", lat: 34.88048, lng: 128.62126, zoom: 15, allow20: true },
+    { id: "gyeongnam-uiryeong", name: "경남 · 의령", short: "경남 의령", label: "의령군", province: "경남", district: "의령", lat: 35.32214, lng: 128.26151, zoom: 15, allow20: true },
+    { id: "gyeongnam-haman", name: "경남 · 함안", short: "경남 함안", label: "함안군", province: "경남", district: "함안", lat: 35.27248, lng: 128.40651, zoom: 15, allow20: true },
+    { id: "gyeongnam-changnyeong", name: "경남 · 창녕", short: "경남 창녕", label: "창녕군", province: "경남", district: "창녕", lat: 35.54463, lng: 128.49218, zoom: 15, allow20: true },
+    { id: "gyeongnam-goseong", name: "경남 · 고성", short: "경남 고성", label: "고성군", province: "경남", district: "고성", lat: 34.97294, lng: 128.32248, zoom: 15, allow20: true },
+    { id: "gyeongnam-namhae", name: "경남 · 남해", short: "경남 남해", label: "남해군", province: "경남", district: "남해", lat: 34.83748, lng: 127.89233, zoom: 15, allow20: true },
+    { id: "gyeongnam-hadong", name: "경남 · 하동", short: "경남 하동", label: "하동군", province: "경남", district: "하동", lat: 35.06731, lng: 127.75131, zoom: 15, allow20: true },
+    { id: "gyeongnam-sancheong", name: "경남 · 산청", short: "경남 산청", label: "산청군", province: "경남", district: "산청", lat: 35.41556, lng: 127.87347, zoom: 15, allow20: true },
+    { id: "gyeongnam-hamyang", name: "경남 · 함양", short: "경남 함양", label: "함양군", province: "경남", district: "함양", lat: 35.52054, lng: 127.72518, zoom: 15, allow20: true },
+    { id: "gyeongnam-geochang", name: "경남 · 거창", short: "경남 거창", label: "거창군", province: "경남", district: "거창", lat: 35.6861, lng: 127.9097, zoom: 15, allow20: true },
+    { id: "gyeongnam-hapcheon", name: "경남 · 합천", short: "경남 합천", label: "합천군", province: "경남", district: "합천", lat: 35.56667, lng: 128.16582, zoom: 15, allow20: true },
   ];
 
   /* ------------------------------------------------ 내장 실제 좌표 스냅샷 */
   /* 카카오맵 전환(2026-11-18) 전에 수집해 둔 대체용 스냅샷.
      출처: OpenStreetMap (Overpass API shop=convenience — 편의점 4사만)
-     조회 시점: 2026-11-17 / 반경 3km / 전국 55개 지역 / 지역 중심에서 가까운 순으로 브랜드별 상한 적용.
+     조회 시점: 2026-11-17 / 반경 3km / 전국 55개 거점 / 지역 중심에서 가까운 순으로 브랜드별 상한 적용.
+     ※ 2026-11-20 전국 시·군·구 확장으로 늘어난 지역에는 스냅샷이 없다(기존 55개 거점만 수집).
+       스냅샷이 없는 지역은 카카오 장소 검색 결과만 지도에 올린다(errors 없이 0곳이면 그대로 비운다).
      편의점 4사(GS25·CU·세븐일레븐·이마트24) 외 업종·브랜드는 담지 않는다.
      카카오 장소 검색이 실패(타임아웃·쿼터·미등록 도메인)할 때 지도에 그대로 표시된다. */
   var osmSnapshot = {

@@ -37,7 +37,7 @@
 <meta name="twitter:image:alt" content="포켓몬카드모아 — 내 주변 편의점 재고 · 인기 카드 시세 · 도감">
 <meta name="theme-color" content="#101f3c">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23101f3c'/%3E%3Crect x='7' y='7' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05'/%3E%3Crect x='17.5' y='7' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05' opacity='.7'/%3E%3Crect x='7' y='17.5' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05' opacity='.7'/%3E%3Crect x='17.5' y='17.5' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="assets/css/style.css?v=100">
+<link rel="stylesheet" href="assets/css/style.css?v=101">
 <!-- 카카오맵 JavaScript SDK — autoload=false로 불러 두고 map.js가 kakao.maps.load()로 초기화합니다.
      JavaScript 키 도메인에는 https://moa-kr.github.io 만 등록되어 있어, 그 밖의 주소(미등록 프리뷰)에서는
      지도 대신 내장 좌표 스냅샷 안내가 표시됩니다. -->
@@ -489,7 +489,7 @@
     <div class="map-page-head">
       <span class="eyebrow" data-copy="mapEyebrow">동네에서 찾기 · 첫 화면</span>
       <h1 id="map-title" data-copy="mapTitle">내 주변 편의점과 오프라인 판매처, 어떤 카드가 있는지 한눈에</h1>
-      <p data-copy-html="mapLead">카카오맵 실제 지도 위에 주변 <b>편의점 4사(GS25·CU·세븐일레븐·이마트24)</b>와 <b>오프라인 판매처(대형마트·아트박스·공식 자판기·공인 카드샵)</b>를 함께 표시합니다. 마트·아트박스는 카카오 장소 검색으로 실시간 조회하고, 공식 자판기(전국 176곳)와 공인 카드샵(전국 16곳)은 포켓몬코리아 공식 목록에서 가져와 반경 안에 들어오면 지도에 올립니다. 지도 말풍선과 매장 카드는 편의점 앱에서 실시간으로 <b>확인한 재고 상품·수량</b>만 표시하고, 재고가 0으로 확인되면 <b>「없음」</b>, 확인되지 않은 매장은 <b>「미조회」</b>로 둡니다. <b>전국 17개 시·도</b>에서 시·군·구를 고르거나 동네 이름으로 검색하고, <b>'내 위치로 찾기'</b>를 누르면 그 반경의 매장을 새로 조회합니다.</p>
+      <p data-copy-html="mapLead">카카오맵 실제 지도 위에 주변 <b>편의점 4사(GS25·CU·세븐일레븐·이마트24)</b>와 <b>오프라인 판매처(대형마트·아트박스·공식 자판기·공인 카드샵)</b>를 함께 표시합니다. 마트·아트박스는 카카오 장소 검색으로 실시간 조회하고, 공식 자판기(전국 176곳)와 공인 카드샵(전국 16곳)은 포켓몬코리아 공식 목록에서 가져와 반경 안에 들어오면 지도에 올립니다. 지도 말풍선과 매장 카드는 편의점 앱에서 실시간으로 <b>확인한 재고 상품·수량</b>만 표시하고, 재고가 0으로 확인되면 <b>「없음」</b>, 확인되지 않은 매장은 <b>「미조회」</b>로 둡니다. <b>전국 17개 시·도 · 230개 시·군·구</b>를 시·도 → 시·군·구 드롭다운에서 빠짐없이 고르거나 동네 이름으로 검색하고, <b>'내 위치로 찾기'</b>를 누르면 그 반경의 매장을 새로 조회합니다.</p>
     </div>
 
     <div class="demo-notice">
@@ -547,10 +547,31 @@
         <span class="select-wrap select-district">
           <select id="districtSelect" aria-label="시·군·구 선택">
             <option value="seoul-gwanghwamun" selected>종로 · 광화문</option>
-            <option value="seoul-jongno">종로 · 명동</option>
             <option value="seoul-gangnam">강남 · 역삼</option>
             <option value="seoul-hongdae">홍대 · 마포</option>
+            <option value="seoul-nowon">노원 · 강북</option>
             <option value="seoul-jamsil">잠실 · 송파</option>
+            <option value="seoul-yeouido">여의도 · 영등포</option>
+            <option value="seoul-jongno">종로 · 명동</option>
+            <option value="seoul-junggu">중구</option>
+            <option value="seoul-yongsan">용산구</option>
+            <option value="seoul-seongdong">성동구</option>
+            <option value="seoul-gwangjin">광진구</option>
+            <option value="seoul-dongdaemun">동대문구</option>
+            <option value="seoul-jungnang">중랑구</option>
+            <option value="seoul-seongbuk">성북구</option>
+            <option value="seoul-gangbuk">강북구</option>
+            <option value="seoul-dobong">도봉구</option>
+            <option value="seoul-eunpyeong">은평구</option>
+            <option value="seoul-seodaemun">서대문구</option>
+            <option value="seoul-yangcheon">양천구</option>
+            <option value="seoul-gangseo">강서구</option>
+            <option value="seoul-guro">구로구</option>
+            <option value="seoul-geumcheon">금천구</option>
+            <option value="seoul-dongjak">동작구</option>
+            <option value="seoul-gwanak">관악구</option>
+            <option value="seoul-seocho">서초구</option>
+            <option value="seoul-gangdong">강동구</option>
           </select>
         </span>
         <span class="region-search">
@@ -1474,12 +1495,12 @@
   </div>
 </template>
 
-<script src="assets/js/data.js?v=100"></script>
-<script src="assets/js/map.js?v=100"></script>
-<script src="assets/js/app.js?v=100"></script>
+<script src="assets/js/data.js?v=101"></script>
+<script src="assets/js/map.js?v=101"></script>
+<script src="assets/js/app.js?v=101"></script>
 <!-- 모아 어드민(moa-kr/moa-admin)이 커밋하는 assets/config/site-config.json 을 화면에 적용합니다.
      공지 바·팝업·탭/섹션 순서와 노출·문구가 이 파일 값으로 바뀝니다. -->
-<script src="assets/js/site-config-loader.js?v=100" defer
+<script src="assets/js/site-config-loader.js?v=101" defer
         data-config="assets/config/site-config.json"
         data-track-site="pokemoa"
         data-tab-container=".main-nav"

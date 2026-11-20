@@ -88,6 +88,7 @@ window.PokeMoaMap = (function () {
     fetchedRadius: 0,
     fetchedBand: "",   /* 마지막으로 조회한 반경 구분(3 / 5 / 20) */
     snapshotLabel: "",
+    snapshotEmpty: false,  /* 이 지역에 내장 좌표 스냅샷이 한 곳도 없는지(확장 지역) */
     pendingLive: false,
     badgeWasSnapshot: false,
     metro: false,
@@ -850,7 +851,9 @@ window.PokeMoaMap = (function () {
     if (st.sdkError) {
       return {
         kind: "snapshot",
-        text: "카카오맵을 이 주소에서 열 수 없어 내장 실제 좌표로 표시합니다 (등록 도메인 https://moa-kr.github.io 에서 지도가 열립니다)",
+        text: st.snapshotEmpty
+          ? "카카오맵을 이 주소에서 열 수 없고, 이 지역은 내장 실제 좌표 스냅샷도 없습니다 (등록 도메인 https://moa-kr.github.io 에서 지도가 열립니다)"
+          : "카카오맵을 이 주소에서 열 수 없어 내장 실제 좌표로 표시합니다 (등록 도메인 https://moa-kr.github.io 에서 지도가 열립니다)",
         action: true
       };
     }
@@ -886,6 +889,14 @@ window.PokeMoaMap = (function () {
     }
     var snapKm = Math.round(((D.osmSnapshot || {}).radius || 3000) / 1000);
     var wideNote = st.radius >= 20000 ? " · 넓은 반경은 실시간 조회에서만 표시" : "";
+    /* 전국 시·군·구 확장 지역 — 스냅샷이 없어도 오류가 아니라 ‘표시할 스냅샷이 없음’으로 알린다 */
+    if (st.snapshotEmpty) {
+      return {
+        kind: "snapshot",
+        text: "실시간 조회 실패/제한 · 이 지역은 내장 좌표 스냅샷이 없어 카카오 장소 검색 결과로만 표시합니다" + wideNote,
+        action: true
+      };
+    }
     return {
       kind: "snapshot",
       text: (st.pendingLive
@@ -1320,6 +1331,8 @@ window.PokeMoaMap = (function () {
   function applySnapshot(seq, reason) {
     var center = st.center;
     var rows = snapshotList();
+    /* 새로 추가한 시·군·구는 스냅샷이 없다 — 빈 배열이어도 그대로 두고(오류 아님) 안내만 바꾼다 */
+    st.snapshotEmpty = rows.length === 0;
     st.all = prepare(rows, center, "snapshot")
       .concat(prepare(builtinOffline(center, st.radius), center, "snapshot"));
     st.source = "snapshot";
