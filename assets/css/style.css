@@ -164,7 +164,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
   background: currentColor;
 }
 .status-badge.in { background: var(--green-soft); color: var(--green); }
-.status-badge.check { background: var(--amber-soft); color: var(--amber); }
+.status-badge.check { background: #f1f4fa; color: #475569; }
+.status-badge.check::before { background: #fff; border: 1.5px dashed #64748b; box-sizing: border-box; }
 .status-badge.none { background: var(--grey-soft); color: var(--grey); }
 /* 세븐일레븐 정책상 매장 위치만 안내 — 실패(주황)가 아닌 중립 안내 톤 */
 .status-badge.policy { background: #edf2fa; color: #3d5474; }
@@ -846,7 +847,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   border-top: 9px solid var(--brand, var(--navy));
 }
 .map-marker.status-in .pin { border-color: var(--green); }
-.map-marker.status-check .pin { border-color: var(--amber); }
+.map-marker.status-check .pin { border-color: #64748b; }
 .map-marker.status-none .pin { border-color: #94a3b8; opacity: 0.82; }
 .map-marker .pin-label {
   position: absolute;
@@ -961,7 +962,14 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .map-legend span { display: inline-flex; align-items: center; gap: 5px; }
 .map-legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 .map-legend .l-in { background: var(--green); }
-.map-legend .l-check { background: var(--amber); }
+/* 미조회 — 고정 색을 주지 않고 '흰 바탕 + 점선 회색 테두리 빈 원'으로 구분한다.
+   (노란 이마트24 배지·점과 헷갈리지 않게, 어떤 브랜드 색과도 겹치지 않는 모양) */
+.map-legend .l-check {
+  width: 10px; height: 10px;
+  background: #fff;
+  border: 1.5px dashed #64748b;
+  box-sizing: border-box;
+}
 .map-legend .l-none { background: #94a3b8; }
 .map-legend .l-policy { background: #8aa0bd; }
 
@@ -1058,14 +1066,20 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .store-item.is-active { border-color: var(--navy); box-shadow: 0 0 0 2px rgba(16, 31, 60, 0.08); }
 .store-item .s-top { display: flex; align-items: center; gap: 7px; }
 .store-item .s-brand {
-  width: 20px; height: 20px;
+  /* 브랜드명을 그대로 읽을 수 있게 폭을 글자에 맞춘다(숫자 '24'·'7'만 쓰지 않는다) */
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
   border-radius: 6px;
   color: #fff;
-  font-size: 8.5px;
+  font-size: 9px;
   font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1;
   display: grid;
   place-items: center;
   flex-shrink: 0;
+  white-space: nowrap;
 }
 .store-item .s-name {
   font-weight: 700;
@@ -1303,7 +1317,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .stock-feed .type { font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 5px; }
 .type.in { background: var(--green-soft); color: var(--green); }
 .type.none { background: var(--grey-soft); color: var(--grey); }
-.type.check { background: var(--amber-soft); color: var(--amber); }
+.type.check { background: #f1f4fa; color: #475569; }
 
 .link-cards { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 12px; }
 .link-card {
@@ -2017,7 +2031,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   overflow: hidden;
 }
 .pm-marker.status-in .pm-pin { border-color: var(--green); }
-.pm-marker.status-check .pm-pin { border-color: var(--amber); }
+.pm-marker.status-check .pm-pin { border-color: #64748b; }
 .pm-marker.status-none .pm-pin { border-color: #94a3b8; opacity: 0.9; }
 .pm-marker.is-selected .pm-pin,
 .pm-marker:hover .pm-pin { box-shadow: 0 0 0 4px rgba(255, 203, 5, 0.6), 0 4px 10px rgba(16, 31, 60, 0.3); }
@@ -2044,11 +2058,14 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .pm-card-head { display: flex; align-items: flex-start; gap: 9px; }
 .pm-card-brand {
   flex: none;
-  width: 26px; height: 26px;
+  min-width: 26px; height: 26px;
+  padding: 0 6px;
   border-radius: 8px;
   color: #fff;
   font-size: 10px;
   font-weight: 800;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
   display: flex; align-items: center; justify-content: center;
 }
 .pm-card-title { min-width: 0; flex: 1; }
@@ -2619,7 +2636,12 @@ button { font: inherit; color: inherit; cursor: pointer; }
   border: 2px solid #fff;
   box-shadow: 0 0 0 1px #cfd9e8;
 }
-.map-legend .l-check { background: #e7a72c; }
+.map-legend .l-check {
+  width: 10px; height: 10px;
+  background: #fff;
+  border: 1.5px dashed #64748b;
+  box-sizing: border-box;
+}
 .map-legend .l-policy { background: #8aa0bd; }
 .map-shell.is-card-open .map-legend { opacity: 0; transition: opacity 0.15s; }
 
@@ -2668,12 +2690,16 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .pm-marker .pm-pill b { font-weight: 900; font-size: 11px; }
 .pm-marker .pm-pill b + span::before { content: "· "; opacity: 0.75; font-weight: 700; }
-.pm-pill.status-in { --pill-bg: var(--brand, #12854a); --pill-bd: var(--brand, #12854a); color: #fff; }
+.pm-pill.status-in { --pill-bg: var(--brand, #12854a); --pill-bd: var(--brand, #12854a); color: var(--brand-ink, #fff); }
 .pm-pill.status-check { color: #475569; border-color: #d7dfea; }
 .pm-pill.status-none { --pill-bg: #f1f4f9; color: #6b7688; border-color: #e2e8f2; }
 /* 세븐일레븐 — 재고 대신 매장 위치만 안내(실패 아님) */
 .pm-marker .pm-pill.is-policy { --pill-bg: #f4f7fc; color: #3d5474; border-color: #d7e1f0; }
 .pm-pill .pm-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+/* 재고 있음 — 브랜드 색 위에서도 초록 점이 보이게 흰 테두리를 둔다 */
+.pm-pill .pm-dot.is-in { background: #0f9d63; box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.92); }
+/* 미조회 — 색이 아니라 '점선 빈 원'으로 구분(노란 브랜드 색과 꾸지 않게) */
+.pm-pill .pm-dot.is-hollow { width: 8px; height: 8px; background: #fff; border: 1.5px dashed #64748b; box-sizing: border-box; }
 .pm-marker.status-check .pm-pill,
 .pm-marker.status-none .pm-pill { box-shadow: 0 2px 6px rgba(16, 31, 60, 0.14); }
 .pm-marker:hover { z-index: 900 !important; }
@@ -2697,14 +2723,21 @@ button { font: inherit; color: inherit; cursor: pointer; }
   background: #94a3b8;
   box-shadow: 0 1px 4px rgba(16, 31, 60, 0.25);
 }
-.pm-marker.is-compact .pm-pill.status-check { background: #e2a52c; border-color: #fff; }
+.pm-marker.is-compact .pm-pill.status-check { background: #fff; border: 2px dashed #64748b; box-sizing: border-box; }
 .pm-marker.is-compact .pm-pill.is-policy { background: #8aa0bd; border-color: #fff; }
 .pm-marker.is-compact .pm-pill.status-none { background: #c3ccda; border-color: #fff; }
+/* 5km 보기 브랜드 칩 — '24'·'7' 대신 브랜드명을 쓰므로 글자는 조금 줄이고 여백은 줄여 폭을 아낀다 */
+.pm-marker.is-compact .pm-pill.is-chip {
+  padding: 2px 5px;
+  font-size: 9.5px;
+  letter-spacing: -0.02em;
+}
+.pm-marker.is-compact .pm-pill.is-chip .pm-dot { width: 6px; height: 6px; }
 
 /* 매장 목록: 개소별 보유 카드가 주인공이 되도록 */
 .store-item { border-left: 3px solid transparent; }
 .store-item.is-in { border-left-color: var(--green); }
-.store-item.is-check { border-left-color: #dfa52f; }
+.store-item.is-check { border-left-color: #64748b; }
 .store-item.is-none { border-left-color: #cbd5e1; }
 .store-item.is-policy { border-left-color: #8aa0bd; }
 .store-item .store-products { gap: 5px; margin-top: 5px; }

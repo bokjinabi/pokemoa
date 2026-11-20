@@ -445,7 +445,7 @@ window.PokeMoaMap = (function () {
      · 20km 보기(level >= 10): 구역별 `N곳` 묶음 */
   var CHIP_LEVEL = 7;
   var CLUSTER_LEVEL = 10;
-  var CHIP_CELL = 30;          /* 5km 보기에서 칩이 겹치는지 판단하는 칸 크기(px) */
+  var CHIP_CELL = 34;          /* 5km 보기에서 칩이 겹치는지 판단하는 칸 크기(px) — 브랜드명 칩 폭에 맞춰 조금 넓혔다 */
   function applyZoomMode() {
     var lv = st.map ? st.map.getLevel() : 0;
     var compact = lv >= CHIP_LEVEL;
@@ -465,22 +465,26 @@ window.PokeMoaMap = (function () {
   }
 
   function pillHtml(s) {
-    var b = D.brandMeta[s.brand] || { short: "?", color: "#1b2a4a" };
+    var b = D.brandMeta[s.brand] || { short: "?", color: "#1b2a4a", ink: "#ffffff" };
+    var brandVar = '--brand:' + b.color + ';--brand-ink:' + (b.ink || "#ffffff");
     var html;
     if (st.compact) {
-      /* 넓게 볼 때는 점·칩만 남긴다 — 세븐일레븐 점은 '미조회(주황)'가 아닌 중립 회청색 */
+      /* 넓게 볼 때는 점·칩만 남긴다 — 세븐일레븐 점은 '미조회(점선빈원)'가 아닌 중립 회청색 */
       var compactPolicy = isPolicyBrand(s.brand) ? " is-policy" : "";
       html = s.status === "in"
-        ? '<span class="pm-pill is-chip status-in' + compactPolicy + '" style="--brand:' + b.color + '">' + b.short + "</span>"
+        ? '<span class="pm-pill is-chip status-in' + compactPolicy + '" style="' + brandVar + '">' +
+          '<i class="pm-dot is-in"></i>' + b.short + "</span>"
         : '<span class="pm-pill is-dot status-' + s.status + compactPolicy + '"></span>';
     } else if (s.status === "in" && s.relay) {
-      /* 실제 조회에서 수량 1개 이상 확인 — 초록 강조 */
+      /* 실제 조회에서 수량 1개 이상 확인 — 브랜드 색 + 초록 점으로 "재고 있음"을 한눈에 */
       var q = s.relayQty || 0;
-      html = '<span class="pm-pill status-in is-relay" style="--brand:' + b.color + '">' +
+      html = '<span class="pm-pill status-in is-relay" style="' + brandVar + '">' +
+        '<i class="pm-dot is-in"></i>' +
         "<b>" + b.short + "</b><span>재고 있음" + (q ? " · " + q + "개" : "") + "</span></span>";
     } else if (s.status === "in") {
       var n = stockProductCount(s);
-      html = '<span class="pm-pill status-in" style="--brand:' + b.color + '">' +
+      html = '<span class="pm-pill status-in" style="' + brandVar + '">' +
+        '<i class="pm-dot is-in"></i>' +
         "<b>" + b.short + "</b><span>재고 있음" + (n ? " · " + n + "종" : "") + "</span></span>";
     } else if (s.offline && (s.brand === "mart" || s.brand === "artbox")) {
       /* 오프라인 판매처는 재고 조회 대상이 아니다 — 방문 확인 */
@@ -498,9 +502,10 @@ window.PokeMoaMap = (function () {
         '<i class="pm-dot" style="background:#9aa7b8"></i>' +
         "<span>" + b.short + " · 없음</span></span>";
     } else {
-      /* 아직 재고 조회가 닿지 않은 브랜드 — '미조회' (모호한 '확인' 금지) */
-      html = '<span class="pm-pill status-check is-unchecked" style="--brand:' + b.color + '">' +
-        '<i class="pm-dot" style="background:#c3ccda"></i>' +
+      /* 아직 재고 조회가 닿지 않은 브랜드 — '미조회' (모호한 '확인' 금지).
+         브랜드 색·노란 점과 겹치지 않도록 '점선 빈 원'으로 구분한다. */
+      html = '<span class="pm-pill status-check is-unchecked" style="--brand:' + b.color + ';--brand-ink:' + (b.ink || "#ffffff") + '">' +
+        '<i class="pm-dot is-hollow"></i>' +
         "<span>" + b.short + " · 미조회</span></span>";
     }
     return html;
@@ -815,7 +820,7 @@ window.PokeMoaMap = (function () {
     el.card.hidden = false;
     el.card.innerHTML =
       '<div class="pm-card-head">' +
-      '<span class="pm-card-brand" style="background:' + meta.color + '">' + meta.short + "</span>" +
+      '<span class="pm-card-brand" style="background:' + meta.color + ';color:' + (meta.ink || "#ffffff") + '">' + meta.short + "</span>" +
       '<div class="pm-card-title"><strong>' + s.name + "</strong>" +
       "<span>" + subLine + "</span></div>" +
       '<button type="button" class="pm-card-close" aria-label="닫기">×</button>' +

@@ -1936,15 +1936,18 @@ window.POKEMOA_DATA = (function () {
   };
 
   /* 편의점 4사 브랜드 메타 (OSM 태그 → 서비스 브랜드) */
+  /* short: 지도 말풍선·매장 카드 배지에 그대로 쓰는 브랜드 표기.
+     숫자만(7·24) 쓰면 재고 수량·거리와 헷갈리므로 브랜드명을 그대로 적는다.
+     ink: 브랜드 배경 위 글자색 — 노란 이마트24는 흰 글자가 읽히지 않아 진한 갈색을 쓴다. */
   var brandMeta = {
-    gs25: { label: "GS25", short: "GS", color: "#0f7ad4", soft: "#e3f1fd" },
-    cu: { label: "CU", short: "CU", color: "#5aa72c", soft: "#ecf7e6" },
-    seven: { label: "세븐일레븐", short: "7", color: "#d33a2c", soft: "#fdeceb" },
-    emart24: { label: "이마트24", short: "24", color: "#f0a500", soft: "#fff5dd" },
-    mart: { label: "대형마트", short: "마트", color: "#1f6feb", soft: "#e6effd" },
-    artbox: { label: "아트박스", short: "아트", color: "#ff4d8d", soft: "#ffe9f1" },
-    vending: { label: "공식 자판기", short: "자판", color: "#7c4dff", soft: "#f0eaff" },
-    cardshop: { label: "공인 카드샵", short: "카드샵", color: "#12854a", soft: "#e4f5ec" }
+    gs25: { label: "GS25", short: "GS25", color: "#0f7ad4", ink: "#ffffff", soft: "#e3f1fd" },
+    cu: { label: "CU", short: "CU", color: "#5aa72c", ink: "#ffffff", soft: "#ecf7e6" },
+    seven: { label: "세븐일레븐", short: "세븐일레븐", color: "#d33a2c", ink: "#ffffff", soft: "#fdeceb" },
+    emart24: { label: "이마트24", short: "이마트24", color: "#f5b100", ink: "#3f2c00", soft: "#fff5dd" },
+    mart: { label: "대형마트", short: "대형마트", color: "#1f6feb", ink: "#ffffff", soft: "#e6effd" },
+    artbox: { label: "아트박스", short: "아트박스", color: "#ff4d8d", ink: "#ffffff", soft: "#ffe9f1" },
+    vending: { label: "공식 자판기", short: "자판기", color: "#7c4dff", ink: "#ffffff", soft: "#f0eaff" },
+    cardshop: { label: "공인 카드샵", short: "카드샵", color: "#12854a", ink: "#ffffff", soft: "#e4f5ec" }
   };
 
   var brands = [

@@ -663,7 +663,7 @@
       btn.setAttribute("data-store", s.id);
       btn.innerHTML =
         '<span class="s-top">' +
-        '<span class="s-brand" style="background:' + b.color + '">' + b.short + "</span>" +
+        '<span class="s-brand" style="background:' + b.color + ';color:' + (b.ink || "#ffffff") + '">' + b.short + "</span>" +
         '<span class="s-name">' + s.name + "</span>" +
         '<span class="s-dist">' + dist + "</span>" +
         "</span>" +
