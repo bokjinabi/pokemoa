@@ -672,7 +672,7 @@
         (s.offline
           ? '<span class="chip chip-offline">재고 미확인</span>'
           : (policyOnlyBrand(s.brand)
-            ? '<span class="chip chip-policy">세븐일레븐 정책상 재고 확인 불가 · 세븐앱에서 확인</span>'
+            ? '<span class="chip chip-policy">앱에서 확인</span>'
             : (s.relay
               ? '<span class="chip chip-relay">실시간 ' + (s.relayQty || 0) + '개</span>'
               : '<span class="chip chip-check">수량 미확인</span>'))) +
@@ -1627,7 +1627,7 @@
           toast("고정할 지역을 먼저 골라 주세요.");
           return;
         }
-        toast("‘" + (rec.label || "이 지역") + "’을 고정했습니다. 다음에도 이 자리에서 시작합니다.");
+        toast("‘" + (rec.label || "이 지역") + "’ 지역을 고정했습니다. 다음에도 이 자리에서 시작합니다.");
         trackEvent("pin_location", { on: 1, mode: rec.mode });
       } else {
         pinRemove();
