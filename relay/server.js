@@ -158,6 +158,17 @@
  *   · v1.9 의 CU 타임아웃 12초·5지점 격자, GS25 gs25-session.json 자동 로드/갱신,
  *     이마트24·세븐일레븐 조회는 그대로입니다(코드 변경 없음).
  *
+ * 2026-11-20 개정(v2.1) — 오픈 전 마무리
+ *   · 동네 결과 캐시: 좌표 소수점 3자리(~100m)·반경·검색어가 같으면 300초 동안 메모리 값을
+ *     그대로 돌려줍니다(cached:true). 같은 동네를 여러 명이 열어도 업체 서버에는 한 번만 묻습니다.
+ *   · 과다 요청 방어: 캐시에 없는 요청만 IP당 분당 15회 · 전체 동시 5건으로 제한하고,
+ *     넘으면 HTTP 429 + { code: "rate_limited", retryAfterSec: 90 } 로 돌려보냅니다.
+ *   · 기본 좌표 제거: lat·lng 를 주지 않으면 400(lat_lng_required). 예전 기본값은 운영자
+ *     자택 근처 좌표였습니다. GS25 세션 만료시각 같은 개인 정보도 응답에서 뺐습니다.
+ *   · CORS: `*` 대신 https://moa-kr.github.io · http(s)://localhost · 127.0.0.1 만 허용합니다.
+ *   · /health: rateLimitedCount · lastRateLimitedAt · errorCount · lastErrorAt · cacheSize 추가
+ *     (긴급 감시 스케줄이 이 값을 읽습니다).
+ *
  * 주의: 이 서버는 조회만 합니다. 주문·결제·선점 같은 쓰기 요청은 없습니다
  *       (자기 파일을 바꾸는 /admin/update 만 예외).
  */
@@ -170,13 +181,26 @@ const fs = require('node:fs');
 const path = require('node:path');
 const cp = require('node:child_process');
 
-const VERSION = '2.0';
+const VERSION = '2.1';
 const SERVICE = 'pokemoa-relay';
 
 const PORT = Number(process.env.PORT || 3100);
 const HOST = process.env.HOST || '127.0.0.1';
 const TIMEOUT_MS = Number(process.env.RELAY_TIMEOUT_MS || 8000);
-const CACHE_MS = Number(process.env.RELAY_CACHE_MS || 60000);
+
+/* ── v2.1 동네 결과 캐시 ──
+   좌표 소수점 3자리(≈100m)·반경·검색어가 같은 요청은 5분 동안 메모리 값을 그대로 돌려줍니다.
+   같은 동네를 여러 사람이 동시에 열어도 업체 서버에는 한 번만 묻습니다(cached:true). */
+const CACHE_MS = Number(process.env.RELAY_CACHE_MS || 300000);
+const CACHE_MAX = Math.max(20, Number(process.env.RELAY_CACHE_MAX || 200));
+
+/* ── v2.1 과다 요청 방어 ──
+   캐시에 없는 요청만 셉니다. IP당 분당 15회, 전체 동시 5건을 넘으면 429 로 돌려보내고
+   사이트는 「잠시 후 다시 조회」 안내를 띄웁니다. */
+const RATE_LIMIT_PER_MIN = Math.max(1, Number(process.env.RELAY_RATE_LIMIT_PER_MIN || 15));
+const RATE_WINDOW_MS = 60000;
+const MAX_CONCURRENT = Math.max(1, Number(process.env.RELAY_MAX_CONCURRENT || 5));
+const RATE_LIMITED_MESSAGE = '현재 이용자가 많아 잠시 대기 중입니다. 약 1~2분 뒤에 다시 조회해 주세요.';
 
 /* ── 자가 업데이트(v2.0) — 어드민 「최신 버전 업데이트」 버튼이 부르는 경로 ──
    내려받는 주소는 이 상수 하나뿐입니다. 요청이 보낸 URL·명령은 절대 쓰지 않습니다. */
@@ -202,8 +226,8 @@ const BASE = {
   gs25Apigw: (process.env.GS25_APIGW_BASE || 'https://b2c-apigw.woodongs.com').replace(/\/+$/, '')
 };
 
-const DEFAULT_LAT = 36.0733;   // 포항 북구 환호동
-const DEFAULT_LNG = 129.3947;
+/* v2.1 — 기본 좌표를 두지 않습니다. lat·lng 를 주지 않은 요청은 400 으로 돌려보냅니다
+   (예전 기본값은 운영자 자택 근처 좌표라 공개 서버에 남길 값이 아니었습니다). */
 const DEFAULT_KEYWORD = '포켓몬카드';
 const DEFAULT_RADIUS = 3000;   // m — 사이트가 ?radius= 로 덮어쓸 수 있다
 const SEVEN_RSA_PUBLIC_KEY =
@@ -257,6 +281,82 @@ const UA_ANDROID =
 function num(v, fallback) {
   const n = Number.parseFloat(v);
   return Number.isFinite(n) ? n : fallback;
+}
+
+/* ------------------------------------------------- v2.1 요청 보호 · 감시 값 */
+/* 좌표는 반드시 요청이 보내야 합니다(기본값 없음). */
+function readPoint(url, res) {
+  const latRaw = String(url.searchParams.get('lat') ?? '').trim();
+  const lngRaw = String(url.searchParams.get('lng') ?? '').trim();
+  const lat = Number.parseFloat(latRaw);
+  const lng = Number.parseFloat(lngRaw);
+  if (!latRaw || !lngRaw || !Number.isFinite(lat) || !Number.isFinite(lng)) {
+    sendJson(res, 400, {
+      ok: false,
+      code: 'lat_lng_required',
+      error: 'lat·lng 좌표가 필요합니다. 예) /api/nearby?lat=37.5665&lng=126.9780&radius=3000'
+    });
+    return null;
+  }
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+    sendJson(res, 400, { ok: false, code: 'lat_lng_range', error: 'lat/lng 범위를 확인해 주세요' });
+    return null;
+  }
+  return { lat, lng };
+}
+
+const guard = {
+  perIp: new Map(),          /* ip → [요청 시각…] */
+  inflight: 0,               /* 지금 돌고 있는 실시간 조회 수 */
+  rateLimitedCount: 0,
+  lastRateLimitedAt: '',
+  errorCount: 0,
+  lastErrorAt: ''
+};
+
+function clientIp(req) {
+  const h = (req && req.headers) || {};
+  const cf = String(h['cf-connecting-ip'] || '').trim();
+  if (cf) return cf;
+  const fwd = String(h['x-forwarded-for'] || '').split(',')[0].trim();
+  if (fwd) return fwd;
+  return String((req && req.socket && req.socket.remoteAddress) || 'unknown');
+}
+
+/* IP 한 곳의 1분 창을 정리하고, 이번 요청을 셀 수 있는지 본다. */
+function countRate(ip) {
+  const now = Date.now();
+  const list = (guard.perIp.get(ip) || []).filter((at) => now - at < RATE_WINDOW_MS);
+  if (list.length >= RATE_LIMIT_PER_MIN) {
+    guard.perIp.set(ip, list);
+    return false;
+  }
+  list.push(now);
+  guard.perIp.set(ip, list);
+  if (guard.perIp.size > 5000) {
+    /* 오래된 IP 기록이 쌓이지 않게 가끔 청소한다 */
+    for (const [key, times] of guard.perIp) {
+      if (!times.length || now - times[times.length - 1] > RATE_WINDOW_MS) guard.perIp.delete(key);
+      if (guard.perIp.size <= 2000) break;
+    }
+  }
+  return true;
+}
+
+function markRateLimited() {
+  guard.rateLimitedCount += 1;
+  guard.lastRateLimitedAt = new Date().toISOString();
+}
+
+function sendRateLimited(res) {
+  markRateLimited();
+  res.setHeader('retry-after', '90');
+  sendJson(res, 429, {
+    ok: false,
+    code: 'rate_limited',
+    retryAfterSec: 90,
+    message: RATE_LIMITED_MESSAGE
+  });
 }
 
 /** 문자열 키를 소문자·기호 제거 형태로 비교하기 위한 도우미 */
@@ -2471,9 +2571,34 @@ function areaFromStores(stores) {
 
 const cache = new Map();
 
+/* 좌표 소수점 3자리(≈100m) · 반경 · 검색어 — 같은 자리·같은 조건이면 같은 결과 */
 function cacheKey(lat, lng, keyword, radius) {
-  return `${lat.toFixed(3)},${lng.toFixed(3)},${keyword},${radius}`;
+  return `${Number(lat).toFixed(3)},${Number(lng).toFixed(3)},${radius},${keyword}`;
 }
+
+function cacheRead(key) {
+  const hit = cache.get(key);
+  if (!hit) return null;
+  if (Date.now() - hit.at >= CACHE_MS) {
+    cache.delete(key);
+    return null;
+  }
+  return hit.value;
+}
+
+function cacheWrite(key, value) {
+  cache.set(key, { at: Date.now(), value });
+  /* 오래된 것부터 버린다(키 삽입 순서 = 저장 순서) */
+  while (cache.size > CACHE_MAX) cache.delete(cache.keys().next().value);
+}
+
+function cachePrune() {
+  const now = Date.now();
+  for (const [key, hit] of cache) {
+    if (now - hit.at >= CACHE_MS) cache.delete(key);
+  }
+}
+setInterval(cachePrune, 60000).unref();
 
 async function runChain(name, task, diag, hardMs) {
   try {
@@ -2493,8 +2618,8 @@ async function runChain(name, task, diag, hardMs) {
 
 async function nearby(lat, lng, keyword, radius) {
   const key = cacheKey(lat, lng, keyword, radius);
-  const hit = cache.get(key);
-  if (hit && Date.now() - hit.at < CACHE_MS) return Object.assign({}, hit.value, { cached: true });
+  const hit = cacheRead(key);
+  if (hit) return Object.assign({}, hit, { cached: true });
 
   const nowIso = new Date().toISOString();
   const diag = { emart24: [], cu: [], seven: [], gs25: [], geo: [] };
@@ -2616,8 +2741,7 @@ async function nearby(lat, lng, keyword, radius) {
     stores: merged
   };
 
-  cache.set(key, { at: Date.now(), value });
-  if (cache.size > 60) cache.delete(cache.keys().next().value);
+  cacheWrite(key, value);
   return value;
 }
 
@@ -2699,9 +2823,7 @@ async function diagnose(lat, lng, keyword, radius) {
     const first = (value.stores || [])[0];
     return {
       session: gs25Session.access ? gs25Session.source || 'set' : 'none',
-      tokenExpiresAt: gs25Session.accessExp ? new Date(gs25Session.accessExp).toISOString() : null,
       revoked: gs25Session.revoked || false,
-      lastError: gs25Session.lastError || '',
       products: (value.products || []).map((p) => ({ code: p.code, name: p.name })),
       stores: (value.stores || []).length,
       sampleStore: first ? { name: first.name, items: (first.items || []).slice(0, 2) } : null,
@@ -2715,15 +2837,23 @@ async function diagnose(lat, lng, keyword, radius) {
 /* --------------------------------------------------------------- HTTP */
 
 function cors(res, req) {
-  /* 조회 API 는 어디서나 부를 수 있게 두고(사이트가 태블릿 주소를 직접 부릅니다),
-     어드민 콘솔(moa-kr.github.io)에서는 X-Admin-Token 까지 쓸 수 있게 허용합니다. */
+  /* v2.1 — 아무 사이트나 부를 수 있던 `*` 를 없앴습니다. 사이트·로컬 개발 서버만 허용합니다.
+     (허용 목록 밖의 출처에는 헤더를 붙이지 않으므로 브라우저가 응답을 읽지 못합니다.) */
   const origin = (req && req.headers && req.headers.origin) || '';
-  const allowed = /^https:\/\/([a-z0-9-]+\.)?moa-kr\.github\.io$/.test(origin);
-  res.setHeader('access-control-allow-origin', allowed ? origin : '*');
+  const allowed = isAllowedOrigin(origin);
+  if (allowed) res.setHeader('access-control-allow-origin', origin);
   res.setHeader('vary', 'origin');
   res.setHeader('access-control-allow-methods', 'GET, POST, OPTIONS');
   res.setHeader('access-control-allow-headers', 'content-type, x-requested-with, x-admin-token, authorization');
   res.setHeader('access-control-max-age', '86400');
+}
+
+function isAllowedOrigin(origin) {
+  const value = String(origin || '').trim();
+  if (!value) return false;
+  if (/^https:\/\/moa-kr\.github\.io$/.test(value)) return true;          /* 운영 사이트 */
+  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(value)) return true; /* 로컬 확인 */
+  return false;
 }
 
 function sendJson(res, code, body) {
@@ -2743,7 +2873,7 @@ const HELP_HTML = `<!doctype html><html lang="ko"><meta charset="utf-8">
 <p>사이트(「동네에서 찾기」)가 이 주소로 주변 매장의 실제 재고를 조회합니다. 별도 설정 없이 자동 연결됩니다.</p>
 <ul>
 <li><code>GET /health</code> — 서버 상태</li>
-<li><code>GET /api/nearby?lat=36.07&amp;lng=129.39&amp;keyword=포켓몬카드&amp;radius=3000</code> — 주변 점포 실재고</li>
+<li><code>GET /api/nearby?lat=37.5665&amp;lng=126.9780&amp;keyword=포켓몬카드&amp;radius=3000</code> — 주변 점포 실재고 (lat·lng 필수)</li>
 <li><code>GET /api/diag</code> — 체인별 조회 진단(어디서 막히는지)</li>
 <li><code>GET /api/emart24</code> — 이마트24만 따로(점포 목록·점포별 수량)</li>
 <li><code>GET /api/seven</code> — 세븐일레븐만 따로(지역명·점포·수량)</li>
@@ -3002,34 +3132,70 @@ const server = http.createServer(async (req, res) => {
         service: SERVICE,
         version: VERSION,
         time: new Date().toISOString(),
-        uptimeSec: Math.round(process.uptime())
+        uptimeSec: Math.round(process.uptime()),
+        /* 주디 긴급 감시 스케줄이 읽는 값 — 과다 요청·오류·캐시 상태를 여기서 본다 */
+        rateLimitedCount: guard.rateLimitedCount,
+        lastRateLimitedAt: guard.lastRateLimitedAt,
+        errorCount: guard.errorCount,
+        lastErrorAt: guard.lastErrorAt,
+        cacheSize: cache.size,
+        cacheTtlSec: Math.round(CACHE_MS / 1000),
+        inflight: guard.inflight,
+        limits: {
+          perIpPerMin: RATE_LIMIT_PER_MIN,
+          maxConcurrent: MAX_CONCURRENT,
+          cacheTtlSec: Math.round(CACHE_MS / 1000)
+        }
       });
       return;
     }
 
     if (path === '/api/nearby') {
-      const lat = num(url.searchParams.get('lat'), DEFAULT_LAT);
-      const lng = num(url.searchParams.get('lng'), DEFAULT_LNG);
+      const point = readPoint(url, res);
+      if (!point) return;
+      const { lat, lng } = point;
       const keyword = (url.searchParams.get('keyword') || DEFAULT_KEYWORD).trim().slice(0, 40) || DEFAULT_KEYWORD;
       const radius = Math.min(20000, Math.max(300, num(url.searchParams.get('radius'), DEFAULT_RADIUS)));
-      if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-        sendJson(res, 400, { ok: false, error: 'lat/lng 범위를 확인해 주세요' });
+
+      /* ① 캐시에 있으면 그대로 돌려준다 — 셈에도 넣지 않는다(같은 동네 재방문은 무료) */
+      const key = cacheKey(lat, lng, keyword, radius);
+      const hit = cacheRead(key);
+      if (hit) {
+        sendJson(res, 200, Object.assign({}, hit, { cached: true }));
+        console.log(`[nearby] ${lat.toFixed(3)},${lng.toFixed(3)} r=${radius} → cache ${hit.stores.length}곳`);
         return;
       }
-      const value = await nearby(lat, lng, keyword, radius);
-      sendJson(res, 200, value);
-      console.log(
-        `[nearby] ${lat.toFixed(4)},${lng.toFixed(4)} "${keyword}" r=${radius} ` +
-          `emart24=${value.sources.emart24.count} cu=${value.sources.cu.count} seven=${value.sources.seven.count} ` +
-          `gs25=${(value.sources.gs25 || {}).count || 0} ` +
-          `→ ${value.stores.length}곳 ${Date.now() - started}ms${value.cached ? ' (cache)' : ''}`
-      );
+
+      /* ② 캐시에 없는 요청만 IP 분당 횟수·동시 조회 수를 본다 */
+      if (!countRate(clientIp(req))) {
+        sendRateLimited(res);
+        return;
+      }
+      if (guard.inflight >= MAX_CONCURRENT) {
+        sendRateLimited(res);
+        return;
+      }
+
+      guard.inflight += 1;
+      try {
+        const value = await nearby(lat, lng, keyword, radius);
+        sendJson(res, 200, value);
+        console.log(
+          `[nearby] ${lat.toFixed(4)},${lng.toFixed(4)} "${keyword}" r=${radius} ` +
+            `emart24=${value.sources.emart24.count} cu=${value.sources.cu.count} seven=${value.sources.seven.count} ` +
+            `gs25=${(value.sources.gs25 || {}).count || 0} ` +
+            `→ ${value.stores.length}곳 ${Date.now() - started}ms${value.cached ? ' (cache)' : ''}`
+        );
+      } finally {
+        guard.inflight -= 1;
+      }
       return;
     }
 
     if (path === '/api/diag') {
-      const lat = num(url.searchParams.get('lat'), DEFAULT_LAT);
-      const lng = num(url.searchParams.get('lng'), DEFAULT_LNG);
+      const point = readPoint(url, res);
+      if (!point) return;
+      const { lat, lng } = point;
       const keyword = (url.searchParams.get('keyword') || DEFAULT_KEYWORD).trim().slice(0, 40) || DEFAULT_KEYWORD;
       const radius = Math.min(20000, Math.max(300, num(url.searchParams.get('radius'), DEFAULT_RADIUS)));
       const value = await diagnose(lat, lng, keyword, radius);
@@ -3041,8 +3207,9 @@ const server = http.createServer(async (req, res) => {
     if (path === '/api/seven') {
       /* 세븐일레븐만 따로 조회해 보는 진단 — 태블릿에서 한 줄로 확인할 때 씁니다.
          /api/seven?lat=36.0733&lng=129.3947&q=포항  (q 생략 시 주소에서 자동) */
-      const lat = num(url.searchParams.get('lat'), DEFAULT_LAT);
-      const lng = num(url.searchParams.get('lng'), DEFAULT_LNG);
+      const point = readPoint(url, res);
+      if (!point) return;
+      const { lat, lng } = point;
       const radius = Math.min(20000, Math.max(300, num(url.searchParams.get('radius'), DEFAULT_RADIUS)));
       const manual = (url.searchParams.get('q') || url.searchParams.get('area') || '').trim().slice(0, 40);
       const item = (url.searchParams.get('item') || '').trim();
@@ -3096,8 +3263,9 @@ const server = http.createServer(async (req, res) => {
     if (path === '/api/gs25') {
       /* GS25만 따로 — 세션 상태·상품 검색·매장별 수량을 한 번에 확인합니다.
          /api/gs25?lat=36.0733&lng=129.3947&keyword=포켓몬카드&item=바코드 */
-      const lat = num(url.searchParams.get('lat'), DEFAULT_LAT);
-      const lng = num(url.searchParams.get('lng'), DEFAULT_LNG);
+      const point = readPoint(url, res);
+      if (!point) return;
+      const { lat, lng } = point;
       const radius = Math.min(20000, Math.max(300, num(url.searchParams.get('radius'), DEFAULT_RADIUS)));
       const keyword = (url.searchParams.get('keyword') || DEFAULT_KEYWORD).trim().slice(0, 40) || DEFAULT_KEYWORD;
       const item = (url.searchParams.get('item') || '').trim();
@@ -3141,10 +3309,7 @@ const server = http.createServer(async (req, res) => {
           configured: !!gs25Session.access,
           source: gs25Session.source || 'none',
           deviceIdSet: !!gs25Session.deviceId,
-          accessExpiresAt: gs25Session.accessExp ? new Date(gs25Session.accessExp).toISOString() : null,
-          refreshExpiresAt: gs25Session.refreshExp ? new Date(gs25Session.refreshExp).toISOString() : null,
-          revoked: gs25Session.revoked || false,
-          lastError: gs25Session.lastError || ''
+          revoked: gs25Session.revoked || false
         },
         products: products.map((p) => ({ code: p.code, name: p.name, price: p.price })),
         stores: stores.map((s) => ({
@@ -3164,8 +3329,9 @@ const server = http.createServer(async (req, res) => {
     if (path === '/api/emart24') {
       /* 이마트24만 따로 — 점포 목록이 어느 경로로 왔는지, 점포별 수량이 어떻게 나오는지 확인용.
          /api/emart24?lat=36.0016&lng=129.4028  (q 를 주면 그 지역명으로 공개 매장 API 조회) */
-      const lat = num(url.searchParams.get('lat'), DEFAULT_LAT);
-      const lng = num(url.searchParams.get('lng'), DEFAULT_LNG);
+      const point = readPoint(url, res);
+      if (!point) return;
+      const { lat, lng } = point;
       const radius = Math.min(20000, Math.max(300, num(url.searchParams.get('radius'), DEFAULT_RADIUS)));
       const manual = (url.searchParams.get('q') || '').trim().slice(0, 40);
       const keyword = (url.searchParams.get('keyword') || DEFAULT_KEYWORD).trim().slice(0, 40) || DEFAULT_KEYWORD;
@@ -3207,8 +3373,9 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (path === '/api/geo') {
-      const lat = num(url.searchParams.get('lat'), DEFAULT_LAT);
-      const lng = num(url.searchParams.get('lng'), DEFAULT_LNG);
+      const point = readPoint(url, res);
+      if (!point) return;
+      const { lat, lng } = point;
       const diag = [];
       const geo = await reverseGeocode(lat, lng, diag);
       sendJson(res, 200, { ok: true, version: VERSION, lat, lng, geo, upstream: diag });
@@ -3248,6 +3415,8 @@ const server = http.createServer(async (req, res) => {
 
     sendJson(res, 404, { ok: false, error: '없는 경로입니다. /health, /api/nearby, /api/diag 를 쓰세요.' });
   } catch (err) {
+    guard.errorCount += 1;
+    guard.lastErrorAt = new Date().toISOString();
     console.error('[error]', err && err.message);
     sendJson(res, 500, { ok: false, error: (err && err.message) || '서버 오류' });
   }
@@ -3262,7 +3431,8 @@ function start() {
     listening = true;
     console.log(`포켓몬카드모아 실재고 조회 서버 v${VERSION} — http://${HOST}:${PORT}`);
     console.log(`  상태 확인: curl http://${HOST}:${PORT}/health`);
-    console.log(`  실재고:    curl "http://${HOST}:${PORT}/api/nearby?lat=${DEFAULT_LAT}&lng=${DEFAULT_LNG}&keyword=${encodeURIComponent(DEFAULT_KEYWORD)}"`);
+    console.log(`  실재고:    curl "http://${HOST}:${PORT}/api/nearby?lat=37.5665&lng=126.9780&keyword=${encodeURIComponent(DEFAULT_KEYWORD)}&radius=3000"`);
+    console.log('             (lat·lng 는 필수입니다 — 예: 서울시청 37.5665/126.9780)');
     console.log(`  진단:      curl "http://${HOST}:${PORT}/api/diag"`);
     console.log('  바깥에서 쓰려면: cloudflared tunnel --url http://' + HOST + ':' + PORT);
     console.log('  자가 업데이트: 모아 어드민 → ⑤ 저장·배포 → 🔌 태블릿 중계 서버 → 최신 버전 업데이트');
