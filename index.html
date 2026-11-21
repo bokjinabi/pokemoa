@@ -37,7 +37,7 @@
 <meta name="twitter:image:alt" content="포켓몬카드모아 — 내 주변 편의점 재고 · 인기 카드 시세 · 도감">
 <meta name="theme-color" content="#101f3c">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23101f3c'/%3E%3Crect x='7' y='7' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05'/%3E%3Crect x='17.5' y='7' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05' opacity='.7'/%3E%3Crect x='7' y='17.5' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05' opacity='.7'/%3E%3Crect x='17.5' y='17.5' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="assets/css/style.css?v=110">
+<link rel="stylesheet" href="assets/css/style.css?v=111">
 <!-- 카카오맵 JavaScript SDK — autoload=false로 불러 두고 map.js가 kakao.maps.load()로 초기화합니다.
      JavaScript 키 도메인에는 https://moa-kr.github.io 만 등록되어 있어, 그 밖의 주소(미등록 프리뷰)에서는
      지도 대신 내장 좌표 스냅샷 안내가 표시됩니다. -->
@@ -177,6 +177,30 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- ---------------------------------------------- GS25 팜사이즈 원더 피규어 -->
+  <div class="wrap" data-section="figure">
+    <section class="section figure-promo" id="figurePromo" aria-labelledby="figurePromoTitle">
+      <div class="fp-card">
+        <div class="fp-media">
+          <img src="assets/img/figure/palmsize-wonders-gs25.jpg" alt="GS25 포켓몬스터 팜사이즈 원더 피규어 공식 판매 이미지 — 몬스터볼 케이스와 1탄 6종 피규어"
+               width="600" height="736" loading="lazy">
+          <span class="fp-flag">GS25 NEW</span>
+        </div>
+        <div class="fp-body">
+          <span class="eyebrow">편의점 신상 · 2026.11.20 출시</span>
+          <h2 id="figurePromoTitle">포켓몬스터 <em>팜사이즈 원더</em> 피규어</h2>
+          <p class="fp-lead">손바닥에 쏙 들어오는 팜사이즈 랜덤 피규어입니다. 1탄 6종 · 2탄 8종 · 3탄 6종, <b>총 20종</b>이고 개당 <b>5,800원</b>입니다. 전국 GS25에서 팔며, 종료일 없이 점포 재고가 소진될 때까지 판매합니다.</p>
+          <ul class="fp-series" id="figurePromoSeries"></ul>
+          <div class="fp-actions">
+            <button type="button" class="btn btn-dark" data-figure-stock>내 주변 GS25 재고 찾기</button>
+            <button type="button" class="btn btn-ghost" data-figure-info>출시 안내 다시 보기</button>
+          </div>
+          <p class="fp-src">사진 = GS25 공식 SNS(2026-11-20) · <a href="https://www.ggilbo.com/news/articleView.html?idxno=1194475" target="_blank" rel="noopener">보도</a> · <a href="https://product.woodongs.com/item/gs25/6970834313420" target="_blank" rel="noopener">우리동네GS 상품</a></p>
+        </div>
+      </div>
+    </section>
   </div>
 
   <!-- ------------------------------------------------------ 정가 구매처 -->
@@ -507,6 +531,41 @@
       <div class="notice-long"><b>매장 위치·이름은 카카오맵 실제 장소 정보</b>이고, 재고는 GS25·CU·이마트24 앱에서 조회한 값만 표시합니다. 세븐일레븐은 매장 위치만 안내합니다. 방문 전 앱이나 매장 전화로 한 번 더 확인하세요.</div>
       <div class="notice-short"><b>위치는 카카오맵 실제 정보</b>, 재고는 앱 조회값만 표시합니다(세븐일레븐은 위치만). 방문 전 앱에서 확인하세요.</div>
     </div>
+
+    <!-- ------------------------------------------------ 찾을 상품 고르기 (카드 / GS25 피규어) -->
+    <div class="product-picker" id="productPicker" role="group" aria-label="찾을 상품 고르기">
+      <span class="pp-label">찾을 상품</span>
+      <div class="pp-tabs">
+        <button type="button" class="pp-tab is-active" data-product="card" aria-pressed="true">
+          <span class="pp-ico" aria-hidden="true">🎴</span>
+          <span class="pp-name">포켓몬 카드</span>
+          <small>30th 외 박스·낱팩</small>
+        </button>
+        <button type="button" class="pp-tab pp-tab-figure" data-product="figure" aria-pressed="false">
+          <span class="pp-new">NEW</span>
+          <span class="pp-name">팜사이즈 원더 피규어</span>
+          <small>GS25 · 20종 랜덤</small>
+        </button>
+      </div>
+    </div>
+
+    <!-- ------------------------------------------------------ GS25 피규어 안내 띠 -->
+    <section class="figure-strip" id="figureStrip" aria-labelledby="figureStripTitle" hidden>
+      <div class="fs-main">
+        <img class="fs-thumb" src="assets/img/figure/palmsize-wonder-1.jpg" alt="GS25 팜사이즈 원더 1탄 상품 이미지" width="96" height="96" loading="lazy">
+        <div class="fs-copy">
+          <p class="fs-eyebrow"><span class="fs-new">NEW</span> GS25 신상 · 2026.11.20 출시</p>
+          <h2 id="figureStripTitle">포켓몬스터 팜사이즈 원더 피규어</h2>
+          <p class="fs-meta">1탄 6종 · 2탄 8종 · 3탄 6종 = 총 20종 랜덤 · <b>개당 5,800원</b></p>
+          <p class="fs-status" id="figureStockNote" role="status" aria-live="polite">주변 GS25 재고를 조회하려면 ‘재고 조회’를 눌러 주세요.</p>
+        </div>
+        <div class="fs-actions">
+          <button type="button" class="btn btn-dark btn-sm" id="figureQuery">재고 조회</button>
+          <a class="btn btn-ghost btn-sm" id="figureOfficial" href="https://product.woodongs.com/item/gs25/6970834313420" target="_blank" rel="noopener">공식 상품 ↗</a>
+        </div>
+      </div>
+      <ul class="fs-series" id="figureSeries"></ul>
+    </section>
 
     <div class="brand-progress" id="brandProgress" data-state="idle" role="group" aria-label="편의점 4사 매장·재고 조회 진행률" hidden>
       <div class="bp-head">
@@ -1502,12 +1561,14 @@
   </div>
 </template>
 
-<script src="assets/js/data.js?v=110"></script>
-<script src="assets/js/map.js?v=110"></script>
-<script src="assets/js/app.js?v=110"></script>
+<script src="assets/js/data.js?v=111"></script>
+<script src="assets/js/map.js?v=111"></script>
+<script src="assets/js/app.js?v=111"></script>
+<!-- GS25 팜사이즈 원더 피규어 — 안내 팝업·상품 전환·주변 GS25 재고 조회 (data.js 의 figure) -->
+<script src="assets/js/figure.js?v=111"></script>
 <!-- 모아 어드민(moa-kr/moa-admin)이 커밋하는 assets/config/site-config.json 을 화면에 적용합니다.
      공지 바·팝업·탭/섹션 순서와 노출·문구가 이 파일 값으로 바뀝니다. -->
-<script src="assets/js/site-config-loader.js?v=110" defer
+<script src="assets/js/site-config-loader.js?v=111" defer
         data-config="assets/config/site-config.json"
         data-track-site="pokemoa"
         data-tab-container=".main-nav"

@@ -263,6 +263,13 @@
         "tab": "home"
       },
       {
+        "id": "figure",
+        "label": "GS25 팜사이즈 원더 피규어 소개",
+        "visible": true,
+        "order": 3.5,
+        "tab": "home"
+      },
+      {
         "id": "pricing",
         "label": "70,000원에 살 수 있는 곳, 채널별 조건까지",
         "visible": true,

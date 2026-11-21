@@ -3621,6 +3621,14 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
 .set-resell-links a:hover { border-color: var(--navy); background: #fff; color: var(--navy); }
 .ssc-actions { margin-top: 10px; }
 
+
+/* 세트 검색 결과에 덧붙는 GS25 팜사이즈 원더 피규어 카드 */
+.figure-search-card { border-color: #f4dfa0; background: linear-gradient(135deg, #fffdf4 0%, #fffdf4 60%, #fff8e2 100%); }
+.figure-search-card .fsc-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.figure-search-card .fsc-head img { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; flex: none; background: #fff; border: 1px solid #efdca0; }
+.figure-search-card .fsc-head > div { min-width: 0; }
+.figure-search-card .ssc-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
 @media (min-width: 720px) {
   .ssc-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
@@ -3793,4 +3801,281 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
   .fx-calc-fields { grid-template-columns: 1fr; }
   .fx-calc-head { gap: 2px; }
   .fx-total-val { font-size: 17px; }
+}
+
+/* =========================================================================
+   GS25 팜사이즈 원더 피규어 — 상품 고르기 · 안내 띠 · 홈 소개 · 안내 팝업
+   (2026-11-21 추가 · index.html 의 #productPicker · #figureStrip · #figurePromo,
+    figure.js 가 그리는 팝업 #fgModal 과 다시 열기 버튼 .fg-reopen)
+   ========================================================================= */
+
+/* ---------------------------------------------- 찾을 상품 고르기 */
+.product-picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 14px 0 0;
+}
+.pp-label { font-size: 11.5px; font-weight: 800; color: var(--muted); letter-spacing: 0.02em; }
+.pp-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.pp-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 15px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink-2);
+  font-weight: 800;
+  font-size: 13.5px;
+  letter-spacing: -0.01em;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.12s, background 0.12s, color 0.12s;
+}
+.pp-tab:hover { border-color: var(--navy); }
+.pp-tab small { font-weight: 600; font-size: 11px; color: var(--muted); }
+.pp-tab .pp-ico { font-size: 14px; line-height: 1; }
+.pp-tab.is-active { border-color: var(--navy); background: var(--navy); color: #fff; }
+.pp-tab.is-active small { color: rgba(255, 255, 255, 0.72); }
+.pp-new {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--yellow);
+  color: var(--navy);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+/* ---------------------------------------------- GS25 피규어 안내 띠 */
+.figure-strip {
+  margin: 12px 0 0;
+  padding: 14px 16px;
+  border: 1px solid #f4dfa0;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #fffdf4 0%, #fff6d6 100%);
+  box-shadow: var(--shadow-sm);
+}
+.fs-main { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.fs-thumb {
+  width: 84px;
+  height: 84px;
+  border-radius: 14px;
+  object-fit: cover;
+  border: 1px solid #efdca0;
+  background: #fff;
+  flex: none;
+}
+.fs-copy { flex: 1 1 260px; min-width: 0; }
+.fs-eyebrow { display: flex; align-items: center; gap: 6px; margin: 0 0 2px; font-size: 11.5px; font-weight: 800; color: #8a6400; }
+.fs-new {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: #d93a2b;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+.fs-copy h2 { margin: 0; font-size: 17px; letter-spacing: -0.025em; }
+.fs-meta { margin: 4px 0 0; font-size: 12.5px; color: var(--ink-2); }
+.fs-status { margin: 6px 0 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
+.fs-status b { color: var(--ink); }
+.fs-status.is-busy { color: var(--blue); }
+.fs-status.is-error { color: var(--red, #c0392b); }
+.fs-actions { display: flex; gap: 6px; flex: none; }
+.fs-series { list-style: none; margin: 12px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.fs-series li { display: flex; align-items: center; gap: 8px; padding: 8px; border: 1px solid #f3e6bb; border-radius: 12px; background: #fff; min-width: 0; }
+.fs-series a { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.fs-series img { width: 38px; height: 38px; border-radius: 9px; object-fit: cover; flex: none; background: var(--paper); }
+.fs-series b { display: block; font-size: 12px; letter-spacing: -0.01em; }
+.fs-series span { display: block; font-size: 11px; line-height: 1.35; color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+.fs-series .fs-count { font-weight: 800; color: var(--ink-2); }
+
+/* ---------------------------------------------- 홈 탭 소개 */
+.figure-promo { padding-top: 8px; }
+.fp-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
+  gap: 22px;
+  align-items: center;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(460px 220px at 100% 0%, rgba(255, 203, 5, 0.22), transparent 70%),
+    #fff;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.fp-media { position: relative; border-radius: 16px; overflow: hidden; background: #0d3a63; }
+.fp-media img { width: 100%; height: 100%; max-height: 340px; object-fit: cover; object-position: top center; }
+.fp-flag {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--yellow);
+  color: var(--navy);
+  font-size: 10.5px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+.fp-body { min-width: 0; }
+.fp-body h2 { margin: 8px 0 0; font-size: 25px; line-height: 1.25; letter-spacing: -0.035em; }
+.fp-body h2 em { font-style: normal; color: #d93a2b; }
+.fp-lead { margin: 10px 0 0; font-size: 14px; color: var(--ink-2); }
+.fp-lead b { color: var(--ink); }
+.fp-series { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 8px; }
+.fp-series li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 12px; background: var(--paper); }
+.fp-series img { width: 40px; height: 40px; border-radius: 9px; object-fit: cover; flex: none; background: #fff; }
+.fp-series .fp-s-no { font-weight: 900; font-size: 12.5px; color: var(--ink); flex: none; }
+.fp-series .fp-s-lineup { font-size: 12px; color: var(--muted); line-height: 1.45; min-width: 0; }
+.fp-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0 0; }
+.fp-src { margin: 12px 0 0; font-size: 11px; color: var(--muted-2); line-height: 1.6; }
+.fp-src a { text-decoration: underline; }
+
+/* ---------------------------------------------- 안내 팝업 */
+.fg-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 320;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(8, 14, 28, 0.58);
+  overflow-y: auto;
+}
+.fg-modal {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  border-radius: 22px;
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 24px 70px rgba(8, 14, 28, 0.38);
+  animation: fg-pop 0.18s ease-out;
+}
+@keyframes fg-pop { from { transform: translateY(8px) scale(0.98); opacity: 0; } to { transform: none; opacity: 1; } }
+.fg-hero { position: relative; background: #0d3a63; }
+.fg-hero img { width: 100%; height: 268px; object-fit: cover; object-position: top center; }
+.fg-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(8, 16, 30, 0.55);
+  color: #fff;
+  font-size: 16px;
+  line-height: 1;
+}
+.fg-close:hover { background: rgba(8, 16, 30, 0.78); }
+.fg-flag {
+  position: absolute;
+  bottom: 10px;
+  left: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--yellow);
+  color: var(--navy);
+  font-size: 10.5px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+}
+.fg-body { padding: 16px 18px 14px; }
+.fg-eyebrow { margin: 0; font-size: 11.5px; font-weight: 800; color: #b3392b; letter-spacing: 0.02em; }
+.fg-body h2 { margin: 4px 0 0; font-size: 20px; line-height: 1.3; letter-spacing: -0.03em; }
+.fg-desc { margin: 8px 0 0; font-size: 13px; line-height: 1.6; color: var(--ink-2); }
+.fg-facts { list-style: none; margin: 12px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.fg-facts li { padding: 8px 10px; border-radius: 11px; background: var(--paper); border: 1px solid var(--line-2); }
+.fg-facts span { display: block; font-size: 10.5px; color: var(--muted); font-weight: 700; }
+.fg-facts b { display: block; font-size: 13px; letter-spacing: -0.02em; margin-top: 1px; }
+.fg-series { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 6px; }
+.fg-series li { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-2); }
+.fg-series img { width: 30px; height: 30px; border-radius: 8px; object-fit: cover; flex: none; background: var(--paper); }
+.fg-series b { flex: none; font-size: 12px; color: var(--ink); }
+.fg-actions { display: grid; gap: 8px; margin: 14px 0 0; }
+.fg-btn-primary {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--navy);
+  color: #fff;
+  font-weight: 900;
+  font-size: 14px;
+  text-align: center;
+}
+.fg-btn-primary:hover { background: var(--navy-2); }
+.fg-btn-ghost {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink-2);
+  font-weight: 800;
+  font-size: 12.5px;
+  text-align: center;
+}
+.fg-note { margin: 10px 0 0; font-size: 11px; line-height: 1.6; color: var(--muted-2); }
+.fg-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 12px 0 0; padding-top: 10px; border-top: 1px solid var(--line-2); font-size: 12px; color: var(--muted); }
+.fg-foot label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.fg-foot button { border: 0; background: none; color: var(--ink-2); font-weight: 800; font-size: 12px; text-decoration: underline; }
+
+/* 다시 열기 버튼 — 팝업을 닫은 뒤에도 화면 오른쪽 아래에 남는다 */
+.fg-reopen {
+  position: fixed;
+  right: 14px;
+  bottom: 16px;
+  z-index: 260;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 13px 7px 8px;
+  border: 1px solid #efdca0;
+  border-radius: 999px;
+  background: #fffdf4;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 800;
+  box-shadow: 0 8px 24px rgba(16, 31, 60, 0.18);
+}
+.fg-reopen img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; background: var(--paper); }
+.fg-reopen:hover { border-color: var(--navy); }
+
+@media (max-width: 679px) {
+  .pp-label { display: none; }
+  .pp-tab { padding: 8px 12px; font-size: 12.5px; }
+  .pp-tab small { display: none; }
+  .figure-strip { padding: 12px; }
+  .fs-thumb { width: 64px; height: 64px; border-radius: 12px; }
+  .fs-copy h2 { font-size: 15.5px; }
+  .fs-actions { width: 100%; }
+  .fs-actions .btn { flex: 1; }
+  .fs-series { grid-template-columns: 1fr; }
+  .fp-card { grid-template-columns: 1fr; gap: 14px; padding: 14px; }
+  .fp-media img { max-height: 260px; }
+  .fp-body h2 { font-size: 21px; }
+  .fp-actions .btn { flex: 1 1 auto; }
+  .fg-hero img { height: 210px; }
+  .fg-body { padding: 14px 15px 12px; }
+  .fg-body h2 { font-size: 18px; }
+  .fg-reopen { bottom: 12px; right: 10px; font-size: 11.5px; padding: 6px 11px 6px 7px; }
+  .fg-reopen img { width: 26px; height: 26px; }
 }

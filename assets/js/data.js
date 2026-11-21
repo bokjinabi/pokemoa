@@ -2528,6 +2528,13 @@ window.POKEMOA_DATA = (function () {
   /* -------------------------------------------------- 신규 팩 발매 소식 */
   var newReleases = [
     {
+      date: "2026-11-20", status: "발매", kind: "done",
+      name: "GS25 포켓몬스터 팜사이즈 원더 피규어", type: "편의점 굿즈 · GS25",
+      price: "개당 5,800원", config: "1탄 6종 · 2탄 8종 · 3탄 6종 = 총 20종 랜덤 · 몬스터볼 케이스",
+      url: "https://product.woodongs.com/item/gs25/6970834313420",
+      note: "출시일 2026-11-20. 종료일은 따로 공지되지 않았고 점포별 재고 소진 시까지 판매합니다. 지도 탭의 '팜사이즈 원더 피규어'에서 주변 GS25 재고를 확인할 수 있습니다."
+    },
+    {
       date: "2026-11-20", status: "예정", kind: "soon",
       name: "아크릴 카드 홀더 세트 「개굴닌자」", type: "특별 제품 · 한글판",
       price: "30,000원", config: "프로모 「개굴닌자 ex」 1장 · 아크릴 카드 홀더 1개 · 30th CELEBRATION 3팩",
@@ -2598,6 +2605,75 @@ window.POKEMOA_DATA = (function () {
     pricecharting: "https://www.pricecharting.com/search-products?q="
   };
 
+  /* ------------------------------------------- GS25 신상 피규어 (2026-11-20) */
+  /* 출처: GS25 공식 SNS(2026-11-20)를 인용한 금강일보 보도, 우리동네GS 상품 검색 API·상품 페이지(2026-11-21 확인).
+     상품코드는 우리동네GS 검색 API가 돌려준 바코드로, 중계 서버의 GS25 재고 조회(/api/gs25?item=)에 그대로 씁니다.
+     이미지는 GS25 공식 SNS 판매 이미지와 우리동네GS 공식 상품 이미지를 저장해 상대 경로로 씁니다(핫링크 차단 회피). */
+  var figure = {
+    id: "gs25-palmsize-wonders",
+    brand: "gs25",
+    brandLabel: "GS25",
+    name: "포켓몬스터 팜사이즈 원더 피규어",
+    short: "팜사이즈 원더 피규어",
+    english: "PALMSIZE WONDERS",
+    release: "2026-11-20",
+    releaseLabel: "2026.11.20 출시",
+    periodNote: "별도 종료일 없이 점포별 재고가 소진될 때까지 판매합니다.",
+    price: 5800,
+    priceLabel: "개당 5,800원",
+    unit: "개",
+    totalCount: 20,
+    config: "1탄 6종 · 2탄 8종 · 3탄 6종 · 총 20종 랜덤",
+    summary: "손바닥에 쏙 들어오는 팜사이즈 랜덤 피규어입니다. 몬스터볼 모양 케이스에 담겨 나오고, 시리즈별로 1종이 랜덤으로 들어 있습니다.",
+    image: "assets/img/figure/palmsize-wonders-gs25.jpg",
+    imageWidth: 600,
+    imageHeight: 736,
+    imageAlt: "GS25 포켓몬스터 팜사이즈 원더 피규어 공식 판매 이미지 — 몬스터볼 케이스와 1탄 6종 피규어",
+    sourceNote: "사진 = GS25 공식 SNS(2026-11-20) · 금강일보 보도",
+    keywords: ["팜사이즈", "팜 사이즈", "원더", "원더피규어", "원더 피규어", "피규어", "포켓볼", "몬스터볼", "palmsize", "wonders", "gs25 피규어", "gs25피규어"],
+    series: [
+      {
+        no: 1,
+        count: 6,
+        code: "6970834313420",
+        itemName: "퍼니즘)포켓몬스터팜사이즈원더1",
+        lineup: ["파이리", "꼬부기", "이상해씨", "고라파덕", "이브이", "피카츄"],
+        image: "assets/img/figure/palmsize-wonder-1.jpg",
+        url: "https://product.woodongs.com/item/gs25/6970834313420"
+      },
+      {
+        no: 2,
+        count: 8,
+        code: "6970834313864",
+        itemName: "퍼니즘)포켓몬스터팜사이즈원더2",
+        lineup: ["샤미드", "쥬피썬더", "에브이", "부스터", "리피아", "블래키", "글레이시아", "님피아"],
+        image: "assets/img/figure/palmsize-wonder-2.jpg",
+        url: "https://product.woodongs.com/item/gs25/6970834313864"
+      },
+      {
+        no: 3,
+        count: 6,
+        code: "6971680453339",
+        itemName: "퍼니즘)포켓몬스터팜사이즈원더3",
+        lineup: ["뮤츠", "식스테일", "망나뇽", "팬텀", "푸린", "뮤"],
+        image: "assets/img/figure/palmsize-wonder-3.jpg",
+        url: "https://product.woodongs.com/item/gs25/6971680453339"
+      }
+    ],
+    officialUrl: "https://woodongs.com/",
+    productUrl: "https://product.woodongs.com/item/gs25/6970834313420",
+    sources: [
+      { label: "금강일보 보도(2026-11-20 · 사진=GS25 공식 SNS)", url: "https://www.ggilbo.com/news/articleView.html?idxno=1194475" },
+      { label: "우리동네GS 공식 상품 페이지", url: "https://product.woodongs.com/item/gs25/6970834313420" }
+    ],
+    /* 재고 조회 — 중계 v2.1 의 GS25 상품 지정 조회(/api/gs25?item=)를 씁니다.
+       v2.1 의 /api/nearby 는 카드 상품만 골라 내므로 피규어는 이 경로로만 조회됩니다. */
+    stock: {
+      mode: "gs25-item",
+      note: "GS25 앱(우리동네GS) 실시간 재고를 중계 서버로 조회합니다. 중계 v2.1 기준 반경 1km 안 점포만 확인됩니다."
+    }
+  };
+
   /* ------------------------------------------------------ 사실 메모(출처) */
   var facts = [
     { label: "정가·구성", text: "포켓몬 카드 게임 공식 제품 정보 (1팩 3,500원 / 1상자 70,000원, 1팩 6장, 1상자 20팩)", url: "https://pokemoncard.co.kr/card/960" },
@@ -2637,6 +2713,7 @@ window.POKEMOA_DATA = (function () {
     cardRanges: cardRanges,
     cardIssues: cardIssues,
     newReleases: newReleases,
+    figure: figure,
     popTools: popTools,
     relayPreset: relayPreset
   };

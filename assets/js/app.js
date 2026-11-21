@@ -955,6 +955,9 @@
   }
 
   function relayRefresh(manual) {
+    /* GS25 팜사이즈 원더 피규어를 고른 동안에는 카드 재고를 덮어쓰지 않는다
+       (피규어 모드는 figure.js 가 /api/gs25 로 따로 조회해 지도에 얹는다). */
+    if (window.PokeMoaFigure && window.PokeMoaFigure.isActive && window.PokeMoaFigure.isActive()) return;
     if (relay.state !== "online" || !relay.url || !mapReady || !window.PokeMoaMap) return;
     var mstate = window.PokeMoaMap.getState();
     if (!mstate || !mstate.center) return;
