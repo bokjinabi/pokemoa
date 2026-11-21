@@ -237,6 +237,21 @@
       window.PokeMoaMap.clearRelay();
       window.PokeMoaMap.setBrand(next === "figure" ? "gs25" : (state.brandBefore || "all"));
     }
+    /* 피규어 모드는 '가까운 거리순'이 읽기 쉽다 — 카드 모드의 정렬은 기억해 두었다가 돌려준다 */
+    var sortEl = $("#sortSelect");
+    if (sortEl) {
+      if (next === "figure") {
+        if (!state.sortBefore) state.sortBefore = sortEl.value || "stock";
+        if (sortEl.value !== "distance") {
+          sortEl.value = "distance";
+          sortEl.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+      } else if (state.sortBefore && sortEl.value !== state.sortBefore) {
+        sortEl.value = state.sortBefore;
+        state.sortBefore = "";
+        sortEl.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    }
     if (next === "figure") {
       setStatus("주변 GS25 재고를 조회하는 중…", "busy");
       queryStock(true);
