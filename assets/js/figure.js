@@ -225,11 +225,15 @@
     }
     state.mode = next;
     syncButtons();
+    /* 카드(4사) 진행률 패널은 피규어 모드에서 의미가 없어 CSS 로 숨긴다 —
+       hidden 속성을 건드리지 않아 카드 모드로 돌아오면 원래 상태 그대로 보인다. */
+    document.body.classList.toggle("figure-mode", next === "figure");
     var strip = $("#figureStrip");
     if (strip) strip.hidden = next !== "figure";
     setSideTitle(next === "figure");
 
     if (window.PokeMoaMap) {
+      if (window.PokeMoaMap.closeCard) window.PokeMoaMap.closeCard();
       window.PokeMoaMap.clearRelay();
       window.PokeMoaMap.setBrand(next === "figure" ? "gs25" : (state.brandBefore || "all"));
     }
@@ -540,7 +544,13 @@
       if (isActive()) queryStock(false);
     });
     document.addEventListener("pokemoa:search-start", function () {
-      if (isActive() && window.PokeMoaMap) window.PokeMoaMap.clearRelay();
+      if (!isActive()) return;
+      /* 지역을 새로 찾으면 카드 4사 패널이 다시 떠오르므로 피규어 모드에서는 곧바로 숨긴다 */
+      if (window.PokeMoaMap) window.PokeMoaMap.clearRelay();
+    });
+    document.addEventListener("pokemoa:search-done", function () {
+      if (!isActive()) return;
+      document.body.classList.add("figure-mode");
     });
 
     /* 세트 검색 — app.js 가 먼저 결과를 그린 뒤 우리 카드를 덧붙인다 */

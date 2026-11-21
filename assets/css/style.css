@@ -4076,6 +4076,10 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
   .fg-hero img { height: 210px; }
   .fg-body { padding: 14px 15px 12px; }
   .fg-body h2 { font-size: 18px; }
-  .fg-reopen { bottom: 12px; right: 10px; font-size: 11.5px; padding: 6px 11px 6px 7px; }
+  /* 모바일은 하단 고정 탭바(약 58px + 안전 영역) 위에 띄운다 */
+  .fg-reopen { bottom: calc(74px + env(safe-area-inset-bottom)); right: 10px; font-size: 11.5px; padding: 6px 11px 6px 7px; }
   .fg-reopen img { width: 26px; height: 26px; }
 }
+
+/* 피규어 모드에서는 카드(4사) 재고 진행률 패널을 숨긴다 — 피규어 재고는 안내 띠(#figureStrip)가 맡는다 */
+body.figure-mode #brandProgress { display: none !important; }
