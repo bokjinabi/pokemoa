@@ -642,6 +642,7 @@
         /* 앱 응답 점포 → 지도(카카오) 점포 좌표에 붙인다 */
         var all = (mapState() && mapState().all) || [];
         var payloadStores = [];
+        var seenTwin = {};
         var matched = 0;
         var unmatched = 0;
         var inStock = 0;
@@ -650,6 +651,11 @@
           var rec = byStore[id];
           var twin = findStore(all, rec.name, rec.address);
           if (!twin) { unmatched += 1; return; }
+          /* 같은 지도 매장에 두 건이 붙을 수 있다(이름이 같은 점포가 둘). applyRelay 가 어차피
+             한 곳으로 합치므로, 안내 문구의 곳수도 화면에 보이는 매장 수와 같게 센다. */
+          var twinKey = String(twin.id || (twin.lat + "," + twin.lng));
+          if (seenTwin[twinKey]) return;
+          seenTwin[twinKey] = 1;
           matched += 1;
           var sum = rec.items.reduce(function (a, b) { return a + (b.qty || 0); }, 0);
           if (sum > 0) inStock += 1;
