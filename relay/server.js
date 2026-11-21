@@ -10,6 +10,9 @@
  *                   → 이마트24 · CU · 세븐일레븐의 점포별 실재고를 모아 돌려줍니다.
  *   GET  /api/diag  → 체인별로 어디까지 됐는지(응답 코드·차단 여부)만 모아 보여 줍니다.
  *   GET  /api/seven?lat=&lng=&q= → 세븐일레븐만 따로(검색어 후보·점포·재고) 확인합니다.
+ *   GET  /api/gs25-grid?lat=&lng=&radius=3000&items=바코드,바코드
+ *                   → (v2.2) GS25 상품 지정 3km 격자 조회 — 카드가 아닌 피규어 같은 상품도
+ *                     점포별 실재고를 17지점 격자로 합쳐 돌려줍니다.
  *   GET  /api/kream-movers → (준비 중 · 501) KREAM 시세를 사이트 「시세·팝수」 탭에 공급하는 자리
  *   GET  /api/pop?q=      → (준비 중 · 501) PSA·BRG 팝수를 공급하는 자리
  *   POST /admin/update    → (어드민 전용 · v2.0) 이 파일을 GitHub main 의 최신 판으로 교체·재시작
@@ -169,6 +172,20 @@
  *   · /health: rateLimitedCount · lastRateLimitedAt · errorCount · lastErrorAt · cacheSize 추가
  *     (긴급 감시 스케줄이 이 값을 읽습니다).
  *
+ * 2026-11-21 개정(v2.2) — GS25 상품 지정 3km 격자 조회(피규어)
+ *   · 새 경로 `GET /api/gs25-grid?lat=&lng=&radius=&items=바코드,바코드`.
+ *     v2.1 의 카드 조회(/api/nearby)는 GS25 상품을 카드 상품만 골라 내므로(looksLikeCard),
+ *     GS25 팜사이즈 원더 피규어(바코드 6970834313420·6970834313864·6971680453339) 같은
+ *     상품은 조회되지 않았습니다. 상품을 바코드로 직접 지정해 받는 경로입니다.
+ *   · 좌표 생성은 v1.8 의 3km 격자 로직(ringPlan·ringPoints — 중심 + 내링·외링 8방위 17지점)을
+ *     그대로 재사용하고, 격자 지점마다 `radiusCondition` 을 1500(엣지 상한)까지 넓혀
+ *     1km 조회보다 빈틈이 적습니다. 점포는 매장코드로 합치고 중심에서 radius 밖은 뺍니다.
+ *   · items 를 주지 않으면 피규어 1·2·3탄 바코드를 씁니다. 상품은 최대 6종(GS25_GRID_MAX_ITEMS).
+ *   · v2.1 과 같은 캐시(좌표 3자리·반경·바코드 목록, 300초)·레이트리밋(IP 분당 15회·동시 5건)을
+ *     적용합니다. 캐시 적중은 세지 않습니다.
+ *   · v2.1 의 기존 경로·동작은 바꾸지 않았습니다(gs25StockForItem 은 조회 반경 인자만 선택적으로
+ *     받게 했고, 주지 않으면 예전과 똑같이 GS25_RADIUS 를 씁니다).
+ *
  * 주의: 이 서버는 조회만 합니다. 주문·결제·선점 같은 쓰기 요청은 없습니다
  *       (자기 파일을 바꾸는 /admin/update 만 예외).
  */
@@ -181,7 +198,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const cp = require('node:child_process');
 
-const VERSION = '2.1';
+const VERSION = '2.2';
 const SERVICE = 'pokemoa-relay';
 
 const PORT = Number(process.env.PORT || 3100);
@@ -259,6 +276,16 @@ const CU_PACE_MS = (() => {
 const CU_MAX_CONCURRENCY = envClamp('CU_MAX_CONCURRENCY', 3, 1, 5);  // 지연이 클 때만 올리는 동시성 상한
 const CU_TIMEOUT_MS = envClamp('CU_TIMEOUT_MS', Math.max(TIMEOUT_MS, 12000), 3000, 20000);
 const GS25_RING_CONCURRENCY = envClamp('GS25_RING_CONCURRENCY', 4, 1, 8);
+/* v2.2 — 피규어 3km 격자. 격자 지점마다 묻는 반경은 1500(엣지 상한)까지 넓혀 빈틈을 줄인다. */
+const GS25_GRID_QUERY_RADIUS = envClamp('GS25_GRID_QUERY_RADIUS', 1500, 300, 1500);
+const GS25_GRID_MAX_ITEMS = envClamp('GS25_GRID_MAX_ITEMS', 3, 1, 6);
+/* items 없이 부를 때 쓰는 기본 상품 — GS25 포켓몬스터 팜사이즈 원더 피규어 1·2·3탄(2026-11-20 출시).
+   이름은 우리동네GS 상품 검색이 돌려주는 표기 그대로다(2026-11-21 확인). */
+const FIGURE_ITEMS = [
+  { code: '6970834313420', name: '퍼니즘)포켓몬스터팜사이즈원더1' },
+  { code: '6970834313864', name: '퍼니즘)포켓몬스터팜사이즈원더2' },
+  { code: '6971680453339', name: '퍼니즘)포켓몬스터팜사이즈원더3' }
+];
 const EMART24_MAX_PAGES = Number(process.env.EMART24_MAX_PAGES || 12); // 검색어당 최대 페이지
 const EMART24_QUERY_BUDGET = Number(process.env.EMART24_QUERY_BUDGET || 36); // 이마트24 점포 요청 총량
 
@@ -2407,10 +2434,12 @@ async function gs25StockOnce(url, diag, tms) {
   return first;
 }
 
-async function gs25StockForItem(lat, lng, item, radius, diag, tms) {
+async function gs25StockForItem(lat, lng, item, radius, diag, tms, queryRadiusM) {
   /* 엣지가 radiusCondition 2000 이상인 요청을 403으로 끊는다(500·1000·1500은 통과, 2000부터 차단 — 2026-11-19 실측).
-     앱 기본값도 1000이라 그 값을 쓴다. 지도 반경(radius)은 결과를 거르는 데만 쓴다. */
-  const r = Math.max(300, Math.min(1500, Number(GS25_RADIUS) || 1000));
+     앱 기본값도 1000이라 그 값을 쓴다. 지도 반경(radius)은 결과를 거르는 데만 쓴다.
+     v2.2 — 격자 조회는 queryRadiusM 으로 1500까지 넓혀 빈틈을 줄인다(주지 않으면 예전과 같다). */
+  const baseR = Number.isFinite(Number(queryRadiusM)) && Number(queryRadiusM) > 0 ? Number(queryRadiusM) : GS25_RADIUS;
+  const r = Math.max(300, Math.min(1500, baseR || 1000));
   const params = new URLSearchParams({
     serviceCode: '01',
     realTimeStockYn: 'Y',
@@ -2523,6 +2552,116 @@ async function collectGs25(lat, lng, keyword, radius, diag, deadlineAt) {
   return { stores, products: targets, note, queries: centers.length };
 }
 
+/* ── v2.2 GS25 상품 지정 3km 격자 ──
+   카드 상품 검색(looksLikeCard)을 거치지 않고, 요청이 준 바코드를 그대로 물어봅니다.
+   좌표는 collectGs25 와 같은 ringPlan·ringPoints(3km = 내링 1.1km · 외링 2.2km 17지점)를 씁니다. */
+function parseGridItems(raw) {
+  const known = new Map(FIGURE_ITEMS.map((it) => [it.code, it.name]));
+  const codes = String(raw || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => /^[0-9]{6,14}$/.test(s));
+  const list = codes.length ? codes : FIGURE_ITEMS.map((it) => it.code);
+  return uniqBy(list, (c) => c)
+    .slice(0, GS25_GRID_MAX_ITEMS)
+    .map((code) => ({ code, name: known.get(code) || '상품 ' + code }));
+}
+
+async function collectGs25Grid(lat, lng, items, radius, diag, deadlineAt) {
+  gs25Load();
+  if (!gs25Session.access) {
+    return {
+      stores: [],
+      items,
+      summary: [],
+      points: 0,
+      queries: 0,
+      note: 'GS25 로그인 세션(GS25_ACCESS_TOKEN) 필요',
+      sessionNeeded: true
+    };
+  }
+
+  const plan = ringPlan(radius || DEFAULT_RADIUS, GS25_GRID_QUERY_RADIUS);
+  const centers = ringPoints(lat, lng, plan.rings);
+  const jobs = [];
+  for (const center of centers) for (const item of items) jobs.push({ center, item });
+  const stopAt = stopAtFor(deadlineAt, CHAIN_SOFT_DEADLINE_MS);
+  let skipped = 0;
+  let lists;
+  try {
+    lists = await mapLimit(jobs, Math.max(1, Math.trunc(GS25_RING_CONCURRENCY)), async (job) => {
+      if (Date.now() > stopAt) {
+        skipped++;
+        return [];
+      }
+      try {
+        return await gs25StockForItem(
+          job.center.lat,
+          job.center.lng,
+          job.item,
+          radius,
+          diag,
+          sliceTms(stopAt, 4000),
+          GS25_GRID_QUERY_RADIUS
+        );
+      } catch (err) {
+        if (err && (err.upstreamStatus === 401 || err.upstreamStatus === 403)) throw err;
+        if (gs25Session.revoked) throw err;   // 세션 만료 사유를 note 로 올리기 위해
+        return [];
+      }
+    });
+  } catch (err) {
+    return {
+      stores: [],
+      items,
+      summary: [],
+      points: centers.length,
+      queries: jobs.length,
+      note: 'GS25 재고를 받지 못했습니다 — ' + ((err && err.message) || String(err)).slice(0, 120),
+      failed: true
+    };
+  }
+
+  const byStore = new Map();
+  for (const list of lists) {
+    for (const row of list) {
+      const cur = byStore.get(row.id) || Object.assign({}, row, { items: [], brand: 'gs25' });
+      const idx = cur.items.findIndex((i) => i.code === row.item.code);
+      if (idx >= 0) cur.items[idx] = row.item;
+      else cur.items.push(row.item);
+      byStore.set(row.id, cur);
+    }
+  }
+
+  /* 격자 지점끼리 겹쳐 잡힌 점포가 반경 밖일 수 있으므로 중심에서 radius 로 한 번 더 거른다 */
+  const maxM = Math.max(300, Number(radius) || DEFAULT_RADIUS);
+  const stores = Array.from(byStore.values())
+    .filter((s) => distanceM(lat, lng, s.lat, s.lng) <= maxM)
+    .sort((a, b) => distanceM(lat, lng, a.lat, a.lng) - distanceM(lat, lng, b.lat, b.lng));
+
+  const summary = items.map((it) => {
+    let storesWithStock = 0;
+    let qty = 0;
+    for (const s of stores) {
+      const hit = (s.items || []).find((i) => i.code === it.code);
+      if (!hit) continue;
+      const n = Number(hit.qty);
+      if (Number.isFinite(n) && n > 0) {
+        storesWithStock += 1;
+        qty += n;
+      }
+    }
+    return { code: it.code, name: it.name, storesWithStock, qty };
+  });
+
+  const note = stores.length
+    ? '점포 ' + stores.length + '곳 재고 확인(' + centers.length + '지점 격자 조회 · 상품 ' + items.length + '종' +
+      (skipped ? ' · 시간 마감으로 ' + skipped + '회 생략' : '') + ')'
+    : 'GS25 점포 재고 응답이 비었습니다(상품 ' + items.length + '종 · ' + centers.length + '지점 조회 · 반경 ' +
+      Math.round(maxM) + 'm). 반경 안에 재고가 잡힌 점포가 없을 수 있습니다.';
+  return { stores, items, summary, points: centers.length, queries: jobs.length, skipped, note };
+}
+
 /* --------------------------------------------------------- 결과 조립 */
 
 function mergeStores(stores, lat, lng, nowIso) {
@@ -2574,6 +2713,11 @@ const cache = new Map();
 /* 좌표 소수점 3자리(≈100m) · 반경 · 검색어 — 같은 자리·같은 조건이면 같은 결과 */
 function cacheKey(lat, lng, keyword, radius) {
   return `${Number(lat).toFixed(3)},${Number(lng).toFixed(3)},${radius},${keyword}`;
+}
+
+/* v2.2 — 피규어 격자용 키. 같은 키가 카드 조회 캐시와 섞이지 않게 앞에 grid| 를 붙인다. */
+function gridCacheKey(lat, lng, items, radius) {
+  return `grid|${Number(lat).toFixed(3)},${Number(lng).toFixed(3)},${radius},${items.map((i) => i.code).join(',')}`;
 }
 
 function cacheRead(key) {
@@ -2878,6 +3022,7 @@ const HELP_HTML = `<!doctype html><html lang="ko"><meta charset="utf-8">
 <li><code>GET /api/emart24</code> — 이마트24만 따로(점포 목록·점포별 수량)</li>
 <li><code>GET /api/seven</code> — 세븐일레븐만 따로(지역명·점포·수량)</li>
 <li><code>GET /api/gs25</code> — GS25만 따로(로그인 세션 상태·상품·매장별 수량)</li>
+<li><code>GET /api/gs25-grid?lat=36.0733&amp;lng=129.3947&amp;radius=3000&amp;items=6970834313420,6970834313864</code> — GS25 상품 지정 3km 격자(팜사이즈 원더 피규어)</li>
 </ul>
 <p style="color:#5b6b85">조회 전용입니다. 주문·결제·선점 요청은 만들지 않습니다.</p>
 </body></html>`;
@@ -3326,6 +3471,97 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (path === '/api/gs25-grid') {
+      /* v2.2 — GS25 상품 지정 3km 격자 조회(피규어).
+         /api/gs25-grid?lat=36.0733&lng=129.3947&radius=3000&items=6970834313420,6970834313864
+         items 를 생략하면 피규어 1·2·3탄 바코드를 씁니다. */
+      const point = readPoint(url, res);
+      if (!point) return;
+      const { lat, lng } = point;
+      const radius = Math.min(20000, Math.max(300, num(url.searchParams.get('radius'), DEFAULT_RADIUS)));
+      const items = parseGridItems(url.searchParams.get('items'));
+      if (!items.length) {
+        sendJson(res, 400, { ok: false, code: 'items_invalid', error: 'items 에 6~14짜리 숫자 상품코드(바코드)를 주세요.' });
+        return;
+      }
+
+      /* ① 캐시 — 같은 자리·반경·바코드면 300초 동안 그대로 돌려준다(셈에 넣지 않는다) */
+      const key = gridCacheKey(lat, lng, items, radius);
+      const hit = cacheRead(key);
+      if (hit) {
+        sendJson(res, 200, Object.assign({}, hit, { cached: true }));
+        console.log(`[gs25-grid] ${lat.toFixed(3)},${lng.toFixed(3)} r=${radius} → cache ${hit.stores.length}곳`);
+        return;
+      }
+
+      /* ② 캐시에 없는 요청만 IP 분당 횟수·동시 조회 수를 본다(v2.1 과 같은 규칙) */
+      if (!countRate(clientIp(req))) {
+        sendRateLimited(res);
+        return;
+      }
+      if (guard.inflight >= MAX_CONCURRENT) {
+        sendRateLimited(res);
+        return;
+      }
+
+      guard.inflight += 1;
+      const startedAt = Date.now();
+      try {
+        const deadlineAt = Date.now() + NEARBY_DEADLINE_MS;
+        const diag = [];
+        const value = await collectGs25Grid(lat, lng, items, radius, diag, deadlineAt);
+        const body = {
+          ok: true,
+          relay: 'home-tablet',
+          version: VERSION,
+          lat,
+          lng,
+          radius,
+          items: value.items.map((i) => ({ code: i.code, name: i.name })),
+          grid: { points: value.points || 0, queries: value.queries || 0, skipped: value.skipped || 0 },
+          summary: value.summary || [],
+          session: { configured: !!gs25Session.access, revoked: gs25Session.revoked || false },
+          sources: {
+            gs25: {
+              ok: !value.sessionNeeded && !value.failed,
+              count: value.stores.length,
+              products: value.items.length,
+              note: value.note || ''
+            }
+          },
+          stores: value.stores.map((s) => ({
+            brand: 'gs25',
+            id: s.id,
+            name: s.name,
+            address: s.address,
+            lat: s.lat,
+            lng: s.lng,
+            distanceM: distanceM(lat, lng, s.lat, s.lng),
+            status: (s.items || []).some((i) => Number(i.qty) > 0) ? 'in_stock' : 'out_of_stock',
+            items: (s.items || []).map((i) => ({ name: i.name, code: String(i.code), qty: Number(i.qty) })),
+            updatedAt: new Date().toISOString()
+          })),
+          generatedAt: new Date().toISOString(),
+          elapsedMs: Date.now() - startedAt
+        };
+        if (value.sessionNeeded) body.note = value.note;
+        /* 세션 없음·업체 오류는 캐시에 남기지 않는다 — 세션을 붙인 뒤 다시 부르면 바로 조회된다 */
+        if (!value.sessionNeeded && !/받지 못했습니다/.test(String(value.note || ''))) cacheWrite(key, body);
+        sendJson(res, 200, body);
+        console.log(
+          `[gs25-grid] ${lat.toFixed(4)},${lng.toFixed(4)} r=${radius} items=${items.length} ` +
+            `points=${body.grid.points} → ${body.stores.length}곳 ${body.elapsedMs}ms`
+        );
+      } catch (err) {
+        guard.errorCount += 1;
+        guard.lastErrorAt = new Date().toISOString();
+        sendJson(res, 500, { ok: false, error: (err && err.message) || 'GS25 격자 조회 오류' });
+      } finally {
+        guard.inflight -= 1;
+      }
+      return;
+    }
+
     if (path === '/api/emart24') {
       /* 이마트24만 따로 — 점포 목록이 어느 경로로 왔는지, 점포별 수량이 어떻게 나오는지 확인용.
          /api/emart24?lat=36.0016&lng=129.4028  (q 를 주면 그 지역명으로 공개 매장 API 조회) */
@@ -3413,7 +3649,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    sendJson(res, 404, { ok: false, error: '없는 경로입니다. /health, /api/nearby, /api/diag 를 쓰세요.' });
+    sendJson(res, 404, { ok: false, error: '없는 경로입니다. /health, /api/nearby, /api/gs25-grid, /api/diag 를 쓰세요.' });
   } catch (err) {
     guard.errorCount += 1;
     guard.lastErrorAt = new Date().toISOString();
@@ -3489,6 +3725,8 @@ module.exports = {
   collectEmart24,
   collectCu,
   collectGs25,
+  collectGs25Grid,
+  parseGridItems,
   gs25Search,
   gs25StockForItem,
   gs25Session,
