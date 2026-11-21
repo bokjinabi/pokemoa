@@ -72,7 +72,7 @@
      모르고 기다리게 되므로, 조회를 시작하면 sticky 헤더 바로 아래로 끌어온다(v=110 카드 모드와 같은 방식). */
   var pg = {
     el: null, title: null, note: null, pct: null, bar: null, fill: null,
-    value: 0, ticker: null, hideTimer: null, scrollTimer: null, wired: false
+    value: 0, stage: "idle", ticker: null, hideTimer: null, scrollTimer: null, wired: false
   };
 
   function pgEnsure() {
@@ -105,7 +105,7 @@
       pgPaint();
     }, 380);
   }
-  function pgShow(st, note, from, max) {
+  function pgShow(st, note, from, max, stage) {
     if (!pgEnsure()) return;
     if (!isActive()) return;
     clearTimeout(pg.hideTimer);
@@ -114,6 +114,7 @@
     if (typeof from === "number") pg.value = from;
     if (note != null && pg.note) pg.note.textContent = note;
     if (pg.title) pg.title.textContent = "GS25 피규어 재고 조회";
+    if (stage) pg.stage = stage;
     pgPaint();
     if (st !== "done" && st !== "error") pgTicker(typeof max === "number" ? max : 88);
   }
@@ -123,6 +124,7 @@
     if (!isActive()) { hideProgress(); return; }
     pgStopTicker();
     pg.value = 100;
+    pg.stage = "done";
     pg.el.hidden = false;
     pg.el.setAttribute("data-state", "done");
     if (note != null && pg.note) pg.note.textContent = note;
@@ -136,6 +138,7 @@
     if (!isActive()) { hideProgress(); return; }
     pgStopTicker();
     pg.value = 100;
+    pg.stage = "error";
     pg.el.hidden = false;
     pg.el.setAttribute("data-state", "error");
     if (note != null && pg.note) pg.note.textContent = note;
@@ -148,6 +151,7 @@
     pgStopTicker();
     clearTimeout(pg.hideTimer);
     clearTimeout(pg.scrollTimer);
+    pg.stage = "idle";
     if (pg.el) pg.el.hidden = true;
   }
   function pgScrollIntoView(delay) {
@@ -604,13 +608,13 @@
     state.clearedBySearch = false;
     state.lastKey = key;
     setStatus("주변 GS25 " + radiusText(radius) + " 안 재고를 조회하는 중…", "busy");
-    pgShow("running", gridNote(st), 42, 88);
+    pgShow("running", gridNote(st), 42, 88, "stock");
 
     fetchGrid(url, lat, lng, radius)
       .catch(function (err) {
         /* 태블릿이 아직 v2.1 이면 이 경로가 404 다 — 예전 1km 경로로 조용히 물러난다 */
         if (err && err.status === 404) {
-          pgShow("running", "구버전 중계 — GS25 1km 상품별 재고로 다시 조회하는 중…", 46, 88);
+          pgShow("running", "구버전 중계 — GS25 1km 상품별 재고로 다시 조회하는 중…", 46, 88, "stock");
           return fetchLegacy(url, lat, lng, radius).then(function (out) {
             out.fallback = true;
             return out;
@@ -829,7 +833,7 @@
        아직 새로 그려지지 않은 매장 목록과 맞춰 보게 된다. 조회는 위 pokemoa:loaded 가 맡는다. */
     document.addEventListener("pokemoa:geo-start", function () {
       if (!isActive()) return;
-      pgShow("running", "현재 위치를 확인하는 중…", 2, 20);
+      pgShow("running", "현재 위치를 확인하는 중…", 2, 20, "search");
       pgScrollIntoView(120);
     });
     document.addEventListener("pokemoa:search-start", function (e) {
@@ -843,7 +847,7 @@
       /* 매장 탐색 단계도 눈에 보이게 — 사용자가 직접 시작한 조회만 화면으로 끌어온다 */
       pgShow("running", d.origin === "map"
         ? "지도 중심 주변 GS25 매장을 찾는 중…"
-        : "선택한 지역 주변 GS25 매장을 찾는 중…", 4, 40);
+        : "선택한 지역 주변 GS25 매장을 찾는 중…", 4, 40, "search");
       if (!d.initial && d.origin !== "map") pgScrollIntoView();
     });
     document.addEventListener("pokemoa:search-progress", function (e) {
@@ -857,8 +861,11 @@
     document.addEventListener("pokemoa:search-done", function () {
       if (!isActive()) return;
       document.body.classList.add("figure-mode");
-      /* 매장 탐색이 끝나면 재고 조회 단계로 — 3km 격자 조회는 최대 27초 걸린다 */
-      if (!state.busy) pgShow("running", gridNote(mapState()), 40, 88);
+      /* 매장 탐색이 끝나면 재고 조회 단계로 — 3km 격자 조회는 최대 27초 걸린다.
+         이미 재고 조회가 돌고 있거나(state.busy) 캐시를 다시 얹어 끝난 패널이면
+         문구를 되돌리지 않는다 — 그러면 진행률이 88% 에 멈춰 서 있게 된다. */
+      if (state.busy || pg.stage !== "search") return;
+      pgShow("running", gridNote(mapState()), 40, 88, "stock");
     });
 
     /* 세트 검색 — app.js 가 먼저 결과를 그린 뒤 우리 카드를 덧붙인다 */
