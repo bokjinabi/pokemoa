@@ -590,6 +590,16 @@
     var lng = Number(st.center.lng).toFixed(4);
     var radius = pickRadius(st);
     var key = lat + "," + lng + "," + radius;
+    /* 지도가 아직 GS25 매장을 하나도 그리지 않았으면(첫 진입·지역 변경 직후) 조회해도
+       붙일 곳이 없다 — 20~30초 걸리는 격자 조회를 버리고, pokemoa:loaded 가 다시 부를 때까지 기다린다. */
+    var hasGs25 = (st.all || []).some(function (s) {
+      return s && !s.relay && String(s.brand || "").toLowerCase() === "gs25";
+    });
+    if (!hasGs25) {
+      setStatus("주변 GS25 매장을 찾는 중입니다. 잠시 뒤 재고를 조회합니다.", "busy");
+      pgShow("running", "주변 GS25 매장 위치를 찾는 중…", 10, 40, "search");
+      return;
+    }
     if (!manual && state.lastKey === key && Date.now() - state.lastAt < QUERY_TTL) {
       /* 같은 자리를 다시 찾은 경우 — 지도가 새로 그려지면서 search-start 의 clearRelay() 로
          모든 매장이 ‘미조회’가 됐다면, 캐시해 둔 마지막 결과를 조회 없이 그대로 다시 얹는다.
@@ -673,9 +683,12 @@
           },
           stores: payloadStores
         };
-        /* 같은 자리 재조회(선택 지역·내 위치) 뒤 clearRelay 로 사라진 결과를 되살릴 수 있게 캐시 */
-        state.lastPayload = payload;
-        if (window.PokeMoaMap && isActive()) window.PokeMoaMap.applyRelay(payload);
+        /* 같은 자리 재조회(선택 지역·내 위치) 뒤 clearRelay 로 사라진 결과를 되살릴 수 있게 캐시.
+           지도 매장과 하나도 연결하지 못한 응답(지도가 아직 안 그려진 경우)은 캐시하지 않고,
+           TTL 도 세우지 않아 다음 pokemoa:loaded 에서 다시 조회합니다. */
+        var applied = total > 0;
+        if (applied) state.lastPayload = payload;
+        if (window.PokeMoaMap && applied && isActive()) window.PokeMoaMap.applyRelay(payload);
 
         var now = hhmm();
         var label = radiusText(out.radius);
@@ -700,7 +713,7 @@
         state.lastStatusHtml = summaryHtml;
         state.lastStatusKind = summaryKind;
         state.lastSummary = summaryHtml.replace(/<[^>]+>/g, "");
-        state.lastAt = Date.now();
+        state.lastAt = total ? Date.now() : 0;
         if (errors.length && !total) pgFail(state.lastSummary);
         else pgDone(state.lastSummary);
         track("figure_stock", {
