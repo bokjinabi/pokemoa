@@ -3636,7 +3636,7 @@
           o.classList.toggle("is-active", on);
           o.setAttribute("aria-selected", on ? "true" : "false");
         });
-        [["cal", "subtabCal"], ["news", "subtabNews"]].forEach(function (pair) {
+        [["cal", "subtabCal"], ["news", "subtabNews"], ["collab", "subtabCollab"]].forEach(function (pair) {
           var panel = document.getElementById(pair[1]);
           if (panel) panel.hidden = pair[0] !== key;
         });
