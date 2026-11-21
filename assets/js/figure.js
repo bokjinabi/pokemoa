@@ -15,7 +15,7 @@
 (function () {
   "use strict";
 
-  var D = window.PokeMoaData || {};
+  var D = window.POKEMOA_DATA || {};
   var F = D.figure;
   if (!F) return;
 
