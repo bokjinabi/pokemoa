@@ -4065,6 +4065,7 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
   .pp-tab small { display: none; }
   .figure-strip { padding: 12px; }
   .fs-thumb { width: 64px; height: 64px; border-radius: 12px; }
+  .fs-copy { flex: 1 1 150px; }
   .fs-copy h2 { font-size: 15.5px; }
   .fs-actions { width: 100%; }
   .fs-actions .btn { flex: 1; }

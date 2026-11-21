@@ -993,6 +993,9 @@
         return res.json();
       })
       .then(function (payload) {
+        /* 조회가 도는 사이에 사용자가 GS25 피규어 상품으로 바꿨다면 이 응답은 버린다
+           (피규어 모드의 지도·목록을 카드 재고가 덮어쓰지 않도록). */
+        if (window.PokeMoaFigure && window.PokeMoaFigure.isActive && window.PokeMoaFigure.isActive()) return;
         var n = window.PokeMoaMap.applyRelay(payload);
         relay.lastCount = n;
         relay.state = "online";
@@ -1002,6 +1005,8 @@
         if (manual && n) toast("실제 재고 " + n + "곳을 지도에 반영했습니다.");
       })
       .catch(function (err) {
+        /* 피규어 모드로 바꾼 뒤 도착한 카드 조회 오류는 화면에 반영하지 않는다 */
+        if (window.PokeMoaFigure && window.PokeMoaFigure.isActive && window.PokeMoaFigure.isActive()) return;
         if (err && err.rateLimited) {
           /* 이미 받아 둔 재고는 지우지 않고, 안내만 띄운 뒤 잠시 뒤 한 번 더 시도한다 */
           relay.state = "online";
