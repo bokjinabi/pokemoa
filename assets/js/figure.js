@@ -485,7 +485,9 @@
   function matchesFigure(raw) {
     var q = String(raw || "").toLowerCase().replace(/\s+/g, "");
     if (q.length < 2) return false;
-    var pool = [F.name, F.short, F.english].concat(F.keywords || []);
+    /* 전체 상품명에는 '포켓몬스터'가 들어 있어 카드 검색('포켓몬')까지 피규어를 띄우게 된다.
+       그래서 짧은 이름·영문명·키워드로만 맞춘다. */
+    var pool = [F.short, F.english].concat(F.keywords || []);
     for (var i = 0; i < pool.length; i++) {
       var k = String(pool[i] || "").toLowerCase().replace(/\s+/g, "");
       if (!k) continue;
