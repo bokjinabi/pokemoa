@@ -43,6 +43,7 @@
   var tabBooted = false;
   function showTab(name, opts) {
     if (!panels[name]) name = "map";
+    var prevTab = currentTab;
     Object.keys(panels).forEach(function (k) {
       if (panels[k]) panels[k].hidden = k !== name;
     });
@@ -63,6 +64,10 @@
     if (!opts || !opts.keepScroll) {
       window.scrollTo({ top: 0, behavior: "auto" });
     }
+    /* 다른 탭의 '지도에서 재고 찾기'·'내 주변 매장 지도 열기'로 넘어온 경우 —
+       이미 떠 있는 진행률 패널(#brandProgress)이 머리글에 밀려 화면 밖에 있으면
+       헤더 바로 아래로 끌어와 보여 준다(패널이 없는 첫 진입은 화면을 건드리지 않는다). */
+    if (name === "map" && prevTab !== "map" && tabEntry === "switch") bpScrollIntoView(140);
     if (history.replaceState) history.replaceState(null, "", "#" + name);
   }
 
@@ -271,6 +276,31 @@
   }
   bpBuildRows();
 
+  /* ------------------------------ 진행률 패널로 화면 맞추기(사용자가 직접 시작한 조회만) */
+  /* 버튼으로 조회를 시작했는데 패널이 머리글에 밀려 화면 밖에 있으면,
+     sticky 헤더 바로 아래로 부드럽게 끌어와 「조회 중」임을 알아볼 수 있게 한다.
+     위치는 스크롤 직전에 잰 sticky 헤더 높이(+12px 여백)로 잡는다 — 공지 배너가 붙어
+     헤더가 높아진 날에도 패널이 헤더 밑에 깔리지 않는다(CSS `[id]{scroll-margin-top:78px}` 는 기본값).
+     첫 자동 조회(페이지 진입)와 지도 드래그 재조회에는 부르지 않는다. */
+  var bpScrollTimer = null;
+  function bpScrollIntoView(delay) {
+    if (!bpEl) return;
+    clearTimeout(bpScrollTimer);
+    bpScrollTimer = setTimeout(function () {
+      if (!bpEl || bpEl.hidden || typeof bpEl.scrollIntoView !== "function") return;
+      /* sticky 헤더 높이는 공지 배너가 붙으면 커진다 — 지금 높이를 재서 헤더 바로 아래로 맞춘다 */
+      var header = document.querySelector(".site-header");
+      var headerH = header && header.getBoundingClientRect ? Math.round(header.getBoundingClientRect().height) : 0;
+      if (headerH > 0) bpEl.style.scrollMarginTop = (headerH + 12) + "px";
+      var reduce = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+      try {
+        bpEl.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+      } catch (e) {
+        try { bpEl.scrollIntoView(); } catch (e2) {}
+      }
+    }, typeof delay === "number" ? delay : 80);
+  }
+
   /* 세븐일레븐 안내 문구 — 장소 검색으로 잡힌 매장 수만 말하고 재고는 세븐일레븐 정책상 미지원임을 적는다 */
   function bpPolicyText() {
     var row = (bp.counts || {}).seven;
@@ -468,7 +498,7 @@
       bpSet(id, 40, "최대 매장 조회 중 (최대 25~30초)", "run");
     });
     /* 완료되어 접혀 있던 패널도 새 진행이 시작되면 다시 펼쳐 보여 준다 */
-    if (manual) { bp.quiet = false; bpShow(true); }
+    if (manual) { bp.quiet = false; bpShow(true); bpScrollIntoView(); }
     else if (bpEl && !bpEl.hidden) bpCollapse(false);
     bpStartTicker();
   }
@@ -507,6 +537,8 @@
       toast("지도 중심 기준으로 주변 매장을 다시 찾습니다 · " + ((d.radius || filterState.radius || 3000) / 1000) + "km");
     }
     bpShow(true);
+    /* 지도 드래그(origin=map)는 지도를 보면서 하는 조작이라 화면을 끌어오지 않는다 */
+    if (d.origin !== "map") bpScrollIntoView();
   });
 
   document.addEventListener("pokemoa:search-progress", function (e) {
