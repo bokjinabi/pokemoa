@@ -4,13 +4,14 @@
    · 첫 방문 안내 팝업 — GS25 공식 판매 이미지 + 출시 정보 + ‘바로 재고 찾기’
      (오늘 하루 보지 않기 / 닫기, 닫은 뒤에는 오른쪽 아래 ‘다시 보기’ 버튼)
    · 「동네에서 찾기」 탭의 상품 전환 — 포켓몬 카드 ↔ 팜사이즈 원더 피규어
-   · 피규어를 고르면 중계 서버(GS25 상품 지정 조회 /api/gs25?item=)로
-     주변 GS25 의 1·2·3탄 실재고를 받아 지도·매장 목록에 그대로 얹습니다.
+   · 피규어를 고르면 중계 서버로 주변 GS25 의 1·2·3탄 실재고를 받아 지도·매장 목록에 그대로 얹습니다.
+     중계 v2.2 부터는 상품 지정 3km 격자(/api/gs25-grid)로 조회하고, 태블릿이 아직 v2.1 이라
+     그 경로가 404 면 예전 상품 지정 조회(/api/gs25?item=)로 조용히 물러납니다(1km).
    · 도감·시세 탭의 세트 검색에서도 이름·키워드로 찾히도록 결과를 덧붙입니다.
 
    중계 v2.1 의 /api/nearby 는 GS25 상품을 카드 상품만 골라 내므로(피규어는 빠짐)
-   피규어는 상품코드로 바로 묻는 /api/gs25 를 씁니다. 그 경로는 조회 반경이
-   1km(GS25_RADIUS)이고 17지점 격자가 아니라 지도 중심 한 곳만 봅니다.
+   피규어는 상품코드로 바로 묻는 경로를 씁니다. v2.2 의 /api/gs25-grid 는 카드 조회와 같은
+   3km 격자(중심 + 내링·외링 8방위 17지점)를 돌아 점포별 수량을 매장코드로 합쳐 줍니다.
    ========================================================================= */
 (function () {
   "use strict";
@@ -22,6 +23,8 @@
   var POPUP_KEY = "moa:figure:palm-size-until";   /* ‘오늘 하루 보지 않기’ 만료 시각(ms) */
   var RELAY_KEY = "pokemoa.relayUrl";             /* app.js 와 같은 저장 키 */
   var QUERY_TTL = 120000;                         /* 같은 자리 재조회는 2분에 한 번 */
+  var GRID_TIMEOUT = 32000;                       /* 3km 격자는 27초까지 걸린다 — 사이트 타임아웃과 같게 */
+  var LEGACY_TIMEOUT = 25000;
 
   var state = {
     mode: "card",
@@ -333,6 +336,121 @@
     return byName || byAddr;
   }
 
+  /* 반경 — 지도의 1km / 3km 선택을 따른다(5km·20km 은 3km 로 묶는다).
+     중계 v2.1(구버전)은 1km 한 곳만 보므로 그때는 실제 조회 반경도 1km 다. */
+  function pickRadius(st) {
+    var r = Number(st && st.radius) || 3000;
+    return r <= 1500 ? 1000 : 3000;
+  }
+  function radiusText(m) {
+    return Number(m) >= 2000 ? "3km" : "1km";
+  }
+
+  function fetchJson(url, ms) {
+    var ctrl = new AbortController();
+    var timer = setTimeout(function () { ctrl.abort(); }, ms);
+    return fetch(url, { signal: ctrl.signal, mode: "cors", cache: "no-store" })
+      .then(function (res) {
+        if (!res.ok) {
+          var err = new Error("HTTP " + res.status);
+          err.status = res.status;
+          throw err;
+        }
+        return res.json();
+      })
+      .finally(function () { clearTimeout(timer); });
+  }
+
+  /* 중계 v2.2 — 상품 지정 3km 격자(/api/gs25-grid). 1·2·3탄을 한 번에 묻는다. */
+  function fetchGrid(url, lat, lng, radius) {
+    var codes = (F.series || []).map(function (s) { return s.code; });
+    var q = url + "/api/gs25-grid?lat=" + lat + "&lng=" + lng +
+      "&radius=" + radius + "&items=" + encodeURIComponent(codes.join(","));
+    return fetchJson(q, GRID_TIMEOUT).then(function (body) {
+      if (!body || body.ok === false) throw new Error("grid-response");
+      return { grid: true, body: body, radius: Number(body.radius) || radius };
+    });
+  }
+
+  /* 중계 v2.1 이하 — 상품마다 /api/gs25?item= (지도 중심 한 곳 · 1km) */
+  function fetchLegacy(url, lat, lng, radius) {
+    var legacyRadius = Math.min(1500, Math.max(300, radius));
+    var jobs = (F.series || []).map(function (s) {
+      var q = url + "/api/gs25?lat=" + lat + "&lng=" + lng +
+        "&item=" + encodeURIComponent(s.code) + "&radius=" + legacyRadius;
+      return fetchJson(q, LEGACY_TIMEOUT)
+        .then(function (body) { return { series: s, body: body }; })
+        .catch(function (err) { return { series: s, error: err }; });
+    });
+    return Promise.all(jobs).then(function (results) {
+      return { grid: false, results: results, radius: legacyRadius };
+    });
+  }
+
+  function seriesFor(code, fallbackIndex) {
+    var list = F.series || [];
+    for (var i = 0; i < list.length; i++) {
+      if (String(list[i].code) === String(code)) return list[i];
+    }
+    return list[fallbackIndex] || null;
+  }
+
+  /* 두 경로의 응답을 같은 모양 { byStore, sessionNeeded, notes, errors } 로 만든다 */
+  function readGrid(body) {
+    var byStore = {};
+    (body.stores || []).forEach(function (row) {
+      if (!row || !row.id) return;
+      var rec = byStore[row.id] || (byStore[row.id] = {
+        id: row.id, name: row.name || "", address: row.address || "",
+        distanceM: Number(row.distanceM) || 0, items: []
+      });
+      (row.items || []).forEach(function (it) {
+        var qty = Number(it && it.qty);
+        if (!isFinite(qty)) return;
+        var series = seriesFor(it.code, 0);
+        rec.items.push({
+          name: "팜사이즈 " + (series ? series.no : "?") + "탄",
+          code: String(it.code || ""),
+          qty: qty
+        });
+      });
+    });
+    return {
+      byStore: byStore,
+      sessionNeeded: !!(body.session && body.session.configured === false),
+      notes: body.note ? [String(body.note)] : [],
+      errors: [],
+      points: (body.grid && body.grid.points) || 0
+    };
+  }
+
+  function readLegacy(results) {
+    var byStore = {};
+    var errors = [];
+    var notes = [];
+    var sessionNeeded = false;
+    results.forEach(function (r) {
+      if (r.error) { errors.push((r.error && r.error.message) || String(r.error)); return; }
+      var body = r.body || {};
+      if (!body.ok) { errors.push("조회 서버 응답 오류"); return; }
+      if (body.session && body.session.configured === false) sessionNeeded = true;
+      if (body.note && /세션|오류/.test(String(body.note))) notes.push(String(body.note));
+      (body.stores || []).forEach(function (row) {
+        if (!row || !row.id) return;
+        var rec = byStore[row.id] || (byStore[row.id] = {
+          id: row.id, name: row.name || "", address: row.address || "",
+          distanceM: Number(row.distanceM) || 0, items: []
+        });
+        (row.items || []).forEach(function (it) {
+          var qty = Number(it && it.qty);
+          if (!isFinite(qty)) return;
+          rec.items.push({ name: "팜사이즈 " + r.series.no + "탄", code: String(it.code || r.series.code), qty: qty });
+        });
+      });
+    });
+    return { byStore: byStore, sessionNeeded: sessionNeeded, notes: notes, errors: errors, points: 0 };
+  }
+
   function queryStock(manual) {
     if (!isActive()) return;
     if (state.busy) return;
@@ -348,125 +466,115 @@
     }
     var lat = Number(st.center.lat).toFixed(4);
     var lng = Number(st.center.lng).toFixed(4);
-    var key = lat + "," + lng;
+    var radius = pickRadius(st);
+    var key = lat + "," + lng + "," + radius;
     if (!manual && state.lastKey === key && Date.now() - state.lastAt < QUERY_TTL) return;
 
     state.busy = true;
     state.lastKey = key;
-    setStatus("주변 GS25 재고를 조회하는 중…", "busy");
+    setStatus("주변 GS25 " + radiusText(radius) + " 안 재고를 조회하는 중…", "busy");
 
-    var radius = Math.min(1500, Math.max(300, Math.round(st.radius || 3000)));
-    var jobs = (F.series || []).map(function (s) {
-      var q = url + "/api/gs25?lat=" + lat + "&lng=" + lng +
-        "&item=" + encodeURIComponent(s.code) + "&radius=" + radius;
-      var ctrl = new AbortController();
-      var timer = setTimeout(function () { ctrl.abort(); }, 25000);
-      return fetch(q, { signal: ctrl.signal, mode: "cors", cache: "no-store" })
-        .then(function (res) {
-          if (!res.ok) throw new Error("HTTP " + res.status);
-          return res.json();
-        })
-        .then(function (body) { return { series: s, body: body }; })
-        .catch(function (err) { return { series: s, error: err }; })
-        .finally(function () { clearTimeout(timer); });
-    });
-
-    Promise.all(jobs).then(function (results) {
-      var byStore = {};
-      var errors = [];
-      var notes = [];
-      var sessionNeeded = false;
-      var anyOk = false;
-      results.forEach(function (r) {
-        if (r.error) { errors.push((r.error && r.error.message) || String(r.error)); return; }
-        var body = r.body || {};
-        if (!body.ok) { errors.push("조회 서버 응답 오류"); return; }
-        if (body.session && body.session.configured === false) sessionNeeded = true;
-        if (body.note && /세션|오류/.test(String(body.note))) notes.push(String(body.note));
-        if (Array.isArray(body.stores) && body.stores.length) anyOk = true;
-        (body.stores || []).forEach(function (row) {
-          if (!row || !row.id) return;
-          var rec = byStore[row.id] || (byStore[row.id] = {
-            id: row.id, name: row.name || "", address: row.address || "",
-            distanceM: Number(row.distanceM) || 0, items: []
+    fetchGrid(url, lat, lng, radius)
+      .catch(function (err) {
+        /* 태블릿이 아직 v2.1 이면 이 경로가 404 다 — 예전 1km 경로로 조용히 물러난다 */
+        if (err && err.status === 404) {
+          return fetchLegacy(url, lat, lng, radius).then(function (out) {
+            out.fallback = true;
+            return out;
           });
-          (row.items || []).forEach(function (it) {
-            var qty = Number(it && it.qty);
-            if (!isFinite(qty)) return;
-            rec.items.push({ name: "팜사이즈 " + r.series.no + "탄", code: String(it.code || r.series.code), qty: qty });
+        }
+        throw err;
+      })
+      .then(function (out) {
+        var data = out.grid ? readGrid(out.body) : readLegacy(out.results);
+        var byStore = data.byStore || {};
+        var errors = data.errors || [];
+        var notes = data.notes || [];
+        var sessionNeeded = data.sessionNeeded;
+
+        /* 앱 응답 점포 → 지도(카카오) 점포 좌표에 붙인다 */
+        var all = (mapState() && mapState().all) || [];
+        var payloadStores = [];
+        var matched = 0;
+        var unmatched = 0;
+        var inStock = 0;
+        var totalQty = 0;
+        Object.keys(byStore).forEach(function (id) {
+          var rec = byStore[id];
+          var twin = findStore(all, rec.name, rec.address);
+          if (!twin) { unmatched += 1; return; }
+          matched += 1;
+          var sum = rec.items.reduce(function (a, b) { return a + (b.qty || 0); }, 0);
+          if (sum > 0) inStock += 1;
+          totalQty += sum;
+          payloadStores.push({
+            brand: "gs25",
+            id: rec.id,
+            name: twin.name,
+            address: twin.street || rec.address,
+            lat: twin.lat,
+            lng: twin.lng,
+            status: sum > 0 ? "in_stock" : "out_of_stock",
+            items: rec.items,
+            updatedAt: new Date().toISOString()
           });
         });
-      });
 
-      /* 앱 응답 점포 → 지도(카카오) 점포 좌표에 붙인다 */
-      var all = (mapState() && mapState().all) || [];
-      var payloadStores = [];
-      var matched = 0;
-      var unmatched = 0;
-      var inStock = 0;
-      var totalQty = 0;
-      Object.keys(byStore).forEach(function (id) {
-        var rec = byStore[id];
-        var twin = findStore(all, rec.name, rec.address);
-        if (!twin) { unmatched += 1; return; }
-        matched += 1;
-        var sum = rec.items.reduce(function (a, b) { return a + (b.qty || 0); }, 0);
-        if (sum > 0) inStock += 1;
-        totalQty += sum;
-        payloadStores.push({
-          brand: "gs25",
-          id: rec.id,
-          name: twin.name,
-          address: twin.street || rec.address,
-          lat: twin.lat,
-          lng: twin.lng,
-          status: sum > 0 ? "in_stock" : "out_of_stock",
-          items: rec.items,
-          updatedAt: new Date().toISOString()
+        var total = payloadStores.length;
+        if (window.PokeMoaMap && isActive()) {
+          window.PokeMoaMap.applyRelay({
+            ok: true,
+            generatedAt: new Date().toISOString(),
+            keyword: F.short,
+            radius: out.radius,
+            sources: {
+              gs25: {
+                ok: !errors.length,
+                count: total,
+                products: (F.series || []).length,
+                note: "GS25 팜사이즈 원더 " + total + "곳 확인"
+              }
+            },
+            stores: payloadStores
+          });
+        }
+
+        var now = hhmm();
+        var label = radiusText(out.radius);
+        var bits = [];
+        if (total) {
+          bits.push("주변 GS25 <b>" + total + "곳</b> 확인");
+          bits.push(inStock ? "<b>" + inStock + "곳</b>에 재고(합계 " + totalQty + "개)" : "재고 있는 곳 없음");
+          bits.push(now + " 조회 · 반경 " + label + (out.fallback ? " · 구버전 중계" : ""));
+        } else if (matched === 0 && unmatched > 0) {
+          bits.push("조회된 GS25 " + unmatched + "곳을 지도 매장과 연결하지 못했습니다. 장소를 다시 조회해 주세요.");
+        } else if (sessionNeeded) {
+          bits.push("GS25 로그인 세션이 없어 재고를 받지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
+        } else if (errors.length) {
+          bits.push("GS25 재고 조회가 지연되고 있습니다. 잠시 뒤 다시 시도해 주세요.");
+        } else {
+          bits.push("반경 " + label + " 안에 GS25 점포가 없습니다. 반경을 넓히거나 지도를 옮겨 보세요.");
+        }
+        if (notes.length && !total) bits.push(esc(notes[0]).slice(0, 80));
+        setStatus(bits.join(" · "), total ? "" : (errors.length ? "error" : ""));
+        state.lastAt = Date.now();
+        track("figure_stock", {
+          stores: total,
+          in_stock: inStock,
+          qty: totalQty,
+          errors: errors.length,
+          radius_m: out.radius,
+          grid: out.grid ? 1 : 0,
+          fallback: out.fallback ? 1 : 0
         });
+      })
+      .catch(function (err) {
+        var msg = (err && err.message) || String(err);
+        setStatus("GS25 재고 조회가 지연되고 있습니다. 잠시 뒤 다시 시도해 주세요." + (/rate|429/i.test(msg) ? " (요청이 많아 잠시 대기 중)" : ""), "error");
+      })
+      .finally(function () {
+        state.busy = false;
       });
-
-      var total = payloadStores.length;
-      if (window.PokeMoaMap && isActive()) {
-        window.PokeMoaMap.applyRelay({
-          ok: true,
-          generatedAt: new Date().toISOString(),
-          keyword: F.short,
-          radius: radius,
-          sources: {
-            gs25: {
-              ok: !errors.length,
-              count: total,
-              products: (F.series || []).length,
-              note: "GS25 팜사이즈 원더 " + total + "곳 확인"
-            }
-          },
-          stores: payloadStores
-        });
-      }
-
-      var now = hhmm();
-      var bits = [];
-      if (total) {
-        bits.push("주변 GS25 <b>" + total + "곳</b> 확인");
-        bits.push(inStock ? "<b>" + inStock + "곳</b>에 재고(합계 " + totalQty + "개)" : "재고 있는 곳 없음");
-        bits.push(now + " 조회 · 반경 1km");
-      } else if (matched === 0 && unmatched > 0) {
-        bits.push("조회된 GS25 " + unmatched + "곳을 지도 매장과 연결하지 못했습니다. 장소를 다시 조회해 주세요.");
-      } else if (sessionNeeded) {
-        bits.push("GS25 로그인 세션이 없어 재고를 받지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
-      } else if (errors.length) {
-        bits.push("GS25 재고 조회가 지연되고 있습니다. 잠시 뒤 다시 시도해 주세요.");
-      } else {
-        bits.push("반경 1km 안에 GS25 점포가 없습니다. 반경을 넓히거나 지도를 옮겨 보세요.");
-      }
-      if (notes.length && !total) bits.push(esc(notes[0]).slice(0, 80));
-      setStatus(bits.join(" · "), total ? "" : (errors.length ? "error" : ""));
-      state.lastAt = Date.now();
-      track("figure_stock", { stores: total, in_stock: inStock, qty: totalQty, errors: errors.length });
-    }).finally(function () {
-      state.busy = false;
-    });
   }
 
   function goStock() {
@@ -541,6 +649,23 @@
     }
     var qBtn = $("#figureQuery");
     if (qBtn) qBtn.addEventListener("click", function () { queryStock(true); });
+
+    /* 반경 1km / 3km 를 바꾸면 피규어 재고도 그 반경으로 다시 받는다.
+       지도가 같은 반경 구간(3km→3km)이라 재조회를 돌리지 않는 경우에도 여기서 한 번 묻는다. */
+    function requeryForRadius(tries) {
+      if (!isActive()) return;
+      if (state.busy && tries > 0) {
+        setTimeout(function () { requeryForRadius(tries - 1); }, 1200);
+        return;
+      }
+      queryStock(false);
+    }
+    $$(".radius-btn").forEach(function (b) {
+      b.addEventListener("click", function () {
+        if (!isActive()) return;
+        setTimeout(function () { requeryForRadius(3); }, 600);
+      });
+    });
 
     $$("[data-figure-stock]").forEach(function (b) {
       b.addEventListener("click", goStock);

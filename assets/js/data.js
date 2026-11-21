@@ -2666,11 +2666,12 @@ window.POKEMOA_DATA = (function () {
       { label: "금강일보 보도(2026-11-20 · 사진=GS25 공식 SNS)", url: "https://www.ggilbo.com/news/articleView.html?idxno=1194475" },
       { label: "우리동네GS 공식 상품 페이지", url: "https://product.woodongs.com/item/gs25/6970834313420" }
     ],
-    /* 재고 조회 — 중계 v2.1 의 GS25 상품 지정 조회(/api/gs25?item=)를 씁니다.
-       v2.1 의 /api/nearby 는 카드 상품만 골라 내므로 피규어는 이 경로로만 조회됩니다. */
+    /* 재고 조회 — 중계 v2.2 의 상품 지정 3km 격자(/api/gs25-grid)를 씁니다.
+       지도의 반경 1km·3km 선택을 따라 조회하고, 태블릿이 아직 v2.1 이면(404)
+       예전 상품 지정 조회(/api/gs25?item=, 1km)로 자동으로 물러납니다. */
     stock: {
-      mode: "gs25-item",
-      note: "GS25 앱(우리동네GS) 실시간 재고를 중계 서버로 조회합니다. 중계 v2.1 기준 반경 1km 안 점포만 확인됩니다."
+      mode: "gs25-grid",
+      note: "GS25 앱(우리동네GS) 실시간 재고를 중계 서버로 조회합니다. 중계 v2.2 부터는 지도에서 고른 반경(1km·3km) 안 GS25 점포를 격자로 함께 확인합니다."
     }
   };
 
