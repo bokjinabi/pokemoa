@@ -2,18 +2,42 @@
   "schemaVersion": 1,
   "site": "pokemoa",
   "basisDate": "2026-11-21",
-  "updatedAt": "2026-11-21T18:20:00+09:00",
+  "updatedAt": "2026-11-21T18:30:00+09:00",
   "title": "공식 콜라보",
   "lead": "포켓몬코리아·브랜드 공식 공지와 보도로 확인한 2026년 11월 기준 콜라보입니다. 가격·기간은 공지에 적힌 값이고, 재고 소진 시 조기 종료될 수 있습니다.",
   "categories": [
-    { "key": "cvs", "label": "편의점" },
-    { "key": "cinema", "label": "영화관" },
-    { "key": "food", "label": "외식·디저트" },
-    { "key": "beauty", "label": "뷰티" },
-    { "key": "fashion", "label": "패션" },
-    { "key": "finance", "label": "금융" },
-    { "key": "living", "label": "생활용품" },
-    { "key": "sports", "label": "스포츠" }
+    {
+      "key": "cvs",
+      "label": "편의점"
+    },
+    {
+      "key": "cinema",
+      "label": "영화관"
+    },
+    {
+      "key": "food",
+      "label": "외식·디저트"
+    },
+    {
+      "key": "beauty",
+      "label": "뷰티"
+    },
+    {
+      "key": "fashion",
+      "label": "패션"
+    },
+    {
+      "key": "finance",
+      "label": "금융"
+    },
+    {
+      "key": "living",
+      "label": "생활용품"
+    },
+    {
+      "key": "sports",
+      "label": "스포츠"
+    }
   ],
   "items": [
     {
@@ -33,8 +57,16 @@
       "price": "시리즈별 각 5,800원",
       "note": "종료일은 따로 공지되지 않았고 점포별 재고 소진 시까지 판매합니다. 이 사이트 지도 탭의 '팜사이즈 원더 피규어'에서 주변 GS25 재고를 조회할 수 있습니다.",
       "links": [
-        { "label": "우리동네GS 상품 페이지", "url": "https://product.woodongs.com/item/gs25/6970834313420", "type": "공식" },
-        { "label": "금강일보 보도(2026-11-20)", "url": "https://www.ggilbo.com/news/articleView.html?idxno=1194475", "type": "보도" }
+        {
+          "label": "우리동네GS 상품 페이지",
+          "url": "https://product.woodongs.com/item/gs25/6970834313420",
+          "type": "공식"
+        },
+        {
+          "label": "금강일보 보도(2026-11-20)",
+          "url": "https://www.ggilbo.com/news/articleView.html?idxno=1194475",
+          "type": "보도"
+        }
       ]
     },
     {
@@ -57,8 +89,16 @@
       "price": "9,000원 ~ 28,900원",
       "note": "영화별 한정 수량이라 조기 소진될 수 있고, 영화관별 입점 여부와 품목이 다릅니다. 사전판매는 롯데시네마 네이버 스마트스토어에서 했고 20일부터 매장 판매가 시작됐습니다.",
       "links": [
-        { "label": "금강일보 보도(2026-11-11)", "url": "https://www.ggilbo.com/news/articleView.html?idxno=1192574", "type": "보도" },
-        { "label": "bntnews 보도(2026-11-20)", "url": "https://www.bntnews.co.kr/article/view/bnt202611200186", "type": "보도" }
+        {
+          "label": "금강일보 보도(2026-11-11)",
+          "url": "https://www.ggilbo.com/news/articleView.html?idxno=1192574",
+          "type": "보도"
+        },
+        {
+          "label": "bntnews 보도(2026-11-20)",
+          "url": "https://www.bntnews.co.kr/article/view/bnt202611200186",
+          "type": "보도"
+        }
       ]
     },
     {
@@ -80,8 +120,16 @@
       "price": "8,000원 ~ 29,500원 (빼빼로가 함께 든 구성 기준)",
       "note": "CU가 낮잠 자는 포켓몬을 처음 다룬 빼빼로데이 기획입니다. 공개된 가격은 빼빼로 박스가 함께 든 구성 기준이라 굿즈만 따로 살 때의 가격은 공지에 없습니다. 결제 할인(11-01~11-10)과 성수디저트파크점 콘셉트 스토어(11-04~11-12)는 종료됐습니다.",
       "links": [
-        { "label": "BGF리테일 보도자료(2026-11-02)", "url": "https://www.bgfretail.com/press/view/?id=2087", "type": "공식" },
-        { "label": "아시아경제 보도(2026-11-02)", "url": "https://www.asiae.co.kr/article/2026110209321083379", "type": "보도" }
+        {
+          "label": "BGF리테일 보도자료(2026-11-02)",
+          "url": "https://www.bgfretail.com/press/view/?id=2087",
+          "type": "공식"
+        },
+        {
+          "label": "아시아경제 보도(2026-11-02)",
+          "url": "https://www.asiae.co.kr/article/2026110209321083379",
+          "type": "보도"
+        }
       ]
     },
     {
@@ -102,8 +150,16 @@
       "price": "3,900원 ~ 14,900원",
       "note": "마그넷 사전예약(10-21~10-27)은 물량 소진으로 마감됐고, 매장 판매로 이어졌습니다. 라이트 피규어는 매장 방문·포장 주문만 되고 배달 주문은 제외입니다.",
       "links": [
-        { "label": "금강일보 보도(2026-10-28)", "url": "https://www.ggilbo.com/news/articleView.html?idxno=1189654", "type": "보도" },
-        { "label": "금강일보 보도(2026-11-13 · 라이트 피규어)", "url": "https://www.ggilbo.com/news/articleView.html?idxno=1193008", "type": "보도" }
+        {
+          "label": "금강일보 보도(2026-10-28)",
+          "url": "https://www.ggilbo.com/news/articleView.html?idxno=1189654",
+          "type": "보도"
+        },
+        {
+          "label": "금강일보 보도(2026-11-13 · 라이트 피규어)",
+          "url": "https://www.ggilbo.com/news/articleView.html?idxno=1193008",
+          "type": "보도"
+        }
       ]
     },
     {
@@ -124,8 +180,16 @@
       "price": "연회비 15,000원 ~ 18,000원",
       "note": "굿즈 추첨은 IBK카드앱에서 미션 4가지를 모두 마치고 기간 중 20만 원 이상 이용해야 대상이 됩니다. 디자인별 1,000명 추첨이고 당첨 안내는 12월 중입니다.",
       "links": [
-        { "label": "IBK기업은행 공식 블로그", "url": "https://blog.ibk.co.kr/569734", "type": "공식" },
-        { "label": "연합뉴스 보도(2026-10-23)", "url": "https://www.yna.co.kr/view/AKR20261023061800002", "type": "보도" }
+        {
+          "label": "IBK기업은행 공식 블로그",
+          "url": "https://blog.ibk.co.kr/569734",
+          "type": "공식"
+        },
+        {
+          "label": "연합뉴스 보도(2026-10-23)",
+          "url": "https://www.yna.co.kr/view/AKR20261023061800002",
+          "type": "보도"
+        }
       ]
     },
     {
@@ -146,8 +210,16 @@
       "price": "제품 가격은 판매처별 상이",
       "note": "2026년 4월부터 이어지는 피죤과 포켓몬코리아 협업의 후속 제품입니다. 8배 초고농축 80개입 두 종이고, 행운부적은 제품마다 1장씩 무작위로 들어갑니다.",
       "links": [
-        { "label": "뉴스1 보도(2026-09-22)", "url": "https://www.news1.kr/industry/distribution/6298289", "type": "보도" },
-        { "label": "세계비즈 보도(2026-09-22)", "url": "https://m.segyebiz.com/newsView/20260922519314", "type": "보도" }
+        {
+          "label": "뉴스1 보도(2026-09-22)",
+          "url": "https://www.news1.kr/industry/distribution/6298289",
+          "type": "보도"
+        },
+        {
+          "label": "세계비즈 보도(2026-09-22)",
+          "url": "https://m.segyebiz.com/newsView/20260922519314",
+          "type": "보도"
+        }
       ]
     },
     {
@@ -168,8 +240,16 @@
       "price": "정가 16,000원 · 올리브영 8,800원(45%)",
       "note": "포켓몬 디자인이 들어간 색상은 4종이고, 올리브영에 함께 올라온 나머지 8색은 일반 패키지입니다. 상품명이 '12종'이어도 포켓몬 에디션은 4색입니다.",
       "links": [
-        { "label": "올리브영 상품 페이지", "url": "https://www.oliveyoung.co.kr/store/goods/getGoodsDetail.do?goodsNo=A000001005243", "type": "공식" },
-        { "label": "한국의약통신 보도(2026-10-30)", "url": "http://www.kmpnews.co.kr/news/articleView.html?idxno=73930", "type": "보도" }
+        {
+          "label": "올리브영 상품 페이지",
+          "url": "https://www.oliveyoung.co.kr/store/goods/getGoodsDetail.do?goodsNo=A000001005243",
+          "type": "공식"
+        },
+        {
+          "label": "한국의약통신 보도(2026-10-30)",
+          "url": "http://www.kmpnews.co.kr/news/articleView.html?idxno=73930",
+          "type": "보도"
+        }
       ]
     },
     {
@@ -190,8 +270,16 @@
       "price": "19,600원 ~ 22,500원",
       "note": "올리브영 단독 기획이라 다른 채널에서는 판매하지 않습니다. 11월 1~7일 블랙프라이데이 기간에는 30% 할인이 적용됐습니다.",
       "links": [
-        { "label": "올리브영 상품 페이지(헤어 마스크)", "url": "https://www.oliveyoung.co.kr/store/goods/getGoodsDetail.do?goodsNo=A000000187090", "type": "공식" },
-        { "label": "PAP 매거진 보도(2026-10-27)", "url": "https://www.pap-magazine.com/article/fino-ditto-special-set-olive-young", "type": "보도" }
+        {
+          "label": "올리브영 상품 페이지(헤어 마스크)",
+          "url": "https://www.oliveyoung.co.kr/store/goods/getGoodsDetail.do?goodsNo=A000000187090",
+          "type": "공식"
+        },
+        {
+          "label": "PAP 매거진 보도(2026-10-27)",
+          "url": "https://www.pap-magazine.com/article/fino-ditto-special-set-olive-young",
+          "type": "보도"
+        }
       ]
     },
     {
@@ -214,8 +302,16 @@
       "price": "1,900원 ~ 38,000원",
       "note": "브랜드별로 포켓몬 패키지와 증정품 구성이 다릅니다. 품목·가격은 기획전 페이지에서 수시로 바뀌므로 결제 전 상품 페이지에서 확인해야 합니다.",
       "links": [
-        { "label": "올리브영 기획전 페이지", "url": "https://www.oliveyoung.co.kr/store/planshop/getPlanShopDetail.do?dispCatNo=500000100019529", "type": "공식" },
-        { "label": "CJ올리브영 뉴스룸(2026-04-28 · 5월 협업)", "url": "https://corp.oliveyoung.com/ko/newsroom/press/117", "type": "공식" }
+        {
+          "label": "올리브영 기획전 페이지",
+          "url": "https://www.oliveyoung.co.kr/store/planshop/getPlanShopDetail.do?dispCatNo=500000100019529",
+          "type": "공식"
+        },
+        {
+          "label": "CJ올리브영 뉴스룸(2026-04-28 · 5월 협업)",
+          "url": "https://corp.oliveyoung.com/ko/newsroom/press/117",
+          "type": "공식"
+        }
       ]
     },
     {
@@ -234,10 +330,18 @@
         "롱슬리브, 코치 재킷, 플리스 집업, 팬텀 고스트 비니, 고라파덕 자수 글러브"
       ],
       "price": "29,000원 ~ 119,000원",
-      "note": "11월 12일 무신사 라이브로 공개됐고 무신사·더뮤지엄비지터 공식 온라인 스토어·29CM에서 판매합니다. 품목에 따라 조기 품절된 사이즈가 있습니다.",
+      "note": "11월 12일 무신사 라이브로 공개됐고 무신사·더뮤지엄비지터 공식 온라인 스토어·29CM에서 판매합니다. 사이즈·색상별 재고는 상품 페이지에서 확인하세요.",
       "links": [
-        { "label": "무신사 상품 페이지(뮤 후디)", "url": "https://www.musinsa.com/products/7727572", "type": "공식" },
-        { "label": "럭드 보도(2026-11-12)", "url": "https://www.luck-d.com/agit/news/3772", "type": "보도" }
+        {
+          "label": "무신사 상품 페이지(뮤 후디)",
+          "url": "https://www.musinsa.com/products/7727572",
+          "type": "공식"
+        },
+        {
+          "label": "럭드 보도(2026-11-12)",
+          "url": "https://www.luck-d.com/agit/news/3772",
+          "type": "보도"
+        }
       ]
     },
     {
@@ -255,11 +359,19 @@
         "미니 해피밀 박스 모양 장난감 15종 중 1개",
         "포켓몬 TCG 카드 2장 (15종 중, 포일 7종)"
       ],
-      "price": "미국 해피밀 가격대 (약 4.5~5.5달러)",
+      "price": "미국 약 4.5~5.5달러 (보도 기준 추정)",
       "note": "포켓몬 공식 국가별 일정에 한국과 일본이 없습니다. 11월 미국·캐나다·호주·뉴질랜드·피지·프랑스·스페인, 12월 유럽 등 36개국, 2027년 1~2월 나머지 국가 순서입니다. 국내 출시는 공식 발표가 없습니다.",
       "links": [
-        { "label": "Pokémon 공식 발표(2026-11-10)", "url": "https://www.pokemon.com/us/news/pokemon-happy-meals-return-to-mcdonalds-in-the-us", "type": "공식" },
-        { "label": "TCG뉴스 정리(2026-11-12)", "url": "https://tcgnews.kr/article/226", "type": "보도" }
+        {
+          "label": "Pokémon 공식 발표(2026-11-10)",
+          "url": "https://www.pokemon.com/us/news/pokemon-happy-meals-return-to-mcdonalds-in-the-us",
+          "type": "공식"
+        },
+        {
+          "label": "TCG뉴스 정리(2026-11-12)",
+          "url": "https://tcgnews.kr/article/226",
+          "type": "보도"
+        }
       ]
     },
     {
@@ -277,10 +389,18 @@
         "수면 파자마 45,900원 · 긴팔 파자마 29,900원 · 리사이클 베이직 퍼플리스 집업 29,900원"
       ],
       "price": "29,900원 ~ 45,900원",
-      "note": "롯데백화점 김포공항점 GF 마켓거리에서 열린 팝업으로 11월 19일 끝났습니다. 팝업 한정 할인은 종료됐고, 같은 상품은 스파오 매장·온라인에서 재고에 따라 판매됩니다.",
+      "note": "롯데백화점 김포공항점 GF 마켓거리에서 열린 팝업으로 11월 19일 끝났습니다. 팝업 한정 할인은 종료됐고, 같은 콜라보 상품의 판매 여부와 재고는 스파오 매장·온라인에서 확인해야 합니다.",
       "links": [
-        { "label": "롯데백화점 김포공항점 안내", "url": "https://www.lotteshopping.com/shpgnews/shpgnewsDetail?shpgNewsNo=SNM00000000000567728", "type": "공식" },
-        { "label": "뉴데일리 보도(2026-10-30)", "url": "https://biz.newdaily.co.kr/site/data/html/2026/10/29/2026102900059.html", "type": "보도" }
+        {
+          "label": "롯데백화점 김포공항점 안내",
+          "url": "https://www.lotteshopping.com/shpgnews/shpgnewsDetail?shpgNewsNo=SNM00000000000567728",
+          "type": "공식"
+        },
+        {
+          "label": "뉴데일리 보도(2026-10-30)",
+          "url": "https://biz.newdaily.co.kr/site/data/html/2026/10/29/2026102900059.html",
+          "type": "보도"
+        }
       ]
     },
     {
@@ -299,10 +419,18 @@
         "포켓몬 무빙 블라인드박스 핀 8종 · 개당 12,000원"
       ],
       "price": "1,000원 ~ 35,000원",
-      "note": "2026 시즌 어린이날 프로젝트로 시작한 콜라보입니다. 1·2차 굿즈 판매는 끝났고, 일부 상품만 FC서울 공식몰에서 확인됩니다.",
+      "note": "2026 시즌 어린이날 프로젝트로 시작한 콜라보입니다. 1·2차 굿즈 판매는 끝났고, 남은 상품의 판매 여부는 FC서울 공식몰에서 확인할 수 있습니다.",
       "links": [
-        { "label": "포켓몬코리아 라이선스 상품", "url": "https://www.pokemonkorea.co.kr/goods", "type": "공식" },
-        { "label": "FC서울 공식몰", "url": "https://fcseoulshop.com/product/list.html?cate_no=78", "type": "공식" }
+        {
+          "label": "포켓몬코리아 라이선스 상품",
+          "url": "https://www.pokemonkorea.co.kr/goods",
+          "type": "공식"
+        },
+        {
+          "label": "FC서울 공식몰",
+          "url": "https://fcseoulshop.com/product/list.html?cate_no=78",
+          "type": "공식"
+        }
       ]
     },
     {
@@ -323,8 +451,16 @@
       "price": "가격은 와이즐리 스토어에서 확인",
       "note": "포켓몬코리아 공식 채널이 2026-11-20 소개했습니다. 면도날은 세트에 포함되지 않습니다.",
       "links": [
-        { "label": "포켓몬코리아 공식 채널", "url": "https://x.com/pokemonkrmkt", "type": "공식" },
-        { "label": "와이즐리 스토어", "url": "https://shop.wisely.store/", "type": "공식" }
+        {
+          "label": "포켓몬코리아 공식 채널",
+          "url": "https://x.com/pokemonkrmkt",
+          "type": "공식"
+        },
+        {
+          "label": "와이즐리 스토어",
+          "url": "https://shop.wisely.store/",
+          "type": "공식"
+        }
       ]
     }
   ]
