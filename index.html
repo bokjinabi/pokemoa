@@ -37,7 +37,7 @@
 <meta name="twitter:image:alt" content="포켓몬카드모아 — 내 주변 편의점 재고 · 인기 카드 시세 · 도감">
 <meta name="theme-color" content="#101f3c">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23101f3c'/%3E%3Crect x='7' y='7' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05'/%3E%3Crect x='17.5' y='7' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05' opacity='.7'/%3E%3Crect x='7' y='17.5' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05' opacity='.7'/%3E%3Crect x='17.5' y='17.5' width='7.5' height='7.5' rx='2.2' fill='%23ffcb05'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="assets/css/style.css?v=117">
+<link rel="stylesheet" href="assets/css/style.css?v=118">
 <!-- 카카오맵 JavaScript SDK — autoload=false로 불러 두고 map.js가 kakao.maps.load()로 초기화합니다.
      JavaScript 키 도메인에는 https://moa-kr.github.io 만 등록되어 있어, 그 밖의 주소(미등록 프리뷰)에서는
      지도 대신 내장 좌표 스냅샷 안내가 표시됩니다. -->
@@ -537,7 +537,6 @@
       <span class="pp-label">찾을 상품</span>
       <div class="pp-tabs">
         <button type="button" class="pp-tab is-active" data-product="card" aria-pressed="true">
-          <span class="pp-ico" aria-hidden="true">🎴</span>
           <span class="pp-name">포켓몬 카드</span>
           <small>30th 외 박스·낱팩</small>
         </button>
@@ -547,6 +546,17 @@
           <small>GS25 · 20종 랜덤</small>
         </button>
       </div>
+    </div>
+
+    <!-- ----------------------------------------- GS25 피규어 재고 조회 진행률 -->
+    <div class="figure-progress" id="figureProgress" data-state="idle" role="group" aria-label="GS25 피규어 재고 조회 진행률" hidden>
+      <div class="fgp-head">
+        <span class="fgp-spin" aria-hidden="true"></span>
+        <b class="fgp-title" id="figureProgressTitle">GS25 피규어 재고 조회</b>
+        <span class="fgp-pct" id="figureProgressPct">0%</span>
+      </div>
+      <div class="fgp-bar" id="figureProgressBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="GS25 피규어 재고 조회 진행률"><i id="figureProgressFill"></i></div>
+      <p class="fgp-note" id="figureProgressNote" role="status" aria-live="polite">주변 GS25 매장을 찾는 중…</p>
     </div>
 
     <!-- ------------------------------------------------------ GS25 피규어 안내 띠 -->
@@ -1561,14 +1571,14 @@
   </div>
 </template>
 
-<script src="assets/js/data.js?v=117"></script>
-<script src="assets/js/map.js?v=117"></script>
-<script src="assets/js/app.js?v=117"></script>
+<script src="assets/js/data.js?v=118"></script>
+<script src="assets/js/map.js?v=118"></script>
+<script src="assets/js/app.js?v=118"></script>
 <!-- GS25 팜사이즈 원더 피규어 — 안내 팝업·상품 전환·주변 GS25 재고 조회 (data.js 의 figure) -->
-<script src="assets/js/figure.js?v=117"></script>
+<script src="assets/js/figure.js?v=118"></script>
 <!-- 모아 어드민(moa-kr/moa-admin)이 커밋하는 assets/config/site-config.json 을 화면에 적용합니다.
      공지 바·팝업·탭/섹션 순서와 노출·문구가 이 파일 값으로 바뀝니다. -->
-<script src="assets/js/site-config-loader.js?v=117" defer
+<script src="assets/js/site-config-loader.js?v=118" defer
         data-config="assets/config/site-config.json"
         data-track-site="pokemoa"
         data-tab-container=".main-nav"

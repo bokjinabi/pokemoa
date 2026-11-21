@@ -35,6 +35,11 @@
     busy: false,
     lastAt: 0,
     lastKey: "",
+    lastPayload: null,        /* 마지막 성공 응답 — 지도를 다시 그려도 같은 자리면 그대로 다시 얹는다 */
+    lastStatusHtml: "",
+    lastStatusKind: "",
+    lastSummary: "",
+    clearedBySearch: false,   /* 방금 지도 재조회로 clearRelay() 가 돌았는지 */
     brandBefore: "all",
     sideTitle: ""
   };
@@ -57,6 +62,110 @@
   }
   function track(name, params) {
     try { if (window.gtag) window.gtag("event", name, params || {}); } catch (e) {}
+  }
+
+  /* ------------------------------------- 피규어 재고 조회 진행률(#figureProgress) */
+  /* 카드 모드의 4사 진행률 패널은 피규어 모드에서 숨긴다(CSS). 그 자리를 이 패널이 맡아
+     '매장 찾는 중 → GS25 3km 격자(17지점 · 1·2·3탄) 재고 조회 중 → 완료'를
+     스피너·진행 바·%로 보여 준다.
+     지도 툴바의 ‘선택 지역 찾기’·‘내 위치로 찾기’는 패널보다 아래에 있어 조회가 도는 줄
+     모르고 기다리게 되므로, 조회를 시작하면 sticky 헤더 바로 아래로 끌어온다(v=110 카드 모드와 같은 방식). */
+  var pg = {
+    el: null, title: null, note: null, pct: null, bar: null, fill: null,
+    value: 0, ticker: null, hideTimer: null, scrollTimer: null, wired: false
+  };
+
+  function pgEnsure() {
+    if (!pg.wired) {
+      pg.wired = true;
+      pg.el = $("#figureProgress");
+      pg.title = $("#figureProgressTitle");
+      pg.note = $("#figureProgressNote");
+      pg.pct = $("#figureProgressPct");
+      pg.bar = $("#figureProgressBar");
+      pg.fill = $("#figureProgressFill");
+    }
+    return pg.el ? pg : null;
+  }
+  function pgVisible() { return !!(pg.el && !pg.el.hidden); }
+  function pgPaint() {
+    if (!pg.el) return;
+    var v = Math.max(0, Math.min(100, Math.round(pg.value)));
+    if (pg.fill) pg.fill.style.width = v + "%";
+    if (pg.pct) pg.pct.textContent = v + "%";
+    if (pg.bar) pg.bar.setAttribute("aria-valuenow", String(v));
+  }
+  function pgStopTicker() { if (pg.ticker) { clearInterval(pg.ticker); pg.ticker = null; } }
+  function pgTicker(max) {
+    pgStopTicker();
+    pg.ticker = setInterval(function () {
+      if (!pgVisible()) { pgStopTicker(); return; }
+      if (pg.value >= max) { pgStopTicker(); return; }
+      pg.value = Math.min(max, pg.value + 1);
+      pgPaint();
+    }, 380);
+  }
+  function pgShow(st, note, from, max) {
+    if (!pgEnsure()) return;
+    if (!isActive()) return;
+    clearTimeout(pg.hideTimer);
+    pg.el.hidden = false;
+    pg.el.setAttribute("data-state", st || "running");
+    if (typeof from === "number") pg.value = from;
+    if (note != null && pg.note) pg.note.textContent = note;
+    if (pg.title) pg.title.textContent = "GS25 피규어 재고 조회";
+    pgPaint();
+    if (st !== "done" && st !== "error") pgTicker(typeof max === "number" ? max : 88);
+  }
+  function pgDone(note) {
+    if (!pgEnsure()) return;
+    /* 조회 중에 카드 모드로 돌아갔으면 피규어 패널을 다시 띄우지 않는다 */
+    if (!isActive()) { hideProgress(); return; }
+    pgStopTicker();
+    pg.value = 100;
+    pg.el.hidden = false;
+    pg.el.setAttribute("data-state", "done");
+    if (note != null && pg.note) pg.note.textContent = note;
+    if (pg.title) pg.title.textContent = "GS25 피규어 재고 조회 완료";
+    pgPaint();
+    clearTimeout(pg.hideTimer);
+    pg.hideTimer = setTimeout(hideProgress, 4200);
+  }
+  function pgFail(note) {
+    if (!pgEnsure()) return;
+    if (!isActive()) { hideProgress(); return; }
+    pgStopTicker();
+    pg.value = 100;
+    pg.el.hidden = false;
+    pg.el.setAttribute("data-state", "error");
+    if (note != null && pg.note) pg.note.textContent = note;
+    if (pg.title) pg.title.textContent = "GS25 피규어 재고 조회";
+    pgPaint();
+    clearTimeout(pg.hideTimer);
+    pg.hideTimer = setTimeout(hideProgress, 6000);
+  }
+  function hideProgress() {
+    pgStopTicker();
+    clearTimeout(pg.hideTimer);
+    clearTimeout(pg.scrollTimer);
+    if (pg.el) pg.el.hidden = true;
+  }
+  function pgScrollIntoView(delay) {
+    if (!pgEnsure()) return;
+    clearTimeout(pg.scrollTimer);
+    pg.scrollTimer = setTimeout(function () {
+      if (!pgVisible() || typeof pg.el.scrollIntoView !== "function") return;
+      /* sticky 헤더 높이는 공지 배너가 붙으면 커진다 — 지금 높이를 재서 헤더 바로 아래로 맞춘다 */
+      var header = document.querySelector(".site-header");
+      var headerH = header && header.getBoundingClientRect ? Math.round(header.getBoundingClientRect().height) : 0;
+      if (headerH > 0) pg.el.style.scrollMarginTop = (headerH + 12) + "px";
+      var reduce = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+      try {
+        pg.el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+      } catch (e) {
+        try { pg.el.scrollIntoView(); } catch (e2) {}
+      }
+    }, typeof delay === "number" ? delay : 80);
   }
 
   /* ---------------------------------------------------------- 저장 값 */
@@ -261,6 +370,7 @@
       if (opts.scroll) scrollToStrip();
     } else {
       setStatus("");
+      hideProgress();
       var brief = $("#figureStockNote");
       if (brief) { brief.textContent = "주변 GS25 재고를 조회하려면 ‘재고 조회’를 눌러 주세요."; brief.className = "fs-status"; }
       /* 카드 재고를 다시 받는다 — app.js 가 이 이벤트에서 relayRefresh 를 예약한다 */
@@ -344,6 +454,12 @@
   }
   function radiusText(m) {
     return Number(m) >= 2000 ? "3km" : "1km";
+  }
+  /* 진행률 패널에 쓰는 조회 단계 문구 — 지도의 3km/1km 선택을 그대로 따른다 */
+  function gridNote(st) {
+    return radiusText(pickRadius(st)) === "3km"
+      ? "GS25 3km 격자(17지점 · 1·2·3탄) 재고 조회 중…"
+      : "GS25 1km 격자 재고 조회 중…";
   }
 
   function fetchJson(url, ms) {
@@ -458,26 +574,43 @@
     var url = relayUrl();
     if (!st || !st.center) {
       setStatus("지도 매장 정보를 아직 불러오지 못했습니다. 지역을 고른 뒤 ‘재고 조회’를 눌러 주세요.", "error");
+      pgFail("지도 매장 정보를 아직 불러오지 못했습니다. 지역을 고른 뒤 다시 조회해 주세요.");
       return;
     }
     if (!url) {
       setStatus("실시간 재고 조회 서버에 연결되어 있지 않습니다. 잠시 뒤 다시 시도해 주세요.", "error");
+      pgFail("실시간 재고 조회 서버에 연결되어 있지 않습니다. 잠시 뒤 다시 시도해 주세요.");
       return;
     }
     var lat = Number(st.center.lat).toFixed(4);
     var lng = Number(st.center.lng).toFixed(4);
     var radius = pickRadius(st);
     var key = lat + "," + lng + "," + radius;
-    if (!manual && state.lastKey === key && Date.now() - state.lastAt < QUERY_TTL) return;
+    if (!manual && state.lastKey === key && Date.now() - state.lastAt < QUERY_TTL) {
+      /* 같은 자리를 다시 찾은 경우 — 지도가 새로 그려지면서 search-start 의 clearRelay() 로
+         모든 매장이 ‘미조회’가 됐다면, 캐시해 둔 마지막 결과를 조회 없이 그대로 다시 얹는다.
+         (이걸 빠뜨리면 ‘선택 지역 찾기’·‘내 위치로 찾기’ 뒤에 전부 미조회로 남는다) */
+      if (state.clearedBySearch && state.lastPayload) {
+        state.clearedBySearch = false;
+        if (window.PokeMoaMap) window.PokeMoaMap.applyRelay(state.lastPayload);
+        setStatus(state.lastStatusHtml, state.lastStatusKind);
+        setSideTitle(true);
+        if (pgVisible()) pgDone(state.lastSummary || "지도에 마지막 재고를 다시 표시했습니다.");
+      }
+      return;
+    }
 
     state.busy = true;
+    state.clearedBySearch = false;
     state.lastKey = key;
     setStatus("주변 GS25 " + radiusText(radius) + " 안 재고를 조회하는 중…", "busy");
+    pgShow("running", gridNote(st), 42, 88);
 
     fetchGrid(url, lat, lng, radius)
       .catch(function (err) {
         /* 태블릿이 아직 v2.1 이면 이 경로가 404 다 — 예전 1km 경로로 조용히 물러난다 */
         if (err && err.status === 404) {
+          pgShow("running", "구버전 중계 — GS25 1km 상품별 재고로 다시 조회하는 중…", 46, 88);
           return fetchLegacy(url, lat, lng, radius).then(function (out) {
             out.fallback = true;
             return out;
@@ -521,23 +654,24 @@
         });
 
         var total = payloadStores.length;
-        if (window.PokeMoaMap && isActive()) {
-          window.PokeMoaMap.applyRelay({
-            ok: true,
-            generatedAt: new Date().toISOString(),
-            keyword: F.short,
-            radius: out.radius,
-            sources: {
-              gs25: {
-                ok: !errors.length,
-                count: total,
-                products: (F.series || []).length,
-                note: "GS25 팜사이즈 원더 " + total + "곳 확인"
-              }
-            },
-            stores: payloadStores
-          });
-        }
+        var payload = {
+          ok: true,
+          generatedAt: new Date().toISOString(),
+          keyword: F.short,
+          radius: out.radius,
+          sources: {
+            gs25: {
+              ok: !errors.length,
+              count: total,
+              products: (F.series || []).length,
+              note: "GS25 팜사이즈 원더 " + total + "곳 확인"
+            }
+          },
+          stores: payloadStores
+        };
+        /* 같은 자리 재조회(선택 지역·내 위치) 뒤 clearRelay 로 사라진 결과를 되살릴 수 있게 캐시 */
+        state.lastPayload = payload;
+        if (window.PokeMoaMap && isActive()) window.PokeMoaMap.applyRelay(payload);
 
         var now = hhmm();
         var label = radiusText(out.radius);
@@ -556,8 +690,15 @@
           bits.push("반경 " + label + " 안에 GS25 점포가 없습니다. 반경을 넓히거나 지도를 옮겨 보세요.");
         }
         if (notes.length && !total) bits.push(esc(notes[0]).slice(0, 80));
-        setStatus(bits.join(" · "), total ? "" : (errors.length ? "error" : ""));
+        var summaryHtml = bits.join(" · ");
+        var summaryKind = total ? "" : (errors.length ? "error" : "");
+        setStatus(summaryHtml, summaryKind);
+        state.lastStatusHtml = summaryHtml;
+        state.lastStatusKind = summaryKind;
+        state.lastSummary = summaryHtml.replace(/<[^>]+>/g, "");
         state.lastAt = Date.now();
+        if (errors.length && !total) pgFail(state.lastSummary);
+        else pgDone(state.lastSummary);
         track("figure_stock", {
           stores: total,
           in_stock: inStock,
@@ -570,7 +711,9 @@
       })
       .catch(function (err) {
         var msg = (err && err.message) || String(err);
-        setStatus("GS25 재고 조회가 지연되고 있습니다. 잠시 뒤 다시 시도해 주세요." + (/rate|429/i.test(msg) ? " (요청이 많아 잠시 대기 중)" : ""), "error");
+        var text = "GS25 재고 조회가 지연되고 있습니다. 잠시 뒤 다시 시도해 주세요." + (/rate|429/i.test(msg) ? " (요청이 많아 잠시 대기 중)" : "");
+        setStatus(text, "error");
+        pgFail(text);
       })
       .finally(function () {
         state.busy = false;
@@ -682,17 +825,40 @@
       setSideTitle(true);
       queryStock(false);
     });
-    document.addEventListener("pokemoa:geo-done", function () {
-      if (isActive()) queryStock(false);
-    });
-    document.addEventListener("pokemoa:search-start", function () {
+    /* 내 위치 → 지도 중심 변경 → load() 순서로 진행되므로, 여기서 먼저 조회하면
+       아직 새로 그려지지 않은 매장 목록과 맞춰 보게 된다. 조회는 위 pokemoa:loaded 가 맡는다. */
+    document.addEventListener("pokemoa:geo-start", function () {
       if (!isActive()) return;
-      /* 지역을 새로 찾으면 카드 4사 패널이 다시 떠오르므로 피규어 모드에서는 곧바로 숨긴다 */
+      pgShow("running", "현재 위치를 확인하는 중…", 2, 20);
+      pgScrollIntoView(120);
+    });
+    document.addEventListener("pokemoa:search-start", function (e) {
+      if (!isActive()) return;
+      var d = (e && e.detail) || {};
+      /* 지역을 새로 찾으면 카드 4사 패널이 다시 떠오르므로 피규어 모드에서는 곧바로 숨긴다.
+         이때 지도 점포가 새로 그려져 전부 ‘미조회’가 되므로, 같은 자리면 queryStock 의 TTL 경로가
+         state.lastPayload 를 다시 엎는다(clearedBySearch). */
+      state.clearedBySearch = true;
       if (window.PokeMoaMap) window.PokeMoaMap.clearRelay();
+      /* 매장 탐색 단계도 눈에 보이게 — 사용자가 직접 시작한 조회만 화면으로 끌어온다 */
+      pgShow("running", d.origin === "map"
+        ? "지도 중심 주변 GS25 매장을 찾는 중…"
+        : "선택한 지역 주변 GS25 매장을 찾는 중…", 4, 40);
+      if (!d.initial && d.origin !== "map") pgScrollIntoView();
+    });
+    document.addEventListener("pokemoa:search-progress", function (e) {
+      if (!isActive() || !pgVisible()) return;
+      var d = (e && e.detail) || {};
+      var total = Math.max(1, d.total || 1);
+      var done = Math.min(1, (d.resolved || 0) / total);
+      pg.value = Math.max(pg.value, 4 + Math.round(34 * done));
+      pgPaint();
     });
     document.addEventListener("pokemoa:search-done", function () {
       if (!isActive()) return;
       document.body.classList.add("figure-mode");
+      /* 매장 탐색이 끝나면 재고 조회 단계로 — 3km 격자 조회는 최대 27초 걸린다 */
+      if (!state.busy) pgShow("running", gridNote(mapState()), 40, 88);
     });
 
     /* 세트 검색 — app.js 가 먼저 결과를 그린 뒤 우리 카드를 덧붙인다 */

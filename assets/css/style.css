@@ -4084,3 +4084,61 @@ button.pop-link { font: inherit; color: inherit; cursor: pointer; }
 
 /* 피규어 모드에서는 카드(4사) 재고 진행률 패널을 숨긴다 — 피규어 재고는 안내 띠(#figureStrip)가 맡는다 */
 body.figure-mode #brandProgress { display: none !important; }
+
+/* ---------------------------------------------- GS25 피규어 재고 조회 진행률 (v=118) */
+/* 카드 모드의 4사 패널 대신, 피규어 모드에서만 보이는 스피너 · 진행 바 · % 패널.
+   '매장 찾는 중 → 3km 격자 재고 조회 중 → 완료'를 지도 툴바 바로 위에서 보여 준다. */
+.figure-progress {
+  display: grid;
+  gap: 7px;
+  margin: 12px 0 0;
+  padding: 12px 14px 13px;
+  background: #fff;
+  border: 1px solid #f4dfa0;
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  min-width: 0;
+}
+.figure-progress[hidden] { display: none; }
+body:not(.figure-mode) .figure-progress { display: none !important; }
+.fgp-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.fgp-spin {
+  width: 13px; height: 13px; flex: none;
+  border-radius: 50%;
+  border: 2px solid #f1e2b4;
+  border-top-color: #d9a41a;
+  animation: pm-spin 0.85s linear infinite;
+}
+.figure-progress[data-state="done"] .fgp-spin,
+.figure-progress[data-state="error"] .fgp-spin { display: none; }
+.fgp-title {
+  min-width: 0;
+  font-size: 12.5px; font-weight: 800; color: var(--ink); letter-spacing: -0.01em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.fgp-pct {
+  margin-left: auto; flex: none;
+  font-size: 12.5px; font-weight: 900; color: #8a6400;
+  font-variant-numeric: tabular-nums;
+}
+.fgp-bar {
+  display: block; height: 8px; border-radius: 999px;
+  background: #f7efd6; overflow: hidden;
+}
+.fgp-bar i {
+  display: block; height: 100%; width: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f7c948, #e8a80c);
+  transition: width 0.35s ease;
+}
+.fgp-note { margin: 0; font-size: 12px; line-height: 1.45; color: var(--ink-2); }
+.figure-progress[data-state="done"] .fgp-bar i { background: var(--green); }
+.figure-progress[data-state="done"] .fgp-pct { color: var(--green); }
+.figure-progress[data-state="error"] .fgp-bar i { background: #c9705a; }
+.figure-progress[data-state="error"] .fgp-pct { color: #b4541f; }
+.figure-progress[data-state="error"] .fgp-note { color: #b4541f; }
+
+@media (max-width: 640px) {
+  .figure-progress { padding: 10px 12px 11px; margin-top: 10px; }
+  .fgp-note { font-size: 11.5px; }
+}
